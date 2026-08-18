@@ -1,5 +1,5 @@
-from .common import ImportResult
 from .async_tn import import_async
+from .common import ImportResult
 from .polynorm import import_polynorm
 from .proteno import import_proteno
 

@@ -6,7 +6,6 @@ from spokenform_gold.benchmark import run_benchmark
 from spokenform_gold.io import read_json
 from spokenform_gold.release import build_release
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 

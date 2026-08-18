@@ -5,7 +5,6 @@ from collections import Counter, defaultdict
 from .semantics import validate_semantic
 from .taxonomy import ambiguity_map, categories_set, policies_map, source_manifest_map
 
-
 STATUSES = {
     "gold",
     "multi_valid",

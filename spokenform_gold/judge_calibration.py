@@ -14,13 +14,13 @@ def load_judge_predictions(path: str | Path) -> dict[str, str]:
                 continue
             payload = json.loads(line)
             if not isinstance(payload, dict):
-                raise ValueError(
+                raise TypeError(
                     f"{path}:{line_number}: judge prediction must be an object"
                 )
             record_id = payload.get("id")
             label = payload.get("label")
             if not isinstance(record_id, str) or not isinstance(label, str):
-                raise ValueError(
+                raise TypeError(
                     f"{path}:{line_number}: judge prediction requires string id and label"
                 )
             if label not in {"accept", "reject"}:

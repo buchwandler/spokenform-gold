@@ -1,8 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from copy import deepcopy
-from typing import Callable
-
 
 SourceTextLoader = Callable[[dict], str]
 
@@ -28,7 +27,7 @@ def hydrate_external_overlay(overlay: dict, *, input_text: str) -> dict:
         return deepcopy(overlay)
     annotation = overlay.get("annotation")
     if not isinstance(annotation, dict):
-        raise ValueError("external_ref record is missing annotation payload")
+        raise TypeError("external_ref record is missing annotation payload")
     hydrated = deepcopy(overlay)
     hydrated["input"] = input_text
     hydrated["expected_output"] = annotation.get("expected_output")
@@ -38,7 +37,9 @@ def hydrate_external_overlay(overlay: dict, *, input_text: str) -> dict:
     return hydrated
 
 
-def resolve_release_record(record: dict, *, source_loader: SourceTextLoader | None) -> dict:
+def resolve_release_record(
+    record: dict, *, source_loader: SourceTextLoader | None
+) -> dict:
     if record.get("materialization") != "external_ref":
         return deepcopy(record)
     if source_loader is None:

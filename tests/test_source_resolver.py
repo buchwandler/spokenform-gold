@@ -3,13 +3,18 @@ import unittest
 from pathlib import Path
 
 from spokenform_gold.benchmark import load_release_records
-from spokenform_gold.io import read_json, read_records, sha256_file, write_json, write_jsonl
+from spokenform_gold.io import (
+    read_json,
+    read_records,
+    sha256_file,
+    write_json,
+    write_jsonl,
+)
 from spokenform_gold.source_resolver import (
     build_external_overlay,
     hydrate_external_overlay,
     resolve_release_record,
 )
-
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -55,8 +60,8 @@ class SourceResolverTests(unittest.TestCase):
                 "benchmark_version": "0.0.0-test",
                 "maturity": "experimental",
                 "file_hashes": {
-                "data/test/sample.jsonl": sha256_file(data_dir / "sample.jsonl"),
-                "sources/manifest.json": sha256_file(sources_dir / "manifest.json"),
+                    "data/test/sample.jsonl": sha256_file(data_dir / "sample.jsonl"),
+                    "sources/manifest.json": sha256_file(sources_dir / "manifest.json"),
                 },
             }
             write_json(root / "manifest.json", manifest)

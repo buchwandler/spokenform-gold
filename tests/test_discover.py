@@ -1,5 +1,6 @@
 import unittest
-from spokenform_gold.discover import shape, discover
+
+from spokenform_gold.discover import discover, shape
 
 
 class DiscoverTests(unittest.TestCase):

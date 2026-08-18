@@ -8,15 +8,15 @@ def shape(token):
     t = token.strip("()[]{}<>\"'“”‘’,;")
     if not t:
         return None
-    if re.fullmatch(r"https?://\S+", t, re.I):
+    if re.fullmatch(r"https?://\S+", t, re.IGNORECASE):
         return "url"
     if re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", t):
         return "email"
     if re.fullmatch(r"(?:\d{1,3}\.){3}\d{1,3}", t):
         return "ipv4"
-    if re.fullmatch(r"v?\d+(?:\.\d+){1,}(?:[-+][A-Za-z0-9.-]+)?", t, re.I):
+    if re.fullmatch(r"v?\d+(?:\.\d+){1,}(?:[-+][A-Za-z0-9.-]+)?", t, re.IGNORECASE):
         return "version_like"
-    if re.fullmatch(r"\d{1,2}:\d{2}(?:\s?[AP]M)?", t, re.I):
+    if re.fullmatch(r"\d{1,2}:\d{2}(?:\s?[AP]M)?", t, re.IGNORECASE):
         return "time_like"
     if re.fullmatch(r"\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4}", t):
         return "date_like"

@@ -6,7 +6,6 @@ from spokenform_gold.io import read_records
 from spokenform_gold.source_manifest import validate_source_manifest
 from spokenform_gold.validation import validate_records
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 

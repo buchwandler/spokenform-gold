@@ -13,7 +13,6 @@ from .io import read_json, read_records, sha256_file, write_json, write_jsonl
 from .scoring import score_records
 from .source_resolver import SourceTextLoader, resolve_release_record
 
-
 PrepareCallable = Callable[[str, str, str, dict[str, Any] | None], str]
 
 GOLD_PROFILE_V1 = {

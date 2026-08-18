@@ -7,7 +7,6 @@ from ..io import read_json, read_jsonl, sha256_text
 from ..taxonomy import load_mapping, source_manifest_map
 from .common import ImportResult
 
-
 OFFICIAL_GLOB = "*_groundtruth.jsonl"
 LOCALE_PATTERN = re.compile(r"([a-z]{2}-[A-Z]{2})")
 MONTH_PATTERN = (
@@ -90,11 +89,17 @@ def _iter_rows(path: str | Path, fmt: str) -> tuple[list[tuple[dict, Path, str]]
         else:
             fmt = "raw"
     if fmt == "projection":
-        return [(row, target, row.get("locale", "en-US")) for row in read_jsonl(target)], "projection"
+        return [
+            (row, target, row.get("locale", "en-US")) for row in read_jsonl(target)
+        ], "projection"
     if fmt == "raw":
         payload = read_json(target)
-        if not isinstance(payload, dict) or not isinstance(payload.get("records"), list):
-            raise ValueError("polynorm raw bundle must be an object with a records list")
+        if not isinstance(payload, dict) or not isinstance(
+            payload.get("records"), list
+        ):
+            raise ValueError(
+                "polynorm raw bundle must be an object with a records list"
+            )
         locale = payload.get("locale", "en-US")
         return [(row, target, locale) for row in payload["records"]], "raw"
     if fmt != "official":

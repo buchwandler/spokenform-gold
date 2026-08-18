@@ -7,7 +7,6 @@ from spokenform_gold.benchmark import verify_release
 from spokenform_gold.io import read_json
 from spokenform_gold.release import build_release
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -114,15 +113,14 @@ class ReleaseTests(unittest.TestCase):
                 )
 
     def test_stable_release_requires_split_registry(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with self.assertRaises(ValueError):
-                build_release(
-                    version="0.2.0",
-                    data_paths=[str(ROOT / "data/dev"), str(ROOT / "data/test")],
-                    out_root=Path(tmpdir) / "release",
-                    maturity="stable",
-                    registry_path=Path(tmpdir) / "missing.json",
-                )
+        with tempfile.TemporaryDirectory() as tmpdir, self.assertRaises(ValueError):
+            build_release(
+                version="0.2.0",
+                data_paths=[str(ROOT / "data/dev"), str(ROOT / "data/test")],
+                out_root=Path(tmpdir) / "release",
+                maturity="stable",
+                registry_path=Path(tmpdir) / "missing.json",
+            )
 
 
 if __name__ == "__main__":

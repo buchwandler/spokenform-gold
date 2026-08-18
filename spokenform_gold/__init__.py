@@ -12,8 +12,8 @@ from .scoring import load_predictions, score_records
 __version__ = "0.1.0"
 
 __all__ = [
-    "__version__",
     "GOLD_PROFILE_V1",
+    "__version__",
     "benchmark_profile",
     "build_judge_calibration",
     "load_judge_predictions",

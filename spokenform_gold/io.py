@@ -3,9 +3,9 @@ from __future__ import annotations
 import glob
 import hashlib
 import json
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
-from collections.abc import Iterable
 
 
 def expand_jsonl_paths(paths: Iterable[str | Path]) -> list[Path]:
@@ -52,7 +52,7 @@ def read_jsonl(path: str | Path) -> list[dict]:
                     f"{source}:{line_number}: invalid JSON: {exc}"
                 ) from exc
             if not isinstance(payload, dict):
-                raise ValueError(f"{source}:{line_number}: expected JSON object")
+                raise TypeError(f"{source}:{line_number}: expected JSON object")
             payload["_source_line"] = line_number
             payload["_source_file"] = str(source)
             records.append(payload)

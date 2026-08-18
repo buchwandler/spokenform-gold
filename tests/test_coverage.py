@@ -4,7 +4,6 @@ from pathlib import Path
 from spokenform_gold.coverage import build_coverage, load_targets
 from spokenform_gold.io import read_records
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 

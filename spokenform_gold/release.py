@@ -21,7 +21,6 @@ from .taxonomy import (
 )
 from .validation import validate_records
 
-
 RELEASE_FORBIDDEN_STATUSES = {"quarantine"}
 RELEASE_MATURITIES = frozenset(release_maturity_profiles())
 

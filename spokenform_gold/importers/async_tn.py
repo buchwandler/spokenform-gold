@@ -7,7 +7,6 @@ from ..taxonomy import load_mapping, source_manifest_map
 from .common import ImportResult
 from .projection import ProjectionRecord, ProjectionUnit
 
-
 LANGUAGE_TO_LOCALE = {
     "en": "en-US",
     "de": "de-DE",
@@ -25,15 +24,19 @@ def detect_async_source_schema(payload: object, suite: str) -> str:
         required = {"original_text", "normalized_text", "units"}
         for row in payload:
             if not isinstance(row, dict) or not required <= row.keys():
-                raise ValueError("english async_tn rows must include original_text, normalized_text, and units")
+                raise ValueError(
+                    "english async_tn rows must include original_text, normalized_text, and units"
+                )
         return "async_tn_english_v1"
     if suite != "multilingual":
         raise ValueError("suite must be english or multilingual")
     if not isinstance(payload, list):
-        raise ValueError("multilingual async_tn payload must be a JSON list")
+        raise TypeError("multilingual async_tn payload must be a JSON list")
     for row in payload:
         if not isinstance(row, dict) or not isinstance(row.get("languages"), dict):
-            raise ValueError("multilingual async_tn rows must include a languages object")
+            raise TypeError(
+                "multilingual async_tn rows must include a languages object"
+            )
     return "async_tn_multilingual_v1"
 
 
@@ -194,7 +197,7 @@ def import_async(path: str | Path, *, suite: str = "english") -> ImportResult:
             input_text=original_text,
             source_file=Path(path).name,
             import_format="bundle",
-            units=tuple(),
+            units=(),
             family_id=f"async-tn-{source_id}",
             upstream_expected=row.get("normalized_text"),
             notes="Imported from async_tn; adjudicate before promotion.",

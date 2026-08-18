@@ -4,9 +4,8 @@ import itertools
 import json
 import unicodedata
 from collections import Counter
-from pathlib import Path
 from collections.abc import Iterable
-
+from pathlib import Path
 
 EXCLUDED_STATUSES = {"ambiguous", "quarantine"}
 SCORABLE_STATUSES = {"gold", "multi_valid", "policy_choice", "no_change"}
@@ -26,11 +25,11 @@ def load_predictions(path: str | Path) -> dict[str, str]:
                 continue
             payload = json.loads(line)
             if not isinstance(payload, dict):
-                raise ValueError(f"{path}:{line_number}: prediction must be an object")
+                raise TypeError(f"{path}:{line_number}: prediction must be an object")
             record_id = payload.get("id")
             output = payload.get("output")
             if not isinstance(record_id, str) or not isinstance(output, str):
-                raise ValueError(
+                raise TypeError(
                     f"{path}:{line_number}: prediction requires string id and output"
                 )
             predictions[record_id] = output

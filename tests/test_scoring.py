@@ -4,7 +4,6 @@ from pathlib import Path
 from spokenform_gold.io import read_records
 from spokenform_gold.scoring import load_predictions, score_records
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from collections import Counter
-from pathlib import Path
 from collections.abc import Iterable
+from pathlib import Path
 
 
 def build_stats(records: Iterable[dict], files: Iterable[str | Path]) -> dict:

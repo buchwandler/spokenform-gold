@@ -4,11 +4,11 @@ import io
 import pickle
 import re
 from pathlib import Path
+from typing import ClassVar
 
 from ..io import read_json, sha256_text
 from ..taxonomy import load_mapping, source_manifest_map
 from .common import ImportResult
-
 
 SPAN_TAG = re.compile(r'<error\s+what="([^"]+)">([^<]+)</error>')
 OFFICIAL_LANGUAGES = {
@@ -22,7 +22,9 @@ RECOGNIZERS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("time", (r"\b\d{1,2}:\d{2}(?:\s?[AP]M)?\b",)),
     (
         "currency",
-        (r"(?:[$€£¥]\s?\d[\d,]*(?:\.\d+)?|\b\d[\d,]*(?:\.\d+)?\s?(?:USD|EUR|GBP|JPY)\b)",),
+        (
+            r"(?:[$€£¥]\s?\d[\d,]*(?:\.\d+)?|\b\d[\d,]*(?:\.\d+)?\s?(?:USD|EUR|GBP|JPY)\b)",
+        ),
     ),
     ("fraction", (r"\b\d+/\d+\b",)),
     ("decimal", (r"\b-?\d[\d,]*\.\d+\b",)),
@@ -33,7 +35,10 @@ RECOGNIZERS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ),
     ("version", (r"\bv?\d+(?:\.\d+)+(?:-[A-Za-z0-9.]+)?\b",)),
     ("math_expression", (r"\b\d+\s*[-+/*^=]\s*\d+(?:\s*[-+/*^=]\s*\d+)*\b",)),
-    ("measurement_unit", (r"\b\d+(?:\.\d+)?\s?(?:kg|g|mg|lb|km|m|cm|mm|L|mL|°C|°F|%)\b",)),
+    (
+        "measurement_unit",
+        (r"\b\d+(?:\.\d+)?\s?(?:kg|g|mg|lb|km|m|cm|mm|L|mL|°C|°F|%)\b",),
+    ),
     ("ordinal", (r"\b\d+(?:st|nd|rd|th)\b",)),
     ("identifier", (r"\b[A-Za-z]+[A-Za-z0-9-]*\d+[A-Za-z0-9-]*\b",)),
     ("cardinal", (r"\b\d+\b",)),
@@ -41,7 +46,7 @@ RECOGNIZERS: tuple[tuple[str, tuple[str, ...]], ...] = (
 
 
 class RestrictedUnpickler(pickle.Unpickler):
-    SAFE_BUILTINS = {
+    SAFE_BUILTINS: ClassVar[dict[str, set[str]]] = {
         "builtins": {
             "dict",
             "list",
@@ -98,7 +103,12 @@ def _iter_rows(
         payload = _load_payload(target)
         if not isinstance(payload, dict) or not isinstance(payload.get("cases"), list):
             raise ValueError("proteno payload must be an object with a cases list")
-        return payload["cases"], str(payload.get("format", fmt)), None, [str(target.name)]
+        return (
+            payload["cases"],
+            str(payload.get("format", fmt)),
+            None,
+            [str(target.name)],
+        )
     if fmt != "official":
         raise ValueError("proteno format must be auto, raw, projection, or official")
 
@@ -110,7 +120,7 @@ def _iter_rows(
     unnorm_rows = _load_payload(unnorm_path)
     norm_rows = _load_payload(norm_path)
     if not isinstance(unnorm_rows, list) or not isinstance(norm_rows, list):
-        raise ValueError("official Proteno pickle payloads must be lists")
+        raise TypeError("official Proteno pickle payloads must be lists")
     if len(unnorm_rows) != len(norm_rows):
         raise ValueError("Proteno pair length mismatch")
 
@@ -144,7 +154,10 @@ def _recognize_spans(text: str) -> list[tuple[int, int, str, str]]:
     accepted: list[tuple[int, int, str, str]] = []
     occupied: list[tuple[int, int]] = []
     for start, end, surface, source_category in matches:
-        if any(not (end <= used_start or start >= used_end) for used_start, used_end in occupied):
+        if any(
+            not (end <= used_start or start >= used_end)
+            for used_start, used_end in occupied
+        ):
             continue
         occupied.append((start, end))
         accepted.append((start, end, surface, source_category))
@@ -179,7 +192,9 @@ def _unit_from_category(
         "features": {
             "surface_pattern": rule.get("surface_pattern", "imported"),
             "identity_example": identity_example,
-            "span_origin": "explicit" if format_name != "official" else "projected-category-rule",
+            "span_origin": "explicit"
+            if format_name != "official"
+            else "projected-category-rule",
             "import_format": format_name,
         },
     }
@@ -311,7 +326,9 @@ def _build_record(
     identity_example: bool = False,
 ) -> dict:
     payload_hash = sha256_text(
-        "\n".join([source_id, text, upstream_expected or "", language, locale, format_name])
+        "\n".join(
+            [source_id, text, upstream_expected or "", language, locale, format_name]
+        )
     )
     return {
         "id": f"{benchmark.replace('_', '-')}-{source_id.replace(':', '-')}",
@@ -386,7 +403,10 @@ def import_proteno(path: str | Path, *, format: str = "auto") -> ImportResult:
             text = case.get("input")
             normalized = case.get("normalized")
             if not isinstance(text, str) or not isinstance(normalized, str):
-                created = ("malformed_row", "official rows must contain string input and normalized values")
+                created = (
+                    "malformed_row",
+                    "official rows must contain string input and normalized values",
+                )
             else:
                 units, upstream_expected, issue = _official_units(
                     text=text,
@@ -407,7 +427,9 @@ def import_proteno(path: str | Path, *, format: str = "auto") -> ImportResult:
                         benchmark=manifest_name,
                         manifest=manifest,
                         source_path=Path(source_files[0]),
-                        source_split="upstream_train" if index <= train_cutoff else "upstream_eval",
+                        source_split="upstream_train"
+                        if index <= train_cutoff
+                        else "upstream_eval",
                         notes=f"Official Proteno paired-list import from {source_path.name}.",
                         format_name="official",
                     )
@@ -415,7 +437,9 @@ def import_proteno(path: str | Path, *, format: str = "auto") -> ImportResult:
             reason, detail = created
             exclusions.append(
                 {
-                    "source_id": str(case.get("case_id") or case.get("row_index") or index),
+                    "source_id": str(
+                        case.get("case_id") or case.get("row_index") or index
+                    ),
                     "reason": reason,
                     "detail": detail,
                 }

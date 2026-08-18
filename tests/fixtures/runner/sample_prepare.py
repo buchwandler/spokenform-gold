@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 PREDICTIONS = {
     "Alarm at 08:05.": "Alarm at eight oh five.",
     "Charge was $12.50.": "Charge was twelve dollars and fifty cents.",

@@ -4,7 +4,6 @@ from pathlib import Path
 
 from .io import read_json, sha256_file
 
-
 SOURCE_KINDS = {"curated", "upstream", "projection_cache"}
 REDISTRIBUTION_STATUSES = {
     "allowed",
@@ -49,7 +48,9 @@ def filter_source_manifest(manifest: dict, source_names: set[str] | None) -> dic
     return {
         **manifest,
         "sources": [
-            entry for entry in manifest.get("sources", []) if entry.get("name") in source_names
+            entry
+            for entry in manifest.get("sources", [])
+            if entry.get("name") in source_names
         ],
     }
 
@@ -117,7 +118,10 @@ def validate_source_manifest(
         if redistribution_status not in REDISTRIBUTION_STATUSES:
             errors.append(f"{prefix}: invalid redistribution_status")
         materialization_policy = source.get("materialization_policy")
-        if materialization_policy is not None and materialization_policy not in MATERIALIZATION_POLICIES:
+        if (
+            materialization_policy is not None
+            and materialization_policy not in MATERIALIZATION_POLICIES
+        ):
             errors.append(f"{prefix}: invalid materialization_policy")
         release_ready = source.get("release_ready")
         if not isinstance(release_ready, bool):
@@ -134,7 +138,9 @@ def validate_source_manifest(
         if parent_source is not None and (
             not isinstance(parent_source, str) or not parent_source.strip()
         ):
-            errors.append(f"{prefix}: parent_source must be non-empty string when present")
+            errors.append(
+                f"{prefix}: parent_source must be non-empty string when present"
+            )
 
         files = source.get("files")
         if not isinstance(files, list) or not files:
@@ -171,7 +177,9 @@ def validate_source_manifest(
         upstream_files = source.get("upstream_files")
         if upstream_files is not None:
             if not isinstance(upstream_files, list) or not upstream_files:
-                errors.append(f"{prefix}: upstream_files must be a non-empty list when present")
+                errors.append(
+                    f"{prefix}: upstream_files must be a non-empty list when present"
+                )
             else:
                 for file_index, entry in enumerate(upstream_files, 1):
                     file_prefix = f"{prefix} upstream_files[{file_index}]"
@@ -185,13 +193,12 @@ def validate_source_manifest(
                     if role is not None and (
                         not isinstance(role, str) or not role.strip()
                     ):
-                        errors.append(f"{file_prefix}: role must be non-empty string when present")
+                        errors.append(
+                            f"{file_prefix}: role must be non-empty string when present"
+                        )
 
         policy = normalize_materialization_policy(source)
-        if (
-            redistribution_status == "allowed"
-            and policy != "embedded_public"
-        ):
+        if redistribution_status == "allowed" and policy != "embedded_public":
             errors.append(
                 f"{prefix}: allowed redistribution requires embedded_public materialization_policy"
             )

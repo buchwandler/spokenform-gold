@@ -7,7 +7,6 @@ from spokenform_gold.judge_calibration import (
     load_judge_predictions,
 )
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 

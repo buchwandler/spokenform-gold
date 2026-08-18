@@ -8,7 +8,6 @@ from spokenform_gold.importers import import_async, import_polynorm, import_prot
 from spokenform_gold.importers.async_tn import detect_async_source_schema
 from spokenform_gold.io import read_json
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -73,7 +72,9 @@ class ImporterTests(unittest.TestCase):
         self.assertIn("malformed_row", reasons)
 
     def test_async_source_fixtures_match_supported_bundle_schema(self):
-        english_payload = read_json(ROOT / "tests/fixtures/importers/async_english.json")
+        english_payload = read_json(
+            ROOT / "tests/fixtures/importers/async_english.json"
+        )
         multilingual_payload = read_json(
             ROOT / "tests/fixtures/importers/async_multilingual.json"
         )
@@ -100,7 +101,10 @@ class ImporterTests(unittest.TestCase):
         self.assertEqual(raw.records[1]["source"]["import_format"], "raw")
 
     def test_polynorm_import_supports_official_file_and_directory(self):
-        official_file = ROOT / "tests/fixtures/importers/polynorm_official/en-US/en-US_groundtruth.jsonl"
+        official_file = (
+            ROOT
+            / "tests/fixtures/importers/polynorm_official/en-US/en-US_groundtruth.jsonl"
+        )
         official_dir = ROOT / "tests/fixtures/importers/polynorm_official"
         single = import_polynorm(official_file, format="official")
         combined = import_polynorm(official_dir, format="official")
@@ -186,7 +190,7 @@ class ImporterTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "unsafe.pkl"
             path.write_bytes(pickle.dumps(Evil()))
-            with self.assertRaises(Exception):
+            with self.assertRaises(pickle.UnpicklingError):
                 import_proteno(path)
 
 

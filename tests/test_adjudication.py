@@ -1,9 +1,8 @@
 import unittest
+from pathlib import Path
 
 from spokenform_gold.adjudication import build_adjudication_queue
 from spokenform_gold.io import read_records
-from pathlib import Path
-
 
 ROOT = Path(__file__).resolve().parents[1]
 

@@ -5,7 +5,6 @@ import json
 from collections import defaultdict
 from pathlib import Path
 
-
 RELEASE_SPLITS = ("train", "dev", "test")
 
 

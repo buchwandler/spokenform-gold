@@ -104,9 +104,13 @@ class ProjectionRecord:
                 "import_format": self.import_format,
                 "importer_version": "1.0.0",
             },
-            "units": [unit.to_candidate(import_format=self.import_format) for unit in self.units],
+            "units": [
+                unit.to_candidate(import_format=self.import_format)
+                for unit in self.units
+            ],
             "negative_for": list(self.negative_for),
-            "notes": self.notes or f"Imported from {self.benchmark}; adjudicate before promotion.",
+            "notes": self.notes
+            or f"Imported from {self.benchmark}; adjudicate before promotion.",
         }
         record["source"].update(self.extra_source)
         record.update(self.extra_record)
