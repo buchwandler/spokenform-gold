@@ -17,6 +17,10 @@
       "version": 1,
       "description": "Read major and minor currency units while preserving exact amount semantics."
     },
+    "date-natural": {
+      "version": 1,
+      "description": "Read fully specified non-ambiguous dates in their natural spoken form for the active locale."
+    },
     "de-DE-dmY": {
       "version": 1,
       "description": "Interpret numeric slash dates as day/month/year under de-DE policy."

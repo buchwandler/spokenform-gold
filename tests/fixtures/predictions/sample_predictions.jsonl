@@ -37,3 +37,8 @@
 {"id":"en-us-ordinal-001","output":"He finished twenty first overall."}
 {"id":"en-us-nochange-email-001","output":"Please email support later."}
 {"id":"en-us-nochange-range-001","output":"Range anxiety is real."}
+{"id":"fr-fr-nochange-currency-001","output":"Le cours porte sur la monnaie."}
+{"id":"fr-fr-nochange-time-001","output":"Il est temps de partir."}
+{"id":"it-it-nochange-date-001","output":"Maggio torna sempre caldo."}
+{"id":"pt-pt-nochange-identifier-001","output":"A arte continua viva."}
+{"id":"pt-pt-nochange-version-001","output":"O controlo de versão ajuda."}

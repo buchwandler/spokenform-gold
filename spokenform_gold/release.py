@@ -8,7 +8,11 @@ from pathlib import Path
 from .conflicts import find_conflicts
 from .coverage import build_coverage, load_targets
 from .io import expand_jsonl_paths, read_records, sha256_file
-from .source_manifest import load_and_validate_source_manifest
+from .source_manifest import (
+    load_and_validate_source_manifest,
+    normalize_materialization_policy,
+    referenced_source_names,
+)
 from .taxonomy import (
     policy_version,
     release_maturity_profiles,
@@ -52,6 +56,44 @@ def _coverage_index(coverage: dict) -> dict[str, dict]:
         for item in coverage.get("coverage", [])
         if isinstance(item, dict) and isinstance(item.get("category"), str)
     }
+
+
+def _record_materialization(record: dict) -> str:
+    materialization = record.get("materialization", "embedded")
+    if materialization not in {"embedded", "external_ref"}:
+        raise ValueError(
+            f"release record {record.get('id', '?')} has invalid materialization {materialization!r}"
+        )
+    return materialization
+
+
+def _enforce_source_materialization(records: list[dict], source_manifest: dict) -> None:
+    source_map = {
+        entry["name"]: entry
+        for entry in source_manifest.get("sources", [])
+        if isinstance(entry, dict) and isinstance(entry.get("name"), str)
+    }
+    errors: list[str] = []
+    for record in records:
+        source = record.get("source", {})
+        benchmark = source.get("benchmark")
+        if benchmark not in source_map:
+            continue
+        policy = normalize_materialization_policy(source_map[benchmark])
+        materialization = _record_materialization(record)
+        if materialization == "embedded" and policy != "embedded_public":
+            errors.append(
+                f"record {record.get('id', '?')} embeds source {benchmark!r} with policy {policy}"
+            )
+        if materialization == "external_ref" and policy not in {
+            "embedded_public",
+            "external_ref_only",
+        }:
+            errors.append(
+                f"record {record.get('id', '?')} uses external_ref for source {benchmark!r} with policy {policy}"
+            )
+    if errors:
+        raise ValueError("; ".join(errors))
 
 
 def _enforce_maturity(
@@ -121,24 +163,20 @@ def _enforce_maturity(
                 f"{category}: {missing_patterns}"
             )
 
-    if profile.get("coverage_profile") == "stable":
+    blocked_gap_kinds = set(profile.get("blocked_gap_kinds", []))
+    blocked_gap_categories = set(profile.get("blocked_gap_categories", []))
+    if blocked_gap_kinds:
         blocking = [
             gap
             for gap in coverage.get("gaps", [])
-            if gap.get("category")
-            in {
-                "date",
-                "time",
-                "decimal",
-                "fraction",
-                "currency",
-                "identifier",
-                "version",
-                "ip_address",
-            }
+            if gap.get("kind") in blocked_gap_kinds
+            and (
+                not blocked_gap_categories
+                or gap.get("category") in blocked_gap_categories
+            )
         ]
         if blocking:
-            errors.append("stable release coverage gate failed")
+            errors.append(f"{profile_name} release coverage gate failed")
     elif not profile.get("allow_coverage_gaps", True) and coverage.get("gaps"):
         errors.append(f"{profile_name} release does not allow coverage gaps")
 
@@ -204,17 +242,6 @@ def build_release(
     )
     if not registry_source.exists():
         raise ValueError(f"missing split registry: {registry_source}")
-    manifest_source_path = (
-        Path(source_manifest_path)
-        if source_manifest_path
-        else root / "sources" / "manifest.json"
-    )
-    manifest_source = load_and_validate_source_manifest(
-        manifest_source_path,
-        repo_root=root,
-        require_release_ready=maturity == "stable",
-    )
-
     record_files = expand_jsonl_paths(data_paths)
     records = read_records(record_files)
     validation_errors = validate_records(records)
@@ -234,6 +261,21 @@ def build_release(
     if conflicts:
         raise ValueError("release data has unresolved conflicts")
 
+    manifest_source_path = (
+        Path(source_manifest_path)
+        if source_manifest_path
+        else root / "sources" / "manifest.json"
+    )
+    referenced_sources = referenced_source_names(records)
+    manifest_source = load_and_validate_source_manifest(
+        manifest_source_path,
+        repo_root=root,
+        require_release_ready=maturity == "stable",
+        source_names=referenced_sources,
+        filter_to_source_names=True,
+    )
+    _enforce_source_materialization(records, manifest_source)
+
     coverage = build_coverage(
         records, load_targets(root / "taxonomy" / "coverage_targets.json")
     )
@@ -246,7 +288,8 @@ def build_release(
 
     for relative in ("taxonomy", "schemas"):
         shutil.copytree(root / relative, output_root / relative)
-    shutil.copytree(root / "sources", output_root / "sources")
+    (output_root / "sources").mkdir(parents=True, exist_ok=True)
+    _write_json(output_root / "sources" / "manifest.json", manifest_source)
     (output_root / "splits").mkdir(parents=True, exist_ok=True)
     shutil.copy2(registry_source, output_root / "splits" / registry_source.name)
     for jsonl_path in record_files:
@@ -301,6 +344,7 @@ def build_release(
                 for source in manifest_source.get("sources", [])
             ),
             "source_count": len(manifest_source.get("sources", [])),
+            "referenced_sources": sorted(referenced_sources),
         },
         "maturity_profile": _profile(maturity),
         "scoring_modes": ["canonical", "accepted"],

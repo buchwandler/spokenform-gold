@@ -5,6 +5,7 @@ from pathlib import Path
 from ..io import read_json, sha256_text
 from ..taxonomy import load_mapping, source_manifest_map
 from .common import ImportResult
+from .projection import ProjectionRecord, ProjectionUnit
 
 
 LANGUAGE_TO_LOCALE = {
@@ -15,6 +16,25 @@ LANGUAGE_TO_LOCALE = {
     "it": "it-IT",
     "pt": "pt-PT",
 }
+
+
+def detect_async_source_schema(payload: object, suite: str) -> str:
+    if suite == "english":
+        if not isinstance(payload, list):
+            raise ValueError("english async_tn payload must be a JSON list")
+        required = {"original_text", "normalized_text", "units"}
+        for row in payload:
+            if not isinstance(row, dict) or not required <= row.keys():
+                raise ValueError("english async_tn rows must include original_text, normalized_text, and units")
+        return "async_tn_english_v1"
+    if suite != "multilingual":
+        raise ValueError("suite must be english or multilingual")
+    if not isinstance(payload, list):
+        raise ValueError("multilingual async_tn payload must be a JSON list")
+    for row in payload:
+        if not isinstance(row, dict) or not isinstance(row.get("languages"), dict):
+            raise ValueError("multilingual async_tn rows must include a languages object")
+    return "async_tn_multilingual_v1"
 
 
 def _resolve_span(text: str, unit: dict) -> tuple[int, int, str] | None:
@@ -48,6 +68,7 @@ def _source_provenance(row: dict, manifest: dict) -> dict:
         + sha256_text(original_text if isinstance(original_text, str) else str(row)),
         "importer_version": "1.0.0",
         "upstream_expected": row.get("normalized_text"),
+        "source_bundle_schema": row.get("_source_bundle_schema"),
     }
 
 
@@ -60,40 +81,27 @@ def _make_unit(text: str, unit: dict, mapping: dict) -> dict | None:
     if resolved is None:
         return None
     start, end, span_origin = resolved
-    return {
-        "surface": unit["text"],
-        "start": start,
-        "end": end,
-        "category": rule["category"],
-        "source_category": source_category,
-        "mapping_status": rule["status"],
-        "semantic": {},
-        "policy": "unadjudicated-upstream",
-        "canonical": None,
-        "accepted": [],
-        "rejected": [],
-        "features": {
-            "surface_pattern": rule.get("surface_pattern", "imported"),
-            "span_origin": span_origin,
-        },
-    }
+    return ProjectionUnit(
+        surface=unit["text"],
+        start=start,
+        end=end,
+        category=rule["category"],
+        source_category=source_category,
+        mapping_status=rule["status"],
+        surface_pattern=rule.get("surface_pattern", "imported"),
+        span_origin=span_origin,
+    ).to_candidate(import_format="bundle")
 
 
 def _iter_rows(payload: object, suite: str):
+    schema_name = detect_async_source_schema(payload, suite)
     if suite == "english":
-        if not isinstance(payload, list):
-            raise ValueError("english async_tn payload must be a JSON list")
         for row in payload:
+            row["_source_bundle_schema"] = schema_name
             yield row
         return
-    if suite != "multilingual":
-        raise ValueError("suite must be english or multilingual")
-    if not isinstance(payload, list):
-        raise ValueError("multilingual async_tn payload must be a JSON list")
     for base_row in payload:
         languages = base_row.get("languages", {})
-        if not isinstance(languages, dict):
-            continue
         row_id = base_row.get("row_id", base_row.get("row_index", "unknown"))
         for language, localized in sorted(languages.items()):
             if not isinstance(localized, dict):
@@ -101,6 +109,7 @@ def _iter_rows(payload: object, suite: str):
             row = dict(localized)
             row["row_id"] = f"{row_id}:{language}"
             row["language"] = language
+            row["_source_bundle_schema"] = schema_name
             yield row
 
 
@@ -174,24 +183,28 @@ def import_async(path: str | Path, *, suite: str = "english") -> ImportResult:
             continue
 
         source_id = str(row.get("row_id", row.get("row_index", index)))
-        records.append(
-            {
-                "id": f"async-tn-{language}-{source_id.replace(':', '-')}",
-                "schema_version": "1.0.0",
-                "taxonomy_version": "1.0.0",
-                "policy_version": "1.0.0",
-                "language": language,
-                "locale": locale,
-                "split": "candidate",
-                "family_id": f"async-tn-{source_id}",
-                "status": "quarantine",
-                "input": original_text,
-                "expected_output": None,
-                "source": _source_provenance(row, manifest),
-                "units": units,
-                "negative_for": [],
-                "notes": "Imported from async_tn; adjudicate before promotion.",
-            }
-        )
+        record = ProjectionRecord(
+            benchmark="async_tn",
+            source_id=source_id,
+            source_version=manifest["revision"],
+            source_url=manifest["source_url"],
+            license=manifest["license"],
+            language=language,
+            locale=locale,
+            input_text=original_text,
+            source_file=Path(path).name,
+            import_format="bundle",
+            units=tuple(),
+            family_id=f"async-tn-{source_id}",
+            upstream_expected=row.get("normalized_text"),
+            notes="Imported from async_tn; adjudicate before promotion.",
+            extra_source={
+                "source_bundle_schema": row.get("_source_bundle_schema"),
+            },
+        ).to_candidate()
+        record["id"] = f"async-tn-{language}-{source_id.replace(':', '-')}"
+        record["source"] = _source_provenance(row, manifest)
+        record["units"] = units
+        records.append(record)
 
     return ImportResult(records=records, exclusions=exclusions, source_rows=source_rows)

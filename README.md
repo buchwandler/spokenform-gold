@@ -51,12 +51,12 @@ spokenform-gold conflicts data/dev/sample.jsonl --mode unit
 spokenform-gold discover   examples/discovery_corpus.txt   --against data/dev/sample.jsonl   --out reports/discovery-candidates.jsonl
 ```
 
-Import the async-TN evaluation JSON format:
+Import the pinned upstream source-bundle fixtures:
 
 ```bash
 spokenform-gold import-async /path/to/sentences.json   --suite english   --out data/candidates/async-tn.jsonl
-spokenform-gold import-polynorm /path/to/polynorm.json   --format raw   --out data/candidates/polynorm.jsonl
-spokenform-gold import-proteno /path/to/proteno.json   --format raw   --out data/candidates/proteno.jsonl
+spokenform-gold import-polynorm /path/to/polynorm_bench   --format official   --out data/candidates/polynorm.jsonl
+spokenform-gold import-proteno /path/to/proteno/data/English   --format official   --out data/candidates/proteno-en.jsonl
 ```
 
 Imported source rows are deliberately written as `quarantine` candidates.
@@ -76,6 +76,12 @@ Release maturity rules are machine-readable in
 `taxonomy/release_maturity_profiles.json`. `experimental`, `candidate`, and
 `stable` releases use the same release builder with progressively stricter
 coverage, category, language, and negative-control gates.
+
+Public release builds validate only the sources actually referenced by the
+reviewed release data. Source manifests also carry a
+`materialization_policy`, so `metadata_only` / restricted third-party sources
+cannot be embedded accidentally; keep those sources local and use
+source-backed overlays when a benchmark needs external hydration.
 
 ## External runner contract
 
@@ -108,6 +114,10 @@ python -m benchmarks.spokenform_gold \
 The runner verifies release hashes, loads records by split and optional
 filters, writes `summary.json`, `predictions.jsonl`, `failures.jsonl`, and
 `failures.md`, and records the applied profile in the summary artifact.
+
+If a release contains source-backed `external_ref` records, pass a
+`source_loader` callable through the Python API so the runner can hydrate the
+upstream text from a local source bundle before scoring.
 
 ## Validate everything
 
@@ -168,6 +178,8 @@ The checked-in corpus is now a reproducible experimental release seed with:
   broader candidate-maturity coverage for score/range, math, cardinal,
   ordinal, measurement, and URL/email families;
 - candidate import fixtures for async-TN, PolyNorm, and Proteno;
+- official-format PolyNorm and Proteno importer fixtures plus source-backed
+  overlay plumbing for restricted upstream corpora;
 - a local release loader and benchmark runner for deterministic score artifacts;
 - judge calibration metrics for precision/recall and false acceptance/rejection
   analysis.

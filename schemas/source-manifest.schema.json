@@ -14,6 +14,9 @@
           "revision",
           "source_url",
           "license",
+          "license_id",
+          "license_scope",
+          "materialization_policy",
           "redistribution_status",
           "release_ready",
           "files"
@@ -23,9 +26,19 @@
           "revision": { "type": "string", "minLength": 1 },
           "source_url": { "type": "string", "minLength": 1 },
           "license": { "type": "string", "minLength": 1 },
+          "license_id": { "type": "string", "minLength": 1 },
+          "license_scope": { "type": "string", "minLength": 1 },
           "release_ready": { "type": "boolean" },
           "kind": {
             "enum": ["curated", "upstream", "projection_cache"]
+          },
+          "materialization_policy": {
+            "enum": [
+              "embedded_public",
+              "external_ref_only",
+              "importer_only",
+              "review_required"
+            ]
           },
           "redistribution_status": {
             "enum": [
@@ -36,6 +49,7 @@
               "not_redistributable"
             ]
           },
+          "parent_source": { "type": "string", "minLength": 1 },
           "files": {
             "type": "array",
             "items": {
@@ -47,6 +61,17 @@
                   "type": "string",
                   "pattern": "^[0-9a-f]{64}$"
                 },
+                "role": { "type": "string", "minLength": 1 }
+              }
+            }
+          },
+          "upstream_files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["path"],
+              "properties": {
+                "path": { "type": "string", "minLength": 1 },
                 "role": { "type": "string", "minLength": 1 }
               }
             }

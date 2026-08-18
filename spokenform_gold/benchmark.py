@@ -11,6 +11,7 @@ from typing import Any
 from .adapter import build_prediction_records
 from .io import read_json, read_records, sha256_file, write_json, write_jsonl
 from .scoring import score_records
+from .source_resolver import SourceTextLoader, resolve_release_record
 
 
 PrepareCallable = Callable[[str, str, str, dict[str, Any] | None], str]
@@ -74,27 +75,29 @@ def load_release_records(
     category: str | None = None,
     status: str | None = None,
     case_ids: set[str] | None = None,
+    source_loader: SourceTextLoader | None = None,
 ) -> tuple[dict, list[dict]]:
     verification = verify_release(gold_root)
     root = Path(gold_root)
     records = read_records([root / "data"])
     filtered: list[dict] = []
     for record in records:
+        hydrated = resolve_release_record(record, source_loader=source_loader)
         if split and record.get("split") != split:
             continue
-        if language and record.get("language") != language:
+        if language and hydrated.get("language") != language:
             continue
-        if locale and record.get("locale") != locale:
+        if locale and hydrated.get("locale") != locale:
             continue
-        if status and record.get("status") != status:
+        if status and hydrated.get("status") != status:
             continue
-        if case_ids and record.get("id") not in case_ids:
+        if case_ids and hydrated.get("id") not in case_ids:
             continue
         if category and category not in {
-            unit.get("category") for unit in record.get("units", [])
+            unit.get("category") for unit in hydrated.get("units", [])
         }:
             continue
-        filtered.append(record)
+        filtered.append(hydrated)
     filtered.sort(key=lambda record: record.get("id", ""))
     return verification["manifest"] | {
         "manifest_hash": verification["manifest_hash"]
@@ -168,6 +171,7 @@ def run_benchmark(
     profile_name: str = GOLD_PROFILE_V1["name"],
     spokenform_version: str = "unknown",
     spokenform_commit: str = "unknown",
+    source_loader: SourceTextLoader | None = None,
 ) -> dict:
     profile = benchmark_profile(profile_name)
     manifest, records = load_release_records(
@@ -177,6 +181,7 @@ def run_benchmark(
         locale=locale,
         category=category,
         case_ids=case_ids,
+        source_loader=source_loader,
     )
     prepare_fn = _resolve_prepare_callable(
         prepare_module=prepare_module, prepare=prepare

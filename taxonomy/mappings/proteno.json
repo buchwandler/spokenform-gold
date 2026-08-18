@@ -2,6 +2,11 @@
   "version": "1.0.0",
   "source": "proteno",
   "mappings": {
+    "cardinal": {
+      "category": "cardinal",
+      "status": "exact",
+      "surface_pattern": "plain_integer"
+    },
     "currency": {
       "category": "currency",
       "status": "exact",
@@ -12,10 +17,60 @@
       "status": "exact",
       "surface_pattern": "iso_date"
     },
+    "decimal": {
+      "category": "decimal",
+      "status": "exact",
+      "surface_pattern": "plain_decimal"
+    },
+    "fraction": {
+      "category": "fraction",
+      "status": "exact",
+      "surface_pattern": "numeric_fraction"
+    },
     "identifier": {
       "category": "identifier",
-      "status": "exact",
+      "status": "broader",
       "surface_pattern": "mixed_identifier"
+    },
+    "ip_address": {
+      "category": "ip_address",
+      "status": "exact",
+      "surface_pattern": "ipv4"
+    },
+    "math_expression": {
+      "category": "math_expression",
+      "status": "exact",
+      "surface_pattern": "math_expression"
+    },
+    "measurement_unit": {
+      "category": "measurement_unit",
+      "status": "exact",
+      "surface_pattern": "number_unit"
+    },
+    "ordinal": {
+      "category": "ordinal",
+      "status": "exact",
+      "surface_pattern": "ordinal_numeric"
+    },
+    "phone": {
+      "category": "phone",
+      "status": "exact",
+      "surface_pattern": "phone_number"
+    },
+    "time": {
+      "category": "time",
+      "status": "exact",
+      "surface_pattern": "time_24h"
+    },
+    "url_or_email": {
+      "category": "url_or_email",
+      "status": "exact",
+      "surface_pattern": "url"
+    },
+    "version": {
+      "category": "version",
+      "status": "exact",
+      "surface_pattern": "semantic_version"
     }
   }
 }

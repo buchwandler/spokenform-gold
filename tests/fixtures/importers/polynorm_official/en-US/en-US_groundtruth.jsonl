@@ -1,0 +1,3 @@
+{"index": "1", "category": "Date", "original_text": "The event is on 05/20/2023.", "normalized_text": "The event is on May twentieth twenty twenty three."}
+{"index": "2", "category": "Symbol", "original_text": "Press # now.", "normalized_text": "Press hash now."}
+{"index": "3", "category": "Imaginary", "original_text": "Value X.", "normalized_text": "Value X."}

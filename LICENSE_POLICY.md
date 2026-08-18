@@ -176,6 +176,11 @@ third-party components.
 Where licensing status is unclear, treat the record as not redistributable
 until the upstream terms have been reviewed.
 
+If a source manifest marks a source as `metadata_only`,
+`not_redistributable`, or `review_required`, do not ship a public embedded
+release that contains the upstream text. Use a source-backed `external_ref`
+overlay or keep the source local until policy review is complete.
+
 ## 6. Provenance must be preserved
 
 Imported benchmark records should retain enough provenance to determine their
@@ -218,6 +223,8 @@ copyright notice
 retrieval date
 source hash
 redistribution status
+license scope
+materialization policy
 ```
 
 Recommended redistribution-status values include:
@@ -237,6 +244,10 @@ review_required
 ```
 
 rather than making an assumption.
+
+The repository uses `materialization_policy` to distinguish sources that may be
+embedded in a public release from sources that must remain external or blocked
+pending review.
 
 ## 8. Documentation
 

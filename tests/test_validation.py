@@ -63,6 +63,9 @@ class ValidationTests(unittest.TestCase):
                     "revision": "rev-1",
                     "source_url": "https://example.com/repo",
                     "license": "Apache-2.0",
+                    "license_id": "Apache-2.0",
+                    "license_scope": "source:fixture",
+                    "materialization_policy": "embedded_public",
                     "redistribution_status": "allowed",
                     "release_ready": True,
                     "files": [

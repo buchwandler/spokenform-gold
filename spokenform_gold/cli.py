@@ -240,7 +240,7 @@ def build_parser():
     polynorm_import = sub.add_parser("import-polynorm")
     polynorm_import.add_argument("path")
     polynorm_import.add_argument(
-        "--format", choices=["auto", "raw", "projection"], default="auto"
+        "--format", choices=["auto", "raw", "projection", "official"], default="auto"
     )
     polynorm_import.add_argument("--out", required=True)
     polynorm_import.add_argument("--exclusions-out")
@@ -249,7 +249,7 @@ def build_parser():
     proteno_import = sub.add_parser("import-proteno")
     proteno_import.add_argument("path")
     proteno_import.add_argument(
-        "--format", choices=["auto", "raw", "projection"], default="auto"
+        "--format", choices=["auto", "raw", "projection", "official"], default="auto"
     )
     proteno_import.add_argument("--out", required=True)
     proteno_import.add_argument("--exclusions-out")

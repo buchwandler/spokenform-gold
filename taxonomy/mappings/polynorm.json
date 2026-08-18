@@ -2,20 +2,155 @@
   "version": "1.0.0",
   "source": "polynorm",
   "mappings": {
+    "Abbreviation": {
+      "category": "abbreviation",
+      "status": "exact",
+      "surface_pattern": "abbreviation_token"
+    },
+    "Acronym/Initialism": {
+      "category": "acronym",
+      "status": "broader",
+      "surface_pattern": "initialism"
+    },
+    "Address": {
+      "category": "address",
+      "status": "exact",
+      "surface_pattern": "street_address"
+    },
+    "Biological Classification": {
+      "category": "biology",
+      "status": "exact",
+      "surface_pattern": "binomial_name"
+    },
+    "Cardinal": {
+      "category": "cardinal",
+      "status": "exact",
+      "surface_pattern": "plain_integer"
+    },
     "clock_time": {
       "category": "time",
       "status": "exact",
       "surface_pattern": "time_24h"
+    },
+    "Chemical Formula": {
+      "category": "chemical",
+      "status": "exact",
+      "surface_pattern": "chemical_formula"
+    },
+    "Currency": {
+      "category": "currency",
+      "status": "exact",
+      "surface_pattern": "currency_symbol"
+    },
+    "Date": {
+      "category": "date",
+      "status": "exact",
+      "surface_pattern": "slash_date"
+    },
+    "Decimal": {
+      "category": "decimal",
+      "status": "exact",
+      "surface_pattern": "plain_decimal"
+    },
+    "Electronic (URL/Email)": {
+      "category": "url_or_email",
+      "status": "exact",
+      "surface_pattern": "url"
+    },
+    "Fraction": {
+      "category": "fraction",
+      "status": "exact",
+      "surface_pattern": "numeric_fraction"
+    },
+    "Geographic Coordinates": {
+      "category": "coordinates",
+      "status": "exact",
+      "surface_pattern": "lat_lon"
+    },
+    "ISBN": {
+      "category": "isbn",
+      "status": "exact",
+      "surface_pattern": "isbn13"
+    },
+    "Legal Reference": {
+      "category": "legal_citation",
+      "status": "exact",
+      "surface_pattern": "legal_reference"
+    },
+    "License/Serial Number": {
+      "category": "serial_or_plate",
+      "status": "broader",
+      "surface_pattern": "serial_number"
+    },
+    "Mathematical Expression": {
+      "category": "math_expression",
+      "status": "exact",
+      "surface_pattern": "math_expression"
+    },
+    "Musical Notation": {
+      "category": "music",
+      "status": "exact",
+      "surface_pattern": "musical_note"
     },
     "num_fraction": {
       "category": "fraction",
       "status": "exact",
       "surface_pattern": "numeric_fraction"
     },
+    "Ordinal": {
+      "category": "ordinal",
+      "status": "exact",
+      "surface_pattern": "ordinal_numeric"
+    },
+    "Roman Numeral": {
+      "category": "roman_numeral",
+      "status": "exact",
+      "surface_pattern": "roman_numeral"
+    },
+    "Sports Score": {
+      "category": "score_or_range",
+      "status": "narrower",
+      "surface_pattern": "score"
+    },
+    "Stock Ticker": {
+      "category": "ticker",
+      "status": "exact",
+      "surface_pattern": "ticker_symbol"
+    },
+    "Symbol": {
+      "category": null,
+      "status": "unsupported",
+      "surface_pattern": "unresolved_symbol"
+    },
+    "Telephone": {
+      "category": "phone",
+      "status": "exact",
+      "surface_pattern": "phone_number"
+    },
+    "Time": {
+      "category": "time",
+      "status": "exact",
+      "surface_pattern": "time_24h"
+    },
+    "Unit (Measure)": {
+      "category": "measurement_unit",
+      "status": "exact",
+      "surface_pattern": "number_unit"
+    },
+    "Vehicle/Product Code": {
+      "category": "product_code",
+      "status": "broader",
+      "surface_pattern": "mixed_identifier"
+    },
     "product_id": {
       "category": "identifier",
       "status": "broader",
       "surface_pattern": "mixed_identifier"
+    },
+    "Version Number": {
+      "category": "version",
+      "status": "exact",
+      "surface_pattern": "semantic_version"
     }
   }
 }

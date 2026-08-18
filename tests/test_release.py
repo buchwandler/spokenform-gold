@@ -31,6 +31,11 @@ class ReleaseTests(unittest.TestCase):
             release_manifest = read_json(output_root / "manifest.json")
             self.assertEqual(release_manifest["maturity"], "experimental")
             self.assertIn("sources/manifest.json", release_manifest["file_hashes"])
+            source_manifest = read_json(output_root / "sources/manifest.json")
+            self.assertEqual(
+                [source["name"] for source in source_manifest["sources"]],
+                ["spokenform_curated"],
+            )
 
     def test_release_verifier_detects_nested_source_manifest_tampering(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -69,24 +74,43 @@ class ReleaseTests(unittest.TestCase):
                     registry_path=ROOT / "splits/family_assignments.json",
                 )
 
-    def test_stable_release_rejects_placeholder_source_metadata(self):
+    def test_release_ignores_unreferenced_source_policy_failures(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             broken_manifest = Path(tmpdir) / "manifest.json"
             payload = read_json(ROOT / "sources/manifest.json")
-            payload["sources"][0]["release_ready"] = True
-            payload["sources"][0]["source_url"] = "https://example.invalid/source"
+            payload["sources"][1]["source_url"] = "https://example.invalid/source"
             broken_manifest.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            manifest = build_release(
+                version="0.2.0-candidate",
+                data_paths=[str(ROOT / "data/dev"), str(ROOT / "data/test")],
+                out_root=Path(tmpdir) / "release",
+                maturity="candidate",
+                registry_path=ROOT / "splits/family_assignments.json",
+                source_manifest_path=broken_manifest,
+            )
+            self.assertEqual(manifest["source_integrity"]["source_count"], 1)
+
+    def test_release_rejects_embedded_restricted_source(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            restricted_manifest = Path(tmpdir) / "manifest.json"
+            payload = read_json(ROOT / "sources/manifest.json")
+            payload["sources"][0]["redistribution_status"] = "metadata_only"
+            payload["sources"][0]["materialization_policy"] = "external_ref_only"
+            restricted_manifest.write_text(
                 json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
                 encoding="utf-8",
             )
             with self.assertRaises(ValueError):
                 build_release(
-                    version="0.2.0",
+                    version="0.2.0-exp",
                     data_paths=[str(ROOT / "data/dev"), str(ROOT / "data/test")],
                     out_root=Path(tmpdir) / "release",
-                    maturity="stable",
+                    maturity="experimental",
                     registry_path=ROOT / "splits/family_assignments.json",
-                    source_manifest_path=broken_manifest,
+                    source_manifest_path=restricted_manifest,
                 )
 
     def test_stable_release_requires_split_registry(self):
