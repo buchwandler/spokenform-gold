@@ -10,10 +10,14 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class AdjudicationTests(unittest.TestCase):
     def test_queue_prioritizes_conflict_and_coverage_gap(self):
-        records = read_records([ROOT / "data/candidates/sample_candidates.jsonl"])
+        records = read_records(
+            [ROOT / "tests/fixtures/candidates/sample_candidates.jsonl"]
+        )
         conflicts = [{"key": ["en-US", "currency", "$5"]}]
         coverage = {"gaps": [{"category": "currency", "kind": "low_volume"}]}
-        queue = build_adjudication_queue(records, conflicts=conflicts, coverage=coverage)
+        queue = build_adjudication_queue(
+            records, conflicts=conflicts, coverage=coverage
+        )
         self.assertEqual(queue[0]["id"], "async-tn-en-1001")
         self.assertIn("source_disagreement", queue[0]["reasons"])
 

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
 
 from ..io import read_json, sha256_text
 from ..taxonomy import load_mapping, source_manifest_map
+from .common import ImportResult
 
 
 LANGUAGE_TO_LOCALE = {
@@ -15,12 +15,6 @@ LANGUAGE_TO_LOCALE = {
     "it": "it-IT",
     "pt": "pt-PT",
 }
-
-
-@dataclass
-class ImportResult:
-    records: list[dict]
-    exclusions: list[dict]
 
 
 def _resolve_span(text: str, unit: dict) -> tuple[int, int, str] | None:
@@ -118,7 +112,9 @@ def import_async(path: str | Path, *, suite: str = "english") -> ImportResult:
     records: list[dict] = []
     exclusions: list[dict] = []
 
+    source_rows = 0
     for index, row in enumerate(_iter_rows(payload, suite), 1):
+        source_rows += 1
         if not isinstance(row, dict):
             exclusions.append(
                 {
@@ -198,4 +194,4 @@ def import_async(path: str | Path, *, suite: str = "english") -> ImportResult:
             }
         )
 
-    return ImportResult(records=records, exclusions=exclusions)
+    return ImportResult(records=records, exclusions=exclusions, source_rows=source_rows)

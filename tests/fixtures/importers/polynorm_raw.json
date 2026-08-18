@@ -1,0 +1,30 @@
+{
+  "format": "polynorm_raw_bundle",
+  "records": [
+    {
+      "source_id": "pn-raw-1",
+      "language": "en",
+      "locale": "en-US",
+      "source_split": "dev",
+      "category": "clock_time",
+      "input": "Leave at 21:10.",
+      "expected": "Leave at nine ten PM.",
+      "surface": "21:10",
+      "start": 9,
+      "end": 14
+    },
+    {
+      "source_id": "pn-raw-2",
+      "language": "de",
+      "locale": "de-DE",
+      "source_split": "test",
+      "category": "num_fraction",
+      "input": "Nimm 3/4 Liter.",
+      "expected": "Nimm drei Viertel Liter.",
+      "surface": "3/4",
+      "start": 5,
+      "end": 8,
+      "projection_notes": "Fraction exported from PolyNorm"
+    }
+  ]
+}

@@ -43,6 +43,7 @@ def _validate_source(
     benchmark = source.get("benchmark")
     source_id = source.get("source_id")
     source_version = source.get("source_version")
+    source_url = source.get("source_url")
     if not isinstance(benchmark, str) or not benchmark:
         errors.append(f"{prefix}: source.benchmark is required")
         return
@@ -50,6 +51,8 @@ def _validate_source(
         errors.append(f"{prefix}: source.source_id is required")
     if not isinstance(source_version, str) or not source_version:
         errors.append(f"{prefix}: source.source_version is required")
+    if not isinstance(source_url, str) or not source_url:
+        errors.append(f"{prefix}: source.source_url is required")
     manifest = source_manifests.get(benchmark)
     if manifest is None:
         errors.append(f"{prefix}: unknown source benchmark {benchmark!r}")
@@ -65,10 +68,22 @@ def _validate_source(
         errors.append(
             f"{prefix}: source.license {license_name!r} does not match manifest license {manifest.get('license')!r}"
         )
+    if (
+        source_url
+        and manifest.get("source_url")
+        and source_url != manifest.get("source_url")
+    ):
+        errors.append(
+            f"{prefix}: source.source_url {source_url!r} does not match manifest source_url {manifest.get('source_url')!r}"
+        )
     if source.get("upstream_expected") is not None and not isinstance(
         source.get("upstream_expected"), str
     ):
         errors.append(f"{prefix}: source.upstream_expected must be string when present")
+    if benchmark != "spokenform_curated":
+        source_hash = source.get("source_hash")
+        if not isinstance(source_hash, str) or not source_hash.startswith("sha256:"):
+            errors.append(f"{prefix}: imported records require source.source_hash")
 
 
 def _validate_unit(

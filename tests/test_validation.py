@@ -3,6 +3,7 @@ import unittest
 from pathlib import Path
 
 from spokenform_gold.io import read_records
+from spokenform_gold.source_manifest import validate_source_manifest
 from spokenform_gold.validation import validate_records
 
 
@@ -43,6 +44,38 @@ class ValidationTests(unittest.TestCase):
         broken["units"][0]["semantic"] = {"hour": 28, "minute": 0}
         errors = validate_records([broken])
         self.assertTrue(any("time hour out of range" in error for error in errors))
+
+    def test_imported_record_requires_source_hash(self):
+        records = read_records(
+            [ROOT / "tests/fixtures/candidates/sample_candidates.jsonl"]
+        )
+        broken = copy.deepcopy(records[0])
+        del broken["source"]["source_hash"]
+        errors = validate_records([broken])
+        self.assertTrue(any("source.source_hash" in error for error in errors))
+
+    def test_source_manifest_hashes_and_release_ready_validate(self):
+        manifest = {
+            "version": "1.0.0",
+            "sources": [
+                {
+                    "name": "fixture",
+                    "revision": "rev-1",
+                    "source_url": "https://example.com/repo",
+                    "license": "Apache-2.0",
+                    "redistribution_status": "allowed",
+                    "release_ready": True,
+                    "files": [
+                        {
+                            "path": "README.md",
+                            "sha256": "0" * 64,
+                        }
+                    ],
+                }
+            ],
+        }
+        errors = validate_source_manifest(manifest, repo_root=ROOT)
+        self.assertTrue(any("sha256 mismatch" in error for error in errors))
 
 
 if __name__ == "__main__":

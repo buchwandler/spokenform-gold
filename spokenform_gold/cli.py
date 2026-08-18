@@ -86,21 +86,31 @@ def cmd_import_async(args):
     write_jsonl(args.out, result.records)
     if args.exclusions_out:
         write_json(args.exclusions_out, result.exclusions)
-    print(f"wrote {len(result.records)} candidate records to {args.out}")
+    print(
+        f"wrote {len(result.records)} candidate records to {args.out} from {result.source_rows} source rows"
+    )
     return 0
 
 
 def cmd_import_polynorm(args):
-    records = import_polynorm(args.path)
-    write_jsonl(args.out, records)
-    print(f"wrote {len(records)} candidate records to {args.out}")
+    result = import_polynorm(args.path, format=args.format)
+    write_jsonl(args.out, result.records)
+    if args.exclusions_out:
+        write_json(args.exclusions_out, result.exclusions)
+    print(
+        f"wrote {len(result.records)} candidate records to {args.out} from {result.source_rows} source rows"
+    )
     return 0
 
 
 def cmd_import_proteno(args):
-    records = import_proteno(args.path)
-    write_jsonl(args.out, records)
-    print(f"wrote {len(records)} candidate records to {args.out}")
+    result = import_proteno(args.path, format=args.format)
+    write_jsonl(args.out, result.records)
+    if args.exclusions_out:
+        write_json(args.exclusions_out, result.exclusions)
+    print(
+        f"wrote {len(result.records)} candidate records to {args.out} from {result.source_rows} source rows"
+    )
     return 0
 
 
@@ -108,10 +118,11 @@ def cmd_split(args):
     records = read_records(args.paths)
     split_map = split_records(
         records,
+        registry_path=args.registry,
+        seed=args.seed,
         train_ratio=args.train,
         dev_ratio=args.dev,
         test_ratio=args.test,
-        seed=args.seed,
     )
     output_root = Path(args.out_root)
     for split_name, split_records_list in split_map.items():
@@ -149,7 +160,13 @@ def cmd_adjudicate_queue(args):
 
 def cmd_release_check(args):
     manifest = build_release(
-        version=args.version, data_paths=args.data, out_root=args.out
+        version=args.version,
+        data_paths=args.data,
+        out_root=args.out,
+        maturity=args.maturity,
+        registry_path=args.registry,
+        source_manifest_path=args.source_manifest,
+        coverage_profile=args.coverage_profile,
     )
     print(
         "release={version} records={records} families={families}".format(
@@ -207,12 +224,20 @@ def build_parser():
 
     polynorm_import = sub.add_parser("import-polynorm")
     polynorm_import.add_argument("path")
+    polynorm_import.add_argument(
+        "--format", choices=["auto", "raw", "projection"], default="auto"
+    )
     polynorm_import.add_argument("--out", required=True)
+    polynorm_import.add_argument("--exclusions-out")
     polynorm_import.set_defaults(func=cmd_import_polynorm)
 
     proteno_import = sub.add_parser("import-proteno")
     proteno_import.add_argument("path")
+    proteno_import.add_argument(
+        "--format", choices=["auto", "raw", "projection"], default="auto"
+    )
     proteno_import.add_argument("--out", required=True)
+    proteno_import.add_argument("--exclusions-out")
     proteno_import.set_defaults(func=cmd_import_proteno)
 
     split = sub.add_parser("split")
@@ -221,6 +246,7 @@ def build_parser():
     split.add_argument("--dev", type=float, default=0.15)
     split.add_argument("--test", type=float, default=0.15)
     split.add_argument("--seed", type=int, default=20260818)
+    split.add_argument("--registry", required=True)
     split.add_argument("--out-root", required=True)
     split.set_defaults(func=cmd_split)
 
@@ -242,6 +268,14 @@ def build_parser():
     release.add_argument("--version", required=True)
     release.add_argument("--data", nargs="+", required=True)
     release.add_argument("--out", required=True)
+    release.add_argument(
+        "--maturity",
+        choices=["experimental", "candidate", "stable"],
+        default="experimental",
+    )
+    release.add_argument("--registry")
+    release.add_argument("--source-manifest")
+    release.add_argument("--coverage-profile", default="none")
     release.set_defaults(func=cmd_release_check)
     return parser
 

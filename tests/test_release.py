@@ -1,7 +1,9 @@
+import json
 import tempfile
 import unittest
 from pathlib import Path
 
+from spokenform_gold.io import read_json
 from spokenform_gold.release import build_release
 
 
@@ -9,14 +11,55 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ReleaseTests(unittest.TestCase):
-    def test_release_builds_manifest_and_checksums(self):
+    def test_release_builds_manifest_checksums_and_audit_files(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            manifest = build_release(version="0.1.0", data_paths=[str(ROOT / "data/dev"), str(ROOT / "data/test")], out_root=Path(tmpdir) / "release")
+            manifest = build_release(
+                version="0.2.0-exp",
+                data_paths=[str(ROOT / "data/dev"), str(ROOT / "data/test")],
+                out_root=Path(tmpdir) / "release",
+                maturity="experimental",
+                registry_path=ROOT / "splits/family_assignments.json",
+            )
             output_root = Path(tmpdir) / "release"
-            self.assertEqual(manifest["benchmark_version"], "0.1.0")
+            self.assertEqual(manifest["benchmark_version"], "0.2.0-exp")
             self.assertTrue((output_root / "manifest.json").exists())
             self.assertTrue((output_root / "SHA256SUMS").exists())
-            self.assertTrue((output_root / "data/dev/sample.jsonl").exists())
+            self.assertTrue((output_root / "sources/manifest.json").exists())
+            self.assertTrue((output_root / "splits/family_assignments.json").exists())
+            self.assertTrue((output_root / "RELEASE_NOTES.md").exists())
+            release_manifest = read_json(output_root / "manifest.json")
+            self.assertEqual(release_manifest["maturity"], "experimental")
+
+    def test_stable_release_rejects_placeholder_source_metadata(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            broken_manifest = Path(tmpdir) / "manifest.json"
+            payload = read_json(ROOT / "sources/manifest.json")
+            payload["sources"][0]["release_ready"] = True
+            payload["sources"][0]["source_url"] = "https://example.invalid/source"
+            broken_manifest.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaises(ValueError):
+                build_release(
+                    version="0.2.0",
+                    data_paths=[str(ROOT / "data/dev"), str(ROOT / "data/test")],
+                    out_root=Path(tmpdir) / "release",
+                    maturity="stable",
+                    registry_path=ROOT / "splits/family_assignments.json",
+                    source_manifest_path=broken_manifest,
+                )
+
+    def test_stable_release_requires_split_registry(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with self.assertRaises(ValueError):
+                build_release(
+                    version="0.2.0",
+                    data_paths=[str(ROOT / "data/dev"), str(ROOT / "data/test")],
+                    out_root=Path(tmpdir) / "release",
+                    maturity="stable",
+                    registry_path=Path(tmpdir) / "missing.json",
+                )
 
 
 if __name__ == "__main__":

@@ -16,3 +16,12 @@
 {"id":"en-us-nochange-art-001","output":"The art department opened today."}
 {"id":"en-us-nochange-may-001","output":"May I come in?"}
 {"id":"en-us-nochange-point-001","output":"Point three is the critical argument."}
+{"id":"de-de-date-policy-001","output":"Der Termin ist der vierte März zweitausendfünfundzwanzig."}
+{"id":"de-de-nochange-punkt-001","output":"Punkt drei bleibt mein Thema."}
+{"id":"es-es-date-policy-001","output":"La fecha es tres de abril de dos mil veinticinco."}
+{"id":"es-es-nochange-punto-001","output":"Punto tres ya está explicado."}
+{"id":"de-de-time-001","output":"Treffen um neun Uhr dreißig."}
+{"id":"de-de-fraction-001","output":"Nimm drei Viertel Liter."}
+{"id":"es-es-currency-001","output":"Cobra doce euros con cincuenta céntimos hoy."}
+{"id":"es-es-identifier-001","output":"Usa el código A B uno dos hoy."}
+{"id":"es-es-version-001","output":"Instala versión dos punto cero punto cero guion beta punto cuatro hoy."}

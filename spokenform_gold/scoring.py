@@ -93,6 +93,41 @@ def _status_bucket(target: dict[str, dict], key: str) -> dict:
     )
 
 
+def evaluate_records(
+    records: Iterable[dict], predictions: dict[str, str]
+) -> list[dict]:
+    results: list[dict] = []
+    for record in records:
+        status = record.get("status")
+        if status in EXCLUDED_STATUSES or record.get("split") == "candidate":
+            continue
+        if status not in SCORABLE_STATUSES:
+            continue
+        predicted = predictions.get(record.get("id"))
+        if predicted is None:
+            predicted = ""
+        normalized_prediction = normalize_text(predicted)
+        canonical_target = normalize_text(record.get("expected_output"))
+        accepted_targets = {normalize_text(value) for value in _render_variants(record)}
+        is_canonical = normalized_prediction == canonical_target
+        is_accepted = is_canonical or normalized_prediction in accepted_targets
+        results.append(
+            {
+                "id": record.get("id"),
+                "status": status,
+                "language": record.get("language"),
+                "locale": record.get("locale"),
+                "input": record.get("input"),
+                "expected_output": record.get("expected_output"),
+                "prediction": predicted,
+                "canonical_match": is_canonical,
+                "accepted_match": is_accepted,
+                "accepted_variants": sorted(_render_variants(record)),
+            }
+        )
+    return results
+
+
 def score_records(
     records: Iterable[dict], predictions: dict[str, str], *, mode: str = "canonical"
 ) -> dict:
@@ -115,6 +150,10 @@ def score_records(
     no_change_mutations = 0
     missing_predictions = []
 
+    evaluation = {
+        item["id"]: item for item in evaluate_records(record_list, predictions)
+    }
+
     for record in record_list:
         status = record.get("status")
         totals[status] += 1
@@ -124,15 +163,16 @@ def score_records(
             continue
 
         scorable_records += 1
+        detail = evaluation.get(record.get("id"))
         predicted = predictions.get(record.get("id"))
         if predicted is None:
             missing_predictions.append(record.get("id"))
-            predicted = ""
-        normalized_prediction = normalize_text(predicted)
-        canonical_target = normalize_text(record.get("expected_output"))
-        accepted_targets = {normalize_text(value) for value in _render_variants(record)}
-        is_canonical = normalized_prediction == canonical_target
-        is_accepted = is_canonical or normalized_prediction in accepted_targets
+        if detail is None:
+            is_canonical = False
+            is_accepted = False
+        else:
+            is_canonical = bool(detail["canonical_match"])
+            is_accepted = bool(detail["accepted_match"])
 
         if is_canonical:
             canonical_matches += 1
@@ -200,6 +240,7 @@ def score_records(
         "missing_prediction_ids": sorted(
             record_id for record_id in missing_predictions if record_id
         ),
+        "record_results": [evaluation[key] for key in sorted(evaluation)],
     }
     if mode == "accepted":
         result["primary_accuracy"] = result["accepted_variant_accuracy"]

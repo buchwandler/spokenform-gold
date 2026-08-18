@@ -1,4 +1,5 @@
 {
+  "format": "raw",
   "cases": [
     {
       "case_id": "pt-1",
@@ -15,6 +16,20 @@
     },
     {
       "case_id": "pt-2",
+      "language": "es",
+      "locale": "es-ES",
+      "source_split": "test",
+      "category": "currency",
+      "input": "Cobro €12,50 hoy.",
+      "expected": "Cobro doce euros con cincuenta céntimos hoy.",
+      "surface": "€12,50",
+      "start": 6,
+      "end": 12,
+      "projection_notes": "Currency export",
+      "identity_example": false
+    },
+    {
+      "case_id": "pt-3",
       "language": "en",
       "locale": "en-US",
       "source_split": "test",

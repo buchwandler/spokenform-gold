@@ -40,6 +40,8 @@ spokenform-gold validate data/judge_gold/sample.jsonl --judge
 
 spokenform-gold coverage   data/dev/sample.jsonl   --targets taxonomy/coverage_targets.json   --json reports/coverage.json
 spokenform-gold stats      data/dev/sample.jsonl   data/test/sample.jsonl
+spokenform-gold split      data/dev/sample.jsonl   data/test/sample.jsonl   --registry splits/family_assignments.json   --seed 20260818   --out-root /tmp/spokenform-gold-split-check
+spokenform-gold release-check   --version 0.2.0-exp   --data data/dev data/test   --registry splits/family_assignments.json   --maturity experimental   --out /tmp/spokenform-gold-release
 
 spokenform-gold conflicts data/dev/sample.jsonl --mode unit
 
@@ -50,8 +52,8 @@ Import the async-TN evaluation JSON format:
 
 ```bash
 spokenform-gold import-async /path/to/sentences.json   --suite english   --out data/candidates/async-tn.jsonl
-spokenform-gold import-polynorm /path/to/polynorm   --out data/candidates/polynorm.jsonl
-spokenform-gold import-proteno /path/to/proteno.json   --out data/candidates/proteno.jsonl
+spokenform-gold import-polynorm /path/to/polynorm.json   --format raw   --out data/candidates/polynorm.jsonl
+spokenform-gold import-proteno /path/to/proteno.json   --format raw   --out data/candidates/proteno.jsonl
 ```
 
 Imported source rows are deliberately written as `quarantine` candidates.
@@ -60,10 +62,10 @@ They must be adjudicated before being promoted into gold.
 ## Release-pipeline commands
 
 ```bash
-spokenform-gold split data/dev/*.jsonl data/test/*.jsonl --seed 20260818 --out-root /tmp/spokenform-gold-split-check
+spokenform-gold split data/dev/*.jsonl data/test/*.jsonl --registry splits/family_assignments.json --seed 20260818 --out-root /tmp/spokenform-gold-split-check
 spokenform-gold score data/test/*.jsonl --predictions tests/fixtures/predictions/sample_predictions.jsonl --mode canonical --json reports/score.json
 spokenform-gold adjudicate-queue data/candidates/*.jsonl --conflicts reports/conflicts.json --coverage reports/coverage.json --out reports/adjudication.jsonl
-spokenform-gold release-check --version 0.1.0 --data data/dev data/test --out dist/spokenform-gold-v0.1.0
+spokenform-gold release-check --version 0.2.0-exp --data data/dev data/test --registry splits/family_assignments.json --maturity experimental --out dist/spokenform-gold-v0.2.0-exp
 ```
 
 ## External runner contract
@@ -81,6 +83,22 @@ Then call the Gold scorer via the CLI or package API:
 from spokenform_gold import score_records
 ```
 
+This repository also ships a repository-local benchmark runner that exercises
+the Gold release contract with an explicit profile and a pluggable prepare
+wrapper:
+
+```bash
+python -m benchmarks.spokenform_gold \
+  --gold-root /tmp/spokenform-gold-release \
+  --split test \
+  --results-dir /tmp/spokenform-gold-results \
+  --prepare-module tests.fixtures.runner.sample_prepare:prepare_gold_record
+```
+
+The runner verifies release hashes, loads records by split and optional
+filters, writes `summary.json`, `predictions.jsonl`, `failures.jsonl`, and
+`failures.md`, and records the applied profile in the summary artifact.
+
 ## Validate everything
 
 ```bash
@@ -95,12 +113,14 @@ data/
   dev/
   judge_gold/
   candidates/
+splits/
 schemas/
 taxonomy/
-src/
+benchmarks/
 tests/
 docs/
 reports/
+sources/
 ```
 
 ## Growth loop
@@ -127,6 +147,20 @@ upstream benchmark / real corpus / regression failure
 For each production bug fix, add a family rather than only one regression row:
 a positive example, boundary variants, an ambiguity case where relevant, and
 negative controls where false positives are plausible.
+
+## Experimental release scope
+
+The checked-in corpus is now a reproducible experimental release seed with:
+
+- pinned source metadata and local cache hashes in `sources/manifest.json`;
+- a frozen family assignment registry in `splits/family_assignments.json`;
+- reviewed English, German, and Spanish high-risk benchmark examples;
+- candidate import fixtures for async-TN, PolyNorm, and Proteno;
+- a local release loader and benchmark runner for deterministic score artifacts.
+
+It is still intentionally **experimental**: coverage targets remain far above
+the current reviewed corpus, and release success is not a claim of full
+benchmark completeness.
 
 ## Publishing
 

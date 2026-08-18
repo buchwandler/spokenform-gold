@@ -13,9 +13,17 @@
       "version": 1,
       "description": "Read major and minor currency units while preserving exact amount semantics."
     },
+    "de-DE-dmY": {
+      "version": 1,
+      "description": "Interpret numeric slash dates as day/month/year under de-DE policy."
+    },
     "en-US-mdY": {
       "version": 1,
       "description": "Interpret numeric slash dates as month/day/year under en-US policy."
+    },
+    "es-ES-dmY": {
+      "version": 1,
+      "description": "Interpret numeric slash dates as day/month/year under es-ES policy."
     },
     "identifier-spellout": {
       "version": 1,
@@ -47,7 +55,7 @@
     },
     "time-natural": {
       "version": 1,
-      "description": "Read times in a natural spoken English form while preserving minute values."
+      "description": "Read times in a natural spoken form while preserving minute values."
     },
     "unadjudicated-upstream": {
       "version": 1,

@@ -15,6 +15,7 @@
           "source_url",
           "license",
           "redistribution_status",
+          "release_ready",
           "files"
         ],
         "properties": {
@@ -22,6 +23,10 @@
           "revision": { "type": "string", "minLength": 1 },
           "source_url": { "type": "string", "minLength": 1 },
           "license": { "type": "string", "minLength": 1 },
+          "release_ready": { "type": "boolean" },
+          "kind": {
+            "enum": ["curated", "upstream", "projection_cache"]
+          },
           "redistribution_status": {
             "enum": [
               "allowed",
@@ -38,10 +43,15 @@
               "required": ["path", "sha256"],
               "properties": {
                 "path": { "type": "string", "minLength": 1 },
-                "sha256": { "type": "string", "minLength": 1 }
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "role": { "type": "string", "minLength": 1 }
               }
             }
-          }
+          },
+          "notes": { "type": "string" }
         }
       }
     }

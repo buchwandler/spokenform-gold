@@ -1,61 +1,93 @@
 {
-  "version": "1.0.0",
+  "version": "2.0.0",
   "sources": [
     {
-      "name": "spokenform_curated",
-      "revision": "2026-08-18",
-      "source_url": "https://github.com/buchwandler/spokenform-gold",
-      "license": "Apache-2.0",
-      "redistribution_status": "allowed",
       "files": [
         {
           "path": "data/dev/sample.jsonl",
-          "sha256": "fixture-managed"
+          "role": "benchmark-dev",
+          "sha256": "ad472af2639b703803108684383f08e00531eef58d2f3d3bddba19dce162a0c5"
         },
         {
           "path": "data/test/sample.jsonl",
-          "sha256": "fixture-managed"
+          "role": "benchmark-test",
+          "sha256": "bbcbf8fcedcb08fede1fbb528fe06829abaa04e8c8b7065fb0d6e7079db07220"
+        },
+        {
+          "path": "data/judge_gold/sample.jsonl",
+          "role": "judge-gold",
+          "sha256": "9d5b14301d8ffb66f36e391afa0c57d26198f075095e4c92548b3140bba596a7"
         }
-      ]
+      ],
+      "kind": "curated",
+      "license": "Apache-2.0",
+      "name": "spokenform_curated",
+      "notes": "Repository-local reviewed benchmark and judge fixtures.",
+      "redistribution_status": "allowed",
+      "release_ready": true,
+      "revision": "2026-08-18",
+      "source_url": "https://github.com/buchwandler/spokenform-gold"
     },
     {
+      "files": [
+        {
+          "path": "tests/fixtures/importers/async_english.json",
+          "role": "english-cache",
+          "sha256": "a9cd3dd0052d5f3f5825097cd6cb455c72c9380506ba807b2669b7605e0aa77f"
+        },
+        {
+          "path": "tests/fixtures/importers/async_multilingual.json",
+          "role": "multilingual-cache",
+          "sha256": "5b0cd95be50175709f8c304674b6206f3ef4a6099dacdb97d5121a43dbfac375"
+        }
+      ],
+      "kind": "upstream",
+      "license": "Apache-2.0",
       "name": "async_tn",
+      "notes": "Pinned local caches for raw async-TN importer tests and candidate generation.",
+      "redistribution_status": "metadata_only",
+      "release_ready": true,
       "revision": "516dfbf54c8f85db865b65de4272b1f4280ad1dd",
-      "source_url": "https://github.com/bastings/async-tn",
-      "license": "Apache-2.0",
-      "redistribution_status": "review_required",
-      "files": [
-        {
-          "path": "source/async/sentences.json",
-          "sha256": "fixture-managed"
-        }
-      ]
+      "source_url": "https://github.com/bastings/async-tn"
     },
     {
+      "files": [
+        {
+          "path": "tests/fixtures/importers/polynorm_raw.json",
+          "role": "neutral-raw-export",
+          "sha256": "632a0d19ed1096629da14b7f4cf39bc2f081435abe38e30e5a6bc8a11caa61e8"
+        },
+        {
+          "path": "tests/fixtures/importers/polynorm_sample.jsonl",
+          "role": "projection-fixture",
+          "sha256": "c74450e8c1284882ed5677de339d800a28acd493469810924c79179c1805cfdd"
+        }
+      ],
+      "kind": "projection_cache",
+      "license": "CC BY-NC-ND 4.0",
       "name": "polynorm",
-      "revision": "2026-08-18-fixture",
-      "source_url": "https://example.invalid/polynorm",
-      "license": "Apache-2.0",
-      "redistribution_status": "review_required",
-      "files": [
-        {
-          "path": "source/polynorm/sample.jsonl",
-          "sha256": "fixture-managed"
-        }
-      ]
+      "notes": "Pinned local neutral export and projection fixtures for PolyNorm bridge testing.",
+      "redistribution_status": "metadata_only",
+      "release_ready": true,
+      "revision": "f3c67e047bea6b7c40bc2466c0fdaad51d8ce67d",
+      "source_url": "https://github.com/apple/ml-speech-polynorm-bench"
     },
     {
-      "name": "proteno",
-      "revision": "2026-08-18-fixture",
-      "source_url": "https://example.invalid/proteno",
-      "license": "Apache-2.0",
-      "redistribution_status": "review_required",
       "files": [
         {
-          "path": "source/proteno/sample.json",
-          "sha256": "fixture-managed"
+          "path": "tests/fixtures/importers/proteno_sample.json",
+          "role": "neutral-raw-export",
+          "sha256": "56a583fb4a9ce3dfeb115c357cd05d73b582409bd1ba9031e08082a5368862fa"
         }
-      ]
+      ],
+      "kind": "projection_cache",
+      "license": "CC BY-SA 3.0 Unported",
+      "name": "proteno",
+      "notes": "Pinned local neutral export fixture for Proteno bridge testing.",
+      "redistribution_status": "metadata_only",
+      "release_ready": true,
+      "revision": "8839501abaf50eeccbe21a2397cefa118eae9660",
+      "source_url": "https://github.com/amazon-science/proteno"
     }
   ]
 }
