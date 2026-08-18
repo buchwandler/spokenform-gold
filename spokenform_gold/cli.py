@@ -9,6 +9,7 @@ from .conflicts import find_conflicts
 from .coverage import build_coverage, load_targets
 from .importers import import_async, import_polynorm, import_proteno
 from .io import expand_jsonl_paths, read_json, read_records, write_json, write_jsonl
+from .judge_calibration import build_judge_calibration, load_judge_predictions
 from .release import build_release
 from .scoring import load_predictions, score_records
 from .splitting import split_records
@@ -178,6 +179,20 @@ def cmd_release_check(args):
     return 0
 
 
+def cmd_judge_calibrate(args):
+    records = read_records(args.paths)
+    errors = validate_records(records, judge=True)
+    if errors:
+        raise ValueError("judge calibration input is invalid: " + "; ".join(errors))
+    predictions = load_judge_predictions(args.predictions)
+    result = build_judge_calibration(records, predictions)
+    if args.json:
+        write_json(args.json, result)
+    else:
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
 def build_parser():
     parser = argparse.ArgumentParser(prog="spokenform-gold")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -277,6 +292,12 @@ def build_parser():
     release.add_argument("--source-manifest")
     release.add_argument("--coverage-profile", default="none")
     release.set_defaults(func=cmd_release_check)
+
+    judge_calibrate = sub.add_parser("judge-calibrate")
+    judge_calibrate.add_argument("paths", nargs="+")
+    judge_calibrate.add_argument("--predictions", required=True)
+    judge_calibrate.add_argument("--json")
+    judge_calibrate.set_defaults(func=cmd_judge_calibrate)
     return parser
 
 

@@ -1,6 +1,10 @@
 {
   "version": "1.0.0",
   "policies": {
+    "cardinal-natural": {
+      "version": 1,
+      "description": "Read plain cardinal numbers in their natural spoken form."
+    },
     "configured-uppercase-initialism": {
       "version": 1,
       "description": "Read all-uppercase acronyms letter by letter when policy selects the initialism reading."
@@ -33,6 +37,14 @@
       "version": 1,
       "description": "Read IPv4 octets digitwise while preserving dot separators."
     },
+    "math-expression-operator": {
+      "version": 1,
+      "description": "Read simple math operators explicitly without collapsing them into score or range semantics."
+    },
+    "measurement-unit-natural": {
+      "version": 1,
+      "description": "Read value-plus-unit expressions with natural unit names."
+    },
     "natural-decimal": {
       "version": 1,
       "description": "Read decimal separator naturally while preserving exact fractional digits."
@@ -41,9 +53,17 @@
       "version": 1,
       "description": "Read common numeric fractions using natural fraction wording."
     },
+    "ordinal-natural": {
+      "version": 1,
+      "description": "Read ordinal numbers using their natural spoken ordinal form."
+    },
     "require-locale-or-context": {
       "version": 1,
       "description": "Do not force a single reading when context or locale does not disambiguate the form."
+    },
+    "score-or-range-contextual": {
+      "version": 1,
+      "description": "Read hyphenated score and numeric-range forms using context-preserving wording."
     },
     "semantic-version": {
       "version": 1,
@@ -60,6 +80,10 @@
     "unadjudicated-upstream": {
       "version": 1,
       "description": "Placeholder policy for imported candidate data pending adjudication."
+    },
+    "url-or-email-literal": {
+      "version": 1,
+      "description": "Read URLs and email addresses as literal contact or locator strings."
     }
   }
 }

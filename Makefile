@@ -1,12 +1,20 @@
-.PHONY: check test stats validate coverage conflicts split score adjudicate release-check
+.PHONY: check lint test stats candidate-stats validate coverage conflicts split score adjudicate judge-calibrate release-check
 
-check: test stats validate coverage conflicts score release-check
+check: lint test stats candidate-stats validate coverage conflicts adjudicate score judge-calibrate release-check
+
+lint:
+	ruff check .
 
 test:
-	python -m unittest discover -s tests -v
+	pytest -q
 
 stats:
-	PYTHONPATH=. python -m spokenform_gold.cli stats data/dev/*.jsonl data/test/*.jsonl
+	mkdir -p reports
+	PYTHONPATH=. python -m spokenform_gold.cli stats data/dev/*.jsonl data/test/*.jsonl --json reports/release_stats.json
+
+candidate-stats:
+	mkdir -p reports
+	PYTHONPATH=. python -m spokenform_gold.cli stats data/candidates/*.jsonl --json reports/candidate_stats.json
 
 validate:
 	PYTHONPATH=. python -m spokenform_gold.cli validate data/dev/*.jsonl
@@ -32,6 +40,10 @@ adjudicate:
 	mkdir -p reports
 	PYTHONPATH=. python -m spokenform_gold.cli adjudicate-queue data/candidates/*.jsonl --conflicts reports/conflicts.json --coverage reports/coverage.json --out reports/adjudication.jsonl
 
+judge-calibrate:
+	mkdir -p reports
+	PYTHONPATH=. python -m spokenform_gold.cli judge-calibrate data/judge_gold/*.jsonl --predictions tests/fixtures/predictions/judge_predictions.jsonl --json reports/judge_calibration.json
+
 release-check:
-	rm -rf dist/spokenform-gold-v0.1.0
-	PYTHONPATH=. python -m spokenform_gold.cli release-check --version 0.1.0 --data data/dev data/test --out dist/spokenform-gold-v0.1.0
+	rm -rf dist/spokenform-gold-v0.1.0-exp
+	PYTHONPATH=. python -m spokenform_gold.cli release-check --version 0.1.0-exp --data data/dev data/test --registry splits/family_assignments.json --maturity experimental --out dist/spokenform-gold-v0.1.0-exp

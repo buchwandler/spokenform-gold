@@ -25,3 +25,15 @@
 {"id":"es-es-currency-001","output":"Cobra doce euros con cincuenta céntimos hoy."}
 {"id":"es-es-identifier-001","output":"Usa el código A B uno dos hoy."}
 {"id":"es-es-version-001","output":"Instala versión dos punto cero punto cero guion beta punto cuatro hoy."}
+{"id":"en-us-acronym-initialism-002","output":"Bring the U S B cable."}
+{"id":"en-us-score-002","output":"The score was three to two."}
+{"id":"en-us-score-range-001","output":"The range is three to five."}
+{"id":"en-us-math-subtraction-001","output":"Calculate three minus two now."}
+{"id":"en-us-math-division-001","output":"Compute eight divided by four now."}
+{"id":"en-us-url-001","output":"Visit example dot org today."}
+{"id":"en-us-email-001","output":"Email support at example dot org today."}
+{"id":"en-us-measurement-001","output":"Mix two kilograms of flour."}
+{"id":"en-us-cardinal-001","output":"We saw twenty four birds."}
+{"id":"en-us-ordinal-001","output":"He finished twenty first overall."}
+{"id":"en-us-nochange-email-001","output":"Please email support later."}
+{"id":"en-us-nochange-range-001","output":"Range anxiety is real."}

@@ -48,6 +48,15 @@ def load_source_manifest(path: str | Path | None = None) -> dict[str, Any]:
     return _load_json(target)
 
 
+def load_release_maturity_profiles(path: str | Path | None = None) -> dict[str, Any]:
+    target = (
+        Path(path)
+        if path
+        else repo_root() / "taxonomy" / "release_maturity_profiles.json"
+    )
+    return _load_json(target)
+
+
 def categories_set(path: str | Path | None = None) -> set[str]:
     return set(load_categories(path).get("categories", []))
 
@@ -75,3 +84,7 @@ def policy_version(path: str | Path | None = None) -> str:
 
 def source_manifest_version(path: str | Path | None = None) -> str:
     return str(load_source_manifest(path).get("version", "0"))
+
+
+def release_maturity_profiles(path: str | Path | None = None) -> dict[str, Any]:
+    return load_release_maturity_profiles(path).get("profiles", {})

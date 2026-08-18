@@ -9,12 +9,17 @@ from .conflicts import find_conflicts
 from .coverage import build_coverage, load_targets
 from .io import expand_jsonl_paths, read_records, sha256_file
 from .source_manifest import load_and_validate_source_manifest
-from .taxonomy import policy_version, repo_root, taxonomy_version
+from .taxonomy import (
+    policy_version,
+    release_maturity_profiles,
+    repo_root,
+    taxonomy_version,
+)
 from .validation import validate_records
 
 
 RELEASE_FORBIDDEN_STATUSES = {"quarantine"}
-RELEASE_MATURITIES = {"experimental", "candidate", "stable"}
+RELEASE_MATURITIES = frozenset(release_maturity_profiles())
 
 
 def _write_json(path: Path, payload: dict | list) -> None:
@@ -30,6 +35,125 @@ def _copy_file(root: Path, output_root: Path, file_path: Path) -> None:
     target = output_root / rel
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(file_path, target)
+
+
+def _profile(name: str) -> dict:
+    try:
+        return release_maturity_profiles()[name]
+    except KeyError as exc:
+        raise ValueError(
+            f"release maturity must be one of {sorted(RELEASE_MATURITIES)}"
+        ) from exc
+
+
+def _coverage_index(coverage: dict) -> dict[str, dict]:
+    return {
+        item["category"]: item
+        for item in coverage.get("coverage", [])
+        if isinstance(item, dict) and isinstance(item.get("category"), str)
+    }
+
+
+def _enforce_maturity(
+    *,
+    profile_name: str,
+    records: list[dict],
+    coverage: dict,
+    source_manifest: dict,
+) -> None:
+    profile = _profile(profile_name)
+    errors: list[str] = []
+    if profile.get("require_source_release_ready") and not all(
+        source.get("release_ready", False)
+        for source in source_manifest.get("sources", [])
+    ):
+        errors.append("release sources are not all marked release_ready")
+
+    minimum_records = int(profile.get("minimum_records", 0))
+    if len(records) < minimum_records:
+        errors.append(
+            f"{profile_name} release requires at least {minimum_records} records"
+        )
+
+    languages = {record.get("language") for record in records if record.get("language")}
+    minimum_languages = int(profile.get("minimum_reviewed_languages", 0))
+    if len(languages) < minimum_languages:
+        errors.append(
+            f"{profile_name} release requires at least {minimum_languages} languages"
+        )
+
+    negative_controls = sum(
+        1 for record in records if record.get("status") == "no_change"
+    )
+    minimum_negatives = int(profile.get("minimum_negative_controls", 0))
+    if negative_controls < minimum_negatives:
+        errors.append(
+            f"{profile_name} release requires at least {minimum_negatives} negative controls"
+        )
+
+    coverage_by_category = _coverage_index(coverage)
+    observed_categories = {
+        unit.get("category")
+        for record in records
+        for unit in record.get("units", [])
+        if isinstance(unit, dict) and unit.get("category")
+    }
+    required_categories = set(profile.get("required_categories", []))
+    missing_categories = sorted(required_categories - observed_categories)
+    if missing_categories:
+        errors.append(
+            f"{profile_name} release is missing required categories: {missing_categories}"
+        )
+
+    for category, required_patterns in sorted(
+        profile.get("required_patterns", {}).items()
+    ):
+        coverage_entry = coverage_by_category.get(category, {})
+        patterns = coverage_entry.get("patterns", {})
+        missing_patterns = [
+            pattern
+            for pattern in required_patterns
+            if int(patterns.get(pattern, 0)) <= 0
+        ]
+        if missing_patterns:
+            errors.append(
+                f"{profile_name} release is missing required patterns for "
+                f"{category}: {missing_patterns}"
+            )
+
+    if profile.get("coverage_profile") == "stable":
+        blocking = [
+            gap
+            for gap in coverage.get("gaps", [])
+            if gap.get("category")
+            in {
+                "date",
+                "time",
+                "decimal",
+                "fraction",
+                "currency",
+                "identifier",
+                "version",
+                "ip_address",
+            }
+        ]
+        if blocking:
+            errors.append("stable release coverage gate failed")
+    elif not profile.get("allow_coverage_gaps", True) and coverage.get("gaps"):
+        errors.append(f"{profile_name} release does not allow coverage gaps")
+
+    if errors:
+        raise ValueError("; ".join(errors))
+
+
+def _tracked_release_files(output_root: Path):
+    for path in sorted(output_root.rglob("*")):
+        if not path.is_file():
+            continue
+        relative = str(path.relative_to(output_root))
+        if relative in {"manifest.json", "SHA256SUMS"}:
+            continue
+        yield relative, path
 
 
 def _build_release_notes(
@@ -65,10 +189,7 @@ def build_release(
     source_manifest_path: str | Path | None = None,
     coverage_profile: str = "none",
 ) -> dict:
-    if maturity not in RELEASE_MATURITIES:
-        raise ValueError(
-            f"release maturity must be one of {sorted(RELEASE_MATURITIES)}"
-        )
+    _profile(maturity)
 
     root = repo_root()
     output_root = Path(out_root)
@@ -116,24 +237,12 @@ def build_release(
     coverage = build_coverage(
         records, load_targets(root / "taxonomy" / "coverage_targets.json")
     )
-    if maturity == "stable" and coverage_profile == "stable":
-        blocking = [
-            gap
-            for gap in coverage.get("gaps", [])
-            if gap.get("category")
-            in {
-                "date",
-                "time",
-                "decimal",
-                "fraction",
-                "currency",
-                "identifier",
-                "version",
-                "ip_address",
-            }
-        ]
-        if blocking:
-            raise ValueError("stable release coverage gate failed")
+    _enforce_maturity(
+        profile_name=maturity,
+        records=records,
+        coverage=coverage,
+        source_manifest=manifest_source,
+    )
 
     for relative in ("taxonomy", "schemas"):
         shutil.copytree(root / relative, output_root / relative)
@@ -193,6 +302,7 @@ def build_release(
             ),
             "source_count": len(manifest_source.get("sources", [])),
         },
+        "maturity_profile": _profile(maturity),
         "scoring_modes": ["canonical", "accepted"],
         "file_hashes": {},
     }
@@ -200,19 +310,16 @@ def build_release(
     manifest_path = output_root / "manifest.json"
     for _ in range(2):
         manifest["file_hashes"] = {}
-        for path in sorted(output_root.rglob("*")):
-            if path.is_file() and path.name not in {"manifest.json", "SHA256SUMS"}:
-                manifest["file_hashes"][str(path.relative_to(output_root))] = (
-                    sha256_file(path)
-                )
+        for relative, path in _tracked_release_files(output_root):
+            manifest["file_hashes"][relative] = sha256_file(path)
         _write_json(manifest_path, manifest)
 
     checksum_lines = []
-    for path in sorted(output_root.rglob("*")):
-        if path.is_file() and path.name != "SHA256SUMS":
-            checksum_lines.append(
-                f"{sha256_file(path)}  {path.relative_to(output_root)}"
-            )
+    for relative, path in _tracked_release_files(output_root):
+        checksum_lines.append(f"{sha256_file(path)}  {relative}")
+    checksum_lines.append(
+        f"{sha256_file(manifest_path)}  {manifest_path.relative_to(output_root)}"
+    )
     (output_root / "SHA256SUMS").write_text(
         "\n".join(checksum_lines) + "\n", encoding="utf-8"
     )

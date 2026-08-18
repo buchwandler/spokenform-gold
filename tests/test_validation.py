@@ -77,6 +77,13 @@ class ValidationTests(unittest.TestCase):
         errors = validate_source_manifest(manifest, repo_root=ROOT)
         self.assertTrue(any("sha256 mismatch" in error for error in errors))
 
+    def test_judge_ambiguity_family_must_match_category(self):
+        records = read_records([ROOT / "data/judge_gold/sample.jsonl"])
+        broken = copy.deepcopy(records[0])
+        broken["ambiguity_family"] = "fraction-vs-division"
+        errors = validate_records([broken], judge=True)
+        self.assertTrue(any("ambiguity_family" in error for error in errors))
+
 
 if __name__ == "__main__":
     unittest.main()

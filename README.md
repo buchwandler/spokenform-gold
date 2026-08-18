@@ -27,21 +27,24 @@ canonical layer that can:
 
 ## Quick start
 
-Requires Python 3.10+ and no runtime dependencies.
+Requires Python 3.10+ and no runtime dependencies. Install the optional dev
+tooling when you want the benchmark checks, lint, and report regeneration
+commands:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -e .
+pip install -e ".[dev]"
 
 spokenform-gold validate data/dev/sample.jsonl
 spokenform-gold validate data/test/sample.jsonl
 spokenform-gold validate data/judge_gold/sample.jsonl --judge
 
-spokenform-gold coverage   data/dev/sample.jsonl   --targets taxonomy/coverage_targets.json   --json reports/coverage.json
-spokenform-gold stats      data/dev/sample.jsonl   data/test/sample.jsonl
+spokenform-gold stats      data/candidates/*.jsonl   --json reports/candidate_stats.json
+spokenform-gold coverage   data/dev/*.jsonl   data/test/*.jsonl   --targets taxonomy/coverage_targets.json   --json reports/coverage.json
 spokenform-gold split      data/dev/sample.jsonl   data/test/sample.jsonl   --registry splits/family_assignments.json   --seed 20260818   --out-root /tmp/spokenform-gold-split-check
 spokenform-gold release-check   --version 0.2.0-exp   --data data/dev data/test   --registry splits/family_assignments.json   --maturity experimental   --out /tmp/spokenform-gold-release
+spokenform-gold judge-calibrate   data/judge_gold/*.jsonl   --predictions tests/fixtures/predictions/judge_predictions.jsonl   --json reports/judge_calibration.json
 
 spokenform-gold conflicts data/dev/sample.jsonl --mode unit
 
@@ -65,8 +68,14 @@ They must be adjudicated before being promoted into gold.
 spokenform-gold split data/dev/*.jsonl data/test/*.jsonl --registry splits/family_assignments.json --seed 20260818 --out-root /tmp/spokenform-gold-split-check
 spokenform-gold score data/test/*.jsonl --predictions tests/fixtures/predictions/sample_predictions.jsonl --mode canonical --json reports/score.json
 spokenform-gold adjudicate-queue data/candidates/*.jsonl --conflicts reports/conflicts.json --coverage reports/coverage.json --out reports/adjudication.jsonl
+spokenform-gold judge-calibrate data/judge_gold/*.jsonl --predictions tests/fixtures/predictions/judge_predictions.jsonl --json reports/judge_calibration.json
 spokenform-gold release-check --version 0.2.0-exp --data data/dev data/test --registry splits/family_assignments.json --maturity experimental --out dist/spokenform-gold-v0.2.0-exp
 ```
+
+Release maturity rules are machine-readable in
+`taxonomy/release_maturity_profiles.json`. `experimental`, `candidate`, and
+`stable` releases use the same release builder with progressively stricter
+coverage, category, language, and negative-control gates.
 
 ## External runner contract
 
@@ -77,10 +86,11 @@ benchmark runners should emit prediction records shaped as:
 { "id": "record-id", "output": "Predicted spoken form" }
 ```
 
-Then call the Gold scorer via the CLI or package API:
+Then call the Gold scorer or benchmark runner via the CLI or package API:
 
 ```python
 from spokenform_gold import score_records
+from spokenform_gold.benchmark import run_benchmark
 ```
 
 This repository also ships a repository-local benchmark runner that exercises
@@ -154,9 +164,13 @@ The checked-in corpus is now a reproducible experimental release seed with:
 
 - pinned source metadata and local cache hashes in `sources/manifest.json`;
 - a frozen family assignment registry in `splits/family_assignments.json`;
-- reviewed English, German, and Spanish high-risk benchmark examples;
+- reviewed English, German, and Spanish high-risk benchmark examples plus
+  broader candidate-maturity coverage for score/range, math, cardinal,
+  ordinal, measurement, and URL/email families;
 - candidate import fixtures for async-TN, PolyNorm, and Proteno;
-- a local release loader and benchmark runner for deterministic score artifacts.
+- a local release loader and benchmark runner for deterministic score artifacts;
+- judge calibration metrics for precision/recall and false acceptance/rejection
+  analysis.
 
 It is still intentionally **experimental**: coverage targets remain far above
 the current reviewed corpus, and release success is not a claim of full

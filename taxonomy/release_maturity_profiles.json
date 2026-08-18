@@ -1,0 +1,78 @@
+{
+  "version": "1.0.0",
+  "profiles": {
+    "experimental": {
+      "allow_coverage_gaps": true,
+      "minimum_negative_controls": 1,
+      "minimum_records": 1,
+      "minimum_reviewed_languages": 1,
+      "require_source_release_ready": false,
+      "required_categories": [],
+      "required_patterns": {}
+    },
+    "candidate": {
+      "allow_coverage_gaps": true,
+      "minimum_negative_controls": 8,
+      "minimum_records": 40,
+      "minimum_reviewed_languages": 3,
+      "require_source_release_ready": true,
+      "required_categories": [
+        "acronym",
+        "cardinal",
+        "currency",
+        "date",
+        "decimal",
+        "fraction",
+        "identifier",
+        "ip_address",
+        "math_expression",
+        "measurement_unit",
+        "ordinal",
+        "score_or_range",
+        "time",
+        "url_or_email",
+        "version"
+      ],
+      "required_patterns": {
+        "acronym": ["initialism", "plural_acronym", "word_like_acronym"],
+        "math_expression": ["division", "subtraction"],
+        "score_or_range": ["countdown", "numeric_range", "score"],
+        "url_or_email": ["email", "url"]
+      }
+    },
+    "stable": {
+      "allow_coverage_gaps": false,
+      "coverage_profile": "stable",
+      "minimum_negative_controls": 12,
+      "minimum_records": 60,
+      "minimum_reviewed_languages": 6,
+      "require_source_release_ready": true,
+      "required_categories": [
+        "acronym",
+        "cardinal",
+        "currency",
+        "date",
+        "decimal",
+        "fraction",
+        "identifier",
+        "ip_address",
+        "math_expression",
+        "measurement_unit",
+        "ordinal",
+        "score_or_range",
+        "time",
+        "url_or_email",
+        "version"
+      ],
+      "required_patterns": {
+        "acronym": ["initialism", "plural_acronym", "word_like_acronym"],
+        "date": ["ambiguous_numeric_date", "month_name_date", "slash_date"],
+        "decimal": ["grouped_decimal", "leading_decimal", "negative_decimal"],
+        "math_expression": ["division", "power", "subtraction", "subscript"],
+        "score_or_range": ["countdown", "numeric_range", "score"],
+        "time": ["leading_zero_time", "time_12h", "time_24h"],
+        "url_or_email": ["email", "url"]
+      }
+    }
+  }
+}

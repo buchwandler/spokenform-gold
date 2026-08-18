@@ -248,6 +248,18 @@ def validate_records(
                     record.get("category"), record.get("expected_semantic")
                 ):
                     errors.append(f"{prefix}: {message}")
+            ambiguity_family = record.get("ambiguity_family")
+            if ambiguity_family is not None:
+                family = ambiguities.get(ambiguity_family)
+                if family is None:
+                    errors.append(
+                        f"{prefix}: unknown ambiguity_family {ambiguity_family!r}"
+                    )
+                elif record.get("category") not in family.get("categories", []):
+                    errors.append(
+                        f"{prefix}: ambiguity_family {ambiguity_family!r} does not "
+                        f"allow category {record.get('category')!r}"
+                    )
         return errors
 
     for record in records:

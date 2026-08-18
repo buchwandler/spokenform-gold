@@ -6,21 +6,21 @@
         {
           "path": "data/dev/sample.jsonl",
           "role": "benchmark-dev",
-          "sha256": "ad472af2639b703803108684383f08e00531eef58d2f3d3bddba19dce162a0c5"
+          "sha256": "446783a463a2b8c64bfd9fe6ba8abae3f0e3db6ad0cda452717ebee63739221b"
         },
         {
           "path": "data/test/sample.jsonl",
           "role": "benchmark-test",
-          "sha256": "bbcbf8fcedcb08fede1fbb528fe06829abaa04e8c8b7065fb0d6e7079db07220"
+          "sha256": "dcec0092faab093df112b1e60e539a40aea1cf9c947ebc9612f8d87edc841822"
         },
         {
           "path": "data/judge_gold/sample.jsonl",
           "role": "judge-gold",
-          "sha256": "9d5b14301d8ffb66f36e391afa0c57d26198f075095e4c92548b3140bba596a7"
+          "sha256": "7219aeb66425f3b9c81ded3a9232663ac0a0e581cf04dc6025e0e7c0b34f8075"
         }
       ],
       "kind": "curated",
-      "license": "Apache-2.0",
+      "license": "CC-BY-4.0",
       "name": "spokenform_curated",
       "notes": "Repository-local reviewed benchmark and judge fixtures.",
       "redistribution_status": "allowed",
@@ -33,12 +33,12 @@
         {
           "path": "tests/fixtures/importers/async_english.json",
           "role": "english-cache",
-          "sha256": "a9cd3dd0052d5f3f5825097cd6cb455c72c9380506ba807b2669b7605e0aa77f"
+          "sha256": "4f4418ef2d7ada3261db86404b5f05f164e9f89a017bfde3796341a6feaf0d5a"
         },
         {
           "path": "tests/fixtures/importers/async_multilingual.json",
           "role": "multilingual-cache",
-          "sha256": "5b0cd95be50175709f8c304674b6206f3ef4a6099dacdb97d5121a43dbfac375"
+          "sha256": "959e12ed33b477b714fe1bb89074a0b63c167ab6ca8f0eaff5aa831c06382539"
         }
       ],
       "kind": "upstream",

@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from benchmarks.spokenform_gold_eval import run_benchmark
+from spokenform_gold.benchmark import run_benchmark
 from spokenform_gold.io import read_json
 from spokenform_gold.release import build_release
 
