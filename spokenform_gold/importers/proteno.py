@@ -8,7 +8,8 @@ from typing import ClassVar
 
 from ..io import read_json, sha256_text
 from ..taxonomy import load_mapping, source_manifest_map
-from .common import ImportResult
+from .common import ImportResult, build_import_diagnostics
+from .surface_patterns import infer_surface_pattern
 
 SPAN_TAG = re.compile(r'<error\s+what="([^"]+)">([^<]+)</error>')
 OFFICIAL_LANGUAGES = {
@@ -190,7 +191,13 @@ def _unit_from_category(
         "accepted": [],
         "rejected": [],
         "features": {
-            "surface_pattern": rule.get("surface_pattern", "imported"),
+            "surface_pattern": infer_surface_pattern(
+                category=rule["category"],
+                surface=surface,
+                text=surface,
+                source_category=source_category,
+            )
+            or rule.get("surface_pattern", "imported"),
             "identity_example": identity_example,
             "span_origin": "explicit"
             if format_name != "official"
@@ -446,4 +453,19 @@ def import_proteno(path: str | Path, *, format: str = "auto") -> ImportResult:
             )
             continue
         records.append(created)
-    return ImportResult(records=records, exclusions=exclusions, source_rows=len(rows))
+    diagnostics = build_import_diagnostics(
+        records=records,
+        exclusions=exclusions,
+        source_rows=len(rows),
+        source_hashes=[
+            record.get("source", {}).get("source_hash", "") for record in records
+        ],
+    )
+    diagnostics["format"] = format_name
+    diagnostics["source_files"] = sorted(source_files)
+    return ImportResult(
+        records=records,
+        exclusions=exclusions,
+        source_rows=len(rows),
+        diagnostics=diagnostics,
+    )

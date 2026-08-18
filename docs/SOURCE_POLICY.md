@@ -39,3 +39,13 @@ Spokenform Gold overlay / external_ref record
         ↓
 local hydrated benchmark
 ```
+
+## Scaled ingestion policy
+
+The current Async Space revision is pinned by its immutable commit in `sources/manifest.json`. The importer prefers `data/sentences.json` and `data/multilingual-sentences.json`, while retaining compatibility with the older fixture bundle schema. Evaluation result CSVs are recovery inputs only and must not be used to invent missing multilingual unit metadata.
+
+Importer reports must account for every row as a candidate, a metadata-only candidate, or an explicit exclusion. Reports include source hashes, schema, languages, locales, categories, surface patterns, mapping status, multi-unit counts, and exclusion reasons.
+
+Candidate deduplication is source-independent. Exact input matches retain all source identities, same-input and different-output groups are conflicts, and source overlap is reported before coverage counts are interpreted. Family clustering creates deterministic review suggestions only. Stable family IDs and split assignments belong to reviewed promotion.
+
+The repository records source metadata and hashes in `sources/source-lock.json` without embedding restricted full PolyNorm or Proteno corpora. Proteno English, Spanish, and Tamil remain separate source identities and license scopes. Tamil is not part of the current six-language release target.

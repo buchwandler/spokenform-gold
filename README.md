@@ -203,3 +203,43 @@ git push -u origin main
 
 Do not add full upstream datasets until redistribution terms and attribution
 requirements have been checked.
+
+## Scaled upstream candidate ingestion
+
+The importers consume local source bundles and never require network access at runtime. Keep source bundles outside the repository:
+
+```text
+$SPOKENFORM_GOLD_SOURCE_CACHE/
+  async_tn/
+  polynorm/
+  proteno/
+
+$SPOKENFORM_GOLD_WORK/
+  candidates/
+  exclusions/
+  reports/
+```
+
+Current Async JSON artifacts are supported directly:
+
+```bash
+spokenform-gold import-async "$SPOKENFORM_GOLD_SOURCE_CACHE/async_tn/data/sentences.json" \
+  --suite english --out "$SPOKENFORM_GOLD_WORK/candidates/async_en.jsonl" \
+  --exclusions-out "$SPOKENFORM_GOLD_WORK/exclusions/async_en.json" \
+  --report-out "$SPOKENFORM_GOLD_WORK/reports/async_en.json"
+
+spokenform-gold import-async "$SPOKENFORM_GOLD_SOURCE_CACHE/async_tn/data/multilingual-sentences.json" \
+  --suite multilingual --out "$SPOKENFORM_GOLD_WORK/candidates/async_multilingual.jsonl" \
+  --exclusions-out "$SPOKENFORM_GOLD_WORK/exclusions/async_multilingual.json" \
+  --report-out "$SPOKENFORM_GOLD_WORK/reports/async_multilingual.json"
+```
+
+All imported rows remain `quarantine`. Review candidates after running:
+
+```bash
+spokenform-gold dedupe-candidates "$SPOKENFORM_GOLD_WORK/candidates/*.jsonl" --out "$SPOKENFORM_GOLD_WORK/reports/dedupe.json"
+spokenform-gold family-suggestions "$SPOKENFORM_GOLD_WORK/candidates/*.jsonl" --out "$SPOKENFORM_GOLD_WORK/reports/families.json"
+spokenform-gold source-lock --manifest sources/manifest.json --out sources/source-lock.json
+```
+
+Duplicate reports preserve every source identity and distinguish exact input overlap from conflicting upstream output. Family suggestions are review inputs only. They do not assign release split families or promote candidates.

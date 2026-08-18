@@ -50,19 +50,35 @@
       "license_scope": "source:async_tn",
       "materialization_policy": "review_required",
       "name": "async_tn",
-      "notes": "Pinned local schema fixtures for the Async Hugging Face pronunciation benchmark download bundle pending explicit license/source-bundle alignment review.",
+      "notes": "Pinned local fixtures and current Space JSON schema metadata for the Async pronunciation benchmark; full source bundles remain external.",
       "redistribution_status": "review_required",
       "release_ready": false,
-      "revision": "hf-space-download-2026-08-18",
+      "revision": "ad8fa8152279bb13c0ded87e3d465494c319da30",
       "source_url": "https://huggingface.co/spaces/async-vocie-ai/text-to-speech-normalization-benchmark",
       "upstream_files": [
         {
+          "path": "data/sentences.json",
+          "role": "english-source-json"
+        },
+        {
+          "path": "data/multilingual-sentences.json",
+          "role": "multilingual-source-json"
+        },
+        {
+          "path": "data/categories.json",
+          "role": "english-category-metadata"
+        },
+        {
+          "path": "data/multilingual-categories.json",
+          "role": "multilingual-category-metadata"
+        },
+        {
           "path": "downloads/english/*.json",
-          "role": "english-bundle-export"
+          "role": "legacy-english-bundle-export"
         },
         {
           "path": "downloads/multilingual/*.json",
-          "role": "multilingual-bundle-export"
+          "role": "legacy-multilingual-bundle-export"
         }
       ]
     },

@@ -7,11 +7,14 @@ from pathlib import Path
 from .adjudication import build_adjudication_queue
 from .conflicts import find_conflicts
 from .coverage import build_coverage, load_targets
+from .deduplication import deduplicate_candidates
+from .families import suggest_families
 from .importers import import_async, import_polynorm, import_proteno
 from .io import expand_jsonl_paths, read_json, read_records, write_json, write_jsonl
 from .judge_calibration import build_judge_calibration, load_judge_predictions
 from .release import build_release
 from .scoring import load_predictions, score_records
+from .source_lock import build_source_lock
 from .splitting import split_records
 from .stats import build_stats
 from .validation import load_categories, validate_records
@@ -82,36 +85,51 @@ def cmd_discover(args):
     return 0
 
 
-def cmd_import_async(args):
-    result = import_async(args.path, suite=args.suite)
+def _write_import_outputs(args, result):
     write_jsonl(args.out, result.records)
     if args.exclusions_out:
         write_json(args.exclusions_out, result.exclusions)
+    if args.report_out:
+        write_json(args.report_out, result.diagnostics)
     print(
         f"wrote {len(result.records)} candidate records to {args.out} from {result.source_rows} source rows"
     )
     return 0
+
+
+def cmd_import_async(args):
+    return _write_import_outputs(args, import_async(args.path, suite=args.suite))
 
 
 def cmd_import_polynorm(args):
-    result = import_polynorm(args.path, format=args.format)
-    write_jsonl(args.out, result.records)
-    if args.exclusions_out:
-        write_json(args.exclusions_out, result.exclusions)
-    print(
-        f"wrote {len(result.records)} candidate records to {args.out} from {result.source_rows} source rows"
-    )
-    return 0
+    return _write_import_outputs(args, import_polynorm(args.path, format=args.format))
 
 
 def cmd_import_proteno(args):
-    result = import_proteno(args.path, format=args.format)
-    write_jsonl(args.out, result.records)
-    if args.exclusions_out:
-        write_json(args.exclusions_out, result.exclusions)
-    print(
-        f"wrote {len(result.records)} candidate records to {args.out} from {result.source_rows} source rows"
-    )
+    return _write_import_outputs(args, import_proteno(args.path, format=args.format))
+
+
+def cmd_dedupe_candidates(args):
+    result = deduplicate_candidates(read_records(args.paths))
+    if args.out:
+        write_json(args.out, result)
+    else:
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_family_suggestions(args):
+    result = suggest_families(read_records(args.paths))
+    if args.out:
+        write_json(args.out, result)
+    else:
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_source_lock(args):
+    write_json(args.out, build_source_lock(args.manifest))
+    print(f"wrote source lock to {args.out}")
     return 0
 
 
@@ -235,6 +253,7 @@ def build_parser():
     )
     async_import.add_argument("--out", required=True)
     async_import.add_argument("--exclusions-out")
+    async_import.add_argument("--report-out")
     async_import.set_defaults(func=cmd_import_async)
 
     polynorm_import = sub.add_parser("import-polynorm")
@@ -244,6 +263,7 @@ def build_parser():
     )
     polynorm_import.add_argument("--out", required=True)
     polynorm_import.add_argument("--exclusions-out")
+    polynorm_import.add_argument("--report-out")
     polynorm_import.set_defaults(func=cmd_import_polynorm)
 
     proteno_import = sub.add_parser("import-proteno")
@@ -253,7 +273,23 @@ def build_parser():
     )
     proteno_import.add_argument("--out", required=True)
     proteno_import.add_argument("--exclusions-out")
+    proteno_import.add_argument("--report-out")
     proteno_import.set_defaults(func=cmd_import_proteno)
+
+    dedupe = sub.add_parser("dedupe-candidates")
+    dedupe.add_argument("paths", nargs="+")
+    dedupe.add_argument("--out")
+    dedupe.set_defaults(func=cmd_dedupe_candidates)
+
+    families = sub.add_parser("family-suggestions")
+    families.add_argument("paths", nargs="+")
+    families.add_argument("--out")
+    families.set_defaults(func=cmd_family_suggestions)
+
+    source_lock = sub.add_parser("source-lock")
+    source_lock.add_argument("--manifest")
+    source_lock.add_argument("--out", required=True)
+    source_lock.set_defaults(func=cmd_source_lock)
 
     split = sub.add_parser("split")
     split.add_argument("paths", nargs="+")

@@ -5,7 +5,8 @@ from pathlib import Path
 
 from ..io import read_json, read_jsonl, sha256_text
 from ..taxonomy import load_mapping, source_manifest_map
-from .common import ImportResult
+from .common import ImportResult, build_import_diagnostics
+from .surface_patterns import infer_surface_pattern
 
 OFFICIAL_GLOB = "*_groundtruth.jsonl"
 LOCALE_PATTERN = re.compile(r"([a-z]{2}-[A-Z]{2})")
@@ -156,7 +157,13 @@ def _explicit_unit(
         "accepted": [],
         "rejected": [],
         "features": {
-            "surface_pattern": rule.get("surface_pattern", "imported"),
+            "surface_pattern": infer_surface_pattern(
+                category=rule["category"],
+                surface=surface,
+                text=text,
+                source_category=category,
+            )
+            or rule.get("surface_pattern", "imported"),
             "span_origin": "explicit",
             "import_format": format_name,
         },
@@ -185,7 +192,13 @@ def _official_units(text: str, category: str, rule: dict) -> tuple[list[dict], s
                 "accepted": [],
                 "rejected": [],
                 "features": {
-                    "surface_pattern": rule.get("surface_pattern", "imported"),
+                    "surface_pattern": infer_surface_pattern(
+                        category=rule["category"],
+                        surface=surface,
+                        text=text,
+                        source_category=category,
+                    )
+                    or rule.get("surface_pattern", "imported"),
                     "span_origin": "projected-category-rule",
                     "import_format": "official",
                 },
@@ -335,4 +348,18 @@ def import_polynorm(path: str | Path, *, format: str = "auto") -> ImportResult:
             )
             continue
         records.append(created)
-    return ImportResult(records=records, exclusions=exclusions, source_rows=len(rows))
+    diagnostics = build_import_diagnostics(
+        records=records,
+        exclusions=exclusions,
+        source_rows=len(rows),
+        source_hashes=[
+            record.get("source", {}).get("source_hash", "") for record in records
+        ],
+    )
+    diagnostics["format"] = format_name
+    return ImportResult(
+        records=records,
+        exclusions=exclusions,
+        source_rows=len(rows),
+        diagnostics=diagnostics,
+    )
