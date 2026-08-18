@@ -1,0 +1,117 @@
+{
+  "languages": [
+    "en",
+    "de",
+    "es",
+    "fr",
+    "it",
+    "pt"
+  ],
+  "default": {
+    "min_units": 20,
+    "min_ambiguous": 2,
+    "min_negative_controls": 2
+  },
+  "categories": {
+    "abbreviation": {},
+    "acronym": {},
+    "address": {},
+    "api_token": {},
+    "biology": {},
+    "cardinal": {},
+    "chemical": {},
+    "coordinates": {},
+    "currency": {},
+    "date": {},
+    "date_time_mixed": {},
+    "decimal": {},
+    "dialogue": {},
+    "file_path": {},
+    "fraction": {},
+    "identifier": {},
+    "ip_address": {},
+    "isbn": {},
+    "legal_citation": {},
+    "math_expression": {},
+    "measurement_unit": {},
+    "mixed_doc": {},
+    "music": {},
+    "ordinal": {},
+    "password_token": {},
+    "phone": {},
+    "pin_passcode": {},
+    "product_code": {},
+    "promo_code": {},
+    "quantity": {},
+    "range": {},
+    "roman_numeral": {},
+    "scientific": {},
+    "score_or_range": {},
+    "score_percent": {},
+    "serial_or_plate": {},
+    "social_handle": {},
+    "ticker": {},
+    "time": {},
+    "ui_copy": {},
+    "url_or_email": {},
+    "version": {}
+  },
+  "required_patterns": {
+    "decimal": [
+      "plain_decimal",
+      "leading_decimal",
+      "leading_zero",
+      "negative_decimal",
+      "grouped_decimal"
+    ],
+    "date": [
+      "iso_date",
+      "slash_date",
+      "month_name_date",
+      "ambiguous_numeric_date"
+    ],
+    "time": [
+      "time_12h",
+      "time_24h",
+      "midnight",
+      "leading_zero_time"
+    ],
+    "fraction": [
+      "numeric_fraction",
+      "fraction_vs_slash"
+    ],
+    "identifier": [
+      "letters_digits",
+      "mixed_identifier",
+      "identifier_vs_word"
+    ],
+    "score_or_range": [
+      "score",
+      "numeric_range",
+      "countdown"
+    ],
+    "math_expression": [
+      "subtraction",
+      "division",
+      "power",
+      "subscript"
+    ],
+    "version": [
+      "simple_version",
+      "semantic_version",
+      "prerelease_version"
+    ],
+    "ip_address": [
+      "ipv4"
+    ],
+    "url_or_email": [
+      "url",
+      "email"
+    ],
+    "acronym": [
+      "initialism",
+      "word_like_acronym",
+      "plural_acronym"
+    ]
+  }
+}

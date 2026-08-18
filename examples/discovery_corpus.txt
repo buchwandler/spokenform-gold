@@ -1,0 +1,4 @@
+The host is 10.42.0.7 and the fallback is 2001:db8::1.
+Deploy v3.1.0-rc.2 to node XJ-900/2B at 09:05.
+Email build.bot@example.org or open https://example.org/v3/status.
+The value was .003, the score was 4-3, and the ratio was 7/8.
