@@ -9,3 +9,4 @@ reports/*.json
 reports/*.jsonl
 data/candidates/*.jsonl
 !data/candidates/.gitkeep
+context_spokenform_gold*.*
