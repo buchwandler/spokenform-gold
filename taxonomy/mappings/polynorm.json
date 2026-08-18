@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0",
+  "source": "polynorm",
+  "mappings": {
+    "clock_time": {
+      "category": "time",
+      "status": "exact",
+      "surface_pattern": "time_24h"
+    },
+    "num_fraction": {
+      "category": "fraction",
+      "status": "exact",
+      "surface_pattern": "numeric_fraction"
+    },
+    "product_id": {
+      "category": "identifier",
+      "status": "broader",
+      "surface_pattern": "mixed_identifier"
+    }
+  }
+}

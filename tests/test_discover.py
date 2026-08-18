@@ -1,6 +1,7 @@
 import unittest
 from spokenform_gold.discover import shape, discover
 
+
 class DiscoverTests(unittest.TestCase):
     def test_shapes(self):
         self.assertEqual(shape("192.168.0.1"), "ipv4")
@@ -10,6 +11,7 @@ class DiscoverTests(unittest.TestCase):
 
     def test_unseen_is_candidate(self):
         self.assertTrue(discover("Use XJ-900/2B.", [], rare_below=3))
+
 
 if __name__ == "__main__":
     unittest.main()

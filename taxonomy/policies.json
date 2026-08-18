@@ -1,0 +1,57 @@
+{
+  "version": "1.0.0",
+  "policies": {
+    "configured-uppercase-initialism": {
+      "version": 1,
+      "description": "Read all-uppercase acronyms letter by letter when policy selects the initialism reading."
+    },
+    "countdown-no-range-word": {
+      "version": 1,
+      "description": "Read countdown digits in sequence without introducing range semantics."
+    },
+    "currency-major-minor": {
+      "version": 1,
+      "description": "Read major and minor currency units while preserving exact amount semantics."
+    },
+    "en-US-mdY": {
+      "version": 1,
+      "description": "Interpret numeric slash dates as month/day/year under en-US policy."
+    },
+    "identifier-spellout": {
+      "version": 1,
+      "description": "Read mixed identifiers by preserving their distinguishing alphanumeric sequence."
+    },
+    "ipv4-digitwise": {
+      "version": 1,
+      "description": "Read IPv4 octets digitwise while preserving dot separators."
+    },
+    "natural-decimal": {
+      "version": 1,
+      "description": "Read decimal separator naturally while preserving exact fractional digits."
+    },
+    "natural-fraction": {
+      "version": 1,
+      "description": "Read common numeric fractions using natural fraction wording."
+    },
+    "require-locale-or-context": {
+      "version": 1,
+      "description": "Do not force a single reading when context or locale does not disambiguate the form."
+    },
+    "semantic-version": {
+      "version": 1,
+      "description": "Read semantic version components in version order, including prerelease markers."
+    },
+    "spell-initialism-preserve-plural": {
+      "version": 1,
+      "description": "Spell an initialism letter by letter while preserving plural marking."
+    },
+    "time-natural": {
+      "version": 1,
+      "description": "Read times in a natural spoken English form while preserving minute values."
+    },
+    "unadjudicated-upstream": {
+      "version": 1,
+      "description": "Placeholder policy for imported candidate data pending adjudication."
+    }
+  }
+}

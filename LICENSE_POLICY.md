@@ -12,13 +12,13 @@ International license.
 Spokenform Gold uses separate licenses for software and original benchmark
 material:
 
-| Material | License |
-| --- | --- |
-| Software, CLI, importers, validators, scorers, scripts, and tests | Apache License 2.0 |
-| Original Spokenform Gold benchmark data | Creative Commons Attribution 4.0 International |
-| Original Spokenform Gold taxonomy and structured annotation data | Creative Commons Attribution 4.0 International |
-| Third-party benchmark material | The applicable upstream license; not relicensed by this repository |
-| Third-party code | The applicable upstream license; not relicensed by this repository |
+| Material                                                          | License                                                            |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Software, CLI, importers, validators, scorers, scripts, and tests | Apache License 2.0                                                 |
+| Original Spokenform Gold benchmark data                           | Creative Commons Attribution 4.0 International                     |
+| Original Spokenform Gold taxonomy and structured annotation data  | Creative Commons Attribution 4.0 International                     |
+| Third-party benchmark material                                    | The applicable upstream license; not relicensed by this repository |
+| Third-party code                                                  | The applicable upstream license; not relicensed by this repository |
 
 The complete Apache License 2.0 text is in `LICENSE`.
 

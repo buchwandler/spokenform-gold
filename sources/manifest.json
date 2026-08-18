@@ -1,0 +1,61 @@
+{
+  "version": "1.0.0",
+  "sources": [
+    {
+      "name": "spokenform_curated",
+      "revision": "2026-08-18",
+      "source_url": "https://github.com/buchwandler/spokenform-gold",
+      "license": "Apache-2.0",
+      "redistribution_status": "allowed",
+      "files": [
+        {
+          "path": "data/dev/sample.jsonl",
+          "sha256": "fixture-managed"
+        },
+        {
+          "path": "data/test/sample.jsonl",
+          "sha256": "fixture-managed"
+        }
+      ]
+    },
+    {
+      "name": "async_tn",
+      "revision": "516dfbf54c8f85db865b65de4272b1f4280ad1dd",
+      "source_url": "https://github.com/bastings/async-tn",
+      "license": "Apache-2.0",
+      "redistribution_status": "review_required",
+      "files": [
+        {
+          "path": "source/async/sentences.json",
+          "sha256": "fixture-managed"
+        }
+      ]
+    },
+    {
+      "name": "polynorm",
+      "revision": "2026-08-18-fixture",
+      "source_url": "https://example.invalid/polynorm",
+      "license": "Apache-2.0",
+      "redistribution_status": "review_required",
+      "files": [
+        {
+          "path": "source/polynorm/sample.jsonl",
+          "sha256": "fixture-managed"
+        }
+      ]
+    },
+    {
+      "name": "proteno",
+      "revision": "2026-08-18-fixture",
+      "source_url": "https://example.invalid/proteno",
+      "license": "Apache-2.0",
+      "redistribution_status": "review_required",
+      "files": [
+        {
+          "path": "source/proteno/sample.json",
+          "sha256": "fixture-managed"
+        }
+      ]
+    }
+  ]
+}

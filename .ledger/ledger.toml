@@ -1,0 +1,12 @@
+schema_version = 3
+
+[project]
+uuid = "bd4b5521-4d92-4061-8c42-338840b41a2b"
+name = "spokenform-gold"
+
+[ledgers.taskledger.mounts.data]
+storage = "external"
+root = "../ledger"
+
+[ledgers.taskledger.mounts.indexes]
+storage = "cache"

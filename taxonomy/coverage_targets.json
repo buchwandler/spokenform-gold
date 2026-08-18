@@ -1,12 +1,6 @@
 {
-  "languages": [
-    "en",
-    "de",
-    "es",
-    "fr",
-    "it",
-    "pt"
-  ],
+  "taxonomy_version": "1.0.0",
+  "languages": ["en", "de", "es", "fr", "it", "pt"],
   "default": {
     "min_units": 20,
     "min_ambiguous": 2,
@@ -70,48 +64,14 @@
       "month_name_date",
       "ambiguous_numeric_date"
     ],
-    "time": [
-      "time_12h",
-      "time_24h",
-      "midnight",
-      "leading_zero_time"
-    ],
-    "fraction": [
-      "numeric_fraction",
-      "fraction_vs_slash"
-    ],
-    "identifier": [
-      "letters_digits",
-      "mixed_identifier",
-      "identifier_vs_word"
-    ],
-    "score_or_range": [
-      "score",
-      "numeric_range",
-      "countdown"
-    ],
-    "math_expression": [
-      "subtraction",
-      "division",
-      "power",
-      "subscript"
-    ],
-    "version": [
-      "simple_version",
-      "semantic_version",
-      "prerelease_version"
-    ],
-    "ip_address": [
-      "ipv4"
-    ],
-    "url_or_email": [
-      "url",
-      "email"
-    ],
-    "acronym": [
-      "initialism",
-      "word_like_acronym",
-      "plural_acronym"
-    ]
+    "time": ["time_12h", "time_24h", "midnight", "leading_zero_time"],
+    "fraction": ["numeric_fraction", "fraction_vs_slash"],
+    "identifier": ["letters_digits", "mixed_identifier", "identifier_vs_word"],
+    "score_or_range": ["score", "numeric_range", "countdown"],
+    "math_expression": ["subtraction", "division", "power", "subscript"],
+    "version": ["simple_version", "semantic_version", "prerelease_version"],
+    "ip_address": ["ipv4"],
+    "url_or_email": ["url", "email"],
+    "acronym": ["initialism", "word_like_acronym", "plural_acronym"]
   }
 }

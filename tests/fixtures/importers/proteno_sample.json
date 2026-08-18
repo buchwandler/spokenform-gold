@@ -1,0 +1,31 @@
+{
+  "cases": [
+    {
+      "case_id": "pt-1",
+      "language": "en",
+      "locale": "en-US",
+      "source_split": "dev",
+      "category": "date",
+      "input": "Date 2025-03-04.",
+      "expected": "Date March fourth twenty twenty five.",
+      "surface": "2025-03-04",
+      "start": 5,
+      "end": 15,
+      "projection_notes": "ISO date projection"
+    },
+    {
+      "case_id": "pt-2",
+      "language": "en",
+      "locale": "en-US",
+      "source_split": "test",
+      "category": "identifier",
+      "input": "Serial AB12 is ready.",
+      "expected": "Serial A B one two is ready.",
+      "surface": "AB12",
+      "start": 7,
+      "end": 11,
+      "projection_notes": "Identity example retained",
+      "identity_example": true
+    }
+  ]
+}

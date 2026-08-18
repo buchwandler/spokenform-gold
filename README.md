@@ -16,10 +16,6 @@ canonical layer that can:
 - discover unseen token shapes in real text;
 - maintain a separate human-labelled judge-validation set.
 
-Recommended GitHub repository:
-
-    https://github.com/buchwandler/spokenform-gold
-
 ## Status classes
 
 - `gold`
@@ -39,8 +35,11 @@ source .venv/bin/activate
 pip install -e .
 
 spokenform-gold validate data/dev/sample.jsonl
+spokenform-gold validate data/test/sample.jsonl
+spokenform-gold validate data/judge_gold/sample.jsonl --judge
 
 spokenform-gold coverage   data/dev/sample.jsonl   --targets taxonomy/coverage_targets.json   --json reports/coverage.json
+spokenform-gold stats      data/dev/sample.jsonl   data/test/sample.jsonl
 
 spokenform-gold conflicts data/dev/sample.jsonl --mode unit
 
@@ -50,11 +49,37 @@ spokenform-gold discover   examples/discovery_corpus.txt   --against data/dev/sa
 Import the async-TN evaluation JSON format:
 
 ```bash
-spokenform-gold import-async /path/to/sentences.json   --out data/candidates/async-tn.jsonl
+spokenform-gold import-async /path/to/sentences.json   --suite english   --out data/candidates/async-tn.jsonl
+spokenform-gold import-polynorm /path/to/polynorm   --out data/candidates/polynorm.jsonl
+spokenform-gold import-proteno /path/to/proteno.json   --out data/candidates/proteno.jsonl
 ```
 
 Imported source rows are deliberately written as `quarantine` candidates.
 They must be adjudicated before being promoted into gold.
+
+## Release-pipeline commands
+
+```bash
+spokenform-gold split data/dev/*.jsonl data/test/*.jsonl --seed 20260818 --out-root /tmp/spokenform-gold-split-check
+spokenform-gold score data/test/*.jsonl --predictions tests/fixtures/predictions/sample_predictions.jsonl --mode canonical --json reports/score.json
+spokenform-gold adjudicate-queue data/candidates/*.jsonl --conflicts reports/conflicts.json --coverage reports/coverage.json --out reports/adjudication.jsonl
+spokenform-gold release-check --version 0.1.0 --data data/dev data/test --out dist/spokenform-gold-v0.1.0
+```
+
+## External runner contract
+
+`spokenform-gold` owns benchmark policy, JSONL data, and scoring. External
+benchmark runners should emit prediction records shaped as:
+
+```json
+{ "id": "record-id", "output": "Predicted spoken form" }
+```
+
+Then call the Gold scorer via the CLI or package API:
+
+```python
+from spokenform_gold import score_records
+```
 
 ## Validate everything
 
@@ -66,6 +91,7 @@ make check
 
 ```text
 data/
+  test/
   dev/
   judge_gold/
   candidates/

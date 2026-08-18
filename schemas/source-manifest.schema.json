@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Spokenform Gold source manifest",
+  "type": "object",
+  "required": ["version", "sources"],
+  "properties": {
+    "version": { "type": "string", "minLength": 1 },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "revision",
+          "source_url",
+          "license",
+          "redistribution_status",
+          "files"
+        ],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "revision": { "type": "string", "minLength": 1 },
+          "source_url": { "type": "string", "minLength": 1 },
+          "license": { "type": "string", "minLength": 1 },
+          "redistribution_status": {
+            "enum": [
+              "allowed",
+              "metadata_only",
+              "importer_only",
+              "review_required",
+              "not_redistributable"
+            ]
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["path", "sha256"],
+              "properties": {
+                "path": { "type": "string", "minLength": 1 },
+                "sha256": { "type": "string", "minLength": 1 }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

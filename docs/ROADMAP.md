@@ -13,14 +13,12 @@
 
 ## Next
 
-- exact PolyNorm importer
-- exact Proteno importer
-- family-aware dev/test splitter
-- adjudication queue CLI
-- semantic validators per category
-- canonical scorer
-- accepted-variant scorer
-- pluggable semantic judge
-- judge calibration report
-- HTML dashboard
-- private challenge split
+- broaden fixture coverage per language/category
+- add richer semantic validators beyond the initial high-risk categories
+- improve multi-unit scoring granularity
+- add adjudication workflow UX on top of the deterministic queue
+- expand release automation and published release notes
+- add pluggable semantic judge
+- add judge calibration report
+- add HTML dashboard
+- add private challenge split

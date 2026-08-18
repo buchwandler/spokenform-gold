@@ -3,6 +3,9 @@
   "title": "Spokenform Gold record",
   "type": "object",
   "required": [
+    "schema_version",
+    "taxonomy_version",
+    "policy_version",
     "id",
     "language",
     "locale",
@@ -16,6 +19,18 @@
     "negative_for"
   ],
   "properties": {
+    "schema_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "taxonomy_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "policy_version": {
+      "type": "string",
+      "minLength": 1
+    },
     "id": {
       "type": "string",
       "minLength": 1
@@ -29,14 +44,7 @@
       "minLength": 2
     },
     "split": {
-      "enum": [
-        "train",
-        "dev",
-        "test",
-        "challenge",
-        "judge_gold",
-        "candidate"
-      ]
+      "enum": ["train", "dev", "test", "challenge", "judge_gold", "candidate"]
     },
     "family_id": {
       "type": "string",
@@ -56,16 +64,29 @@
       "type": "string"
     },
     "expected_output": {
-      "type": [
-        "string",
-        "null"
-      ]
+      "type": ["string", "null"]
     },
     "source": {
-      "type": "object"
+      "type": "object",
+      "required": ["benchmark", "source_id", "source_version", "license"]
     },
     "units": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "surface",
+          "start",
+          "end",
+          "category",
+          "semantic",
+          "policy",
+          "canonical",
+          "accepted",
+          "rejected",
+          "features"
+        ]
+      }
     },
     "negative_for": {
       "type": "array",

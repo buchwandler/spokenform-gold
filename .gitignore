@@ -10,3 +10,9 @@ reports/*.jsonl
 data/candidates/*.jsonl
 !data/candidates/.gitkeep
 context_spokenform_gold*.*
+
+# taskledger runtime state
+.taskledger/
+.ledger/backups/
+.ledger/migrations/
+.ledger/ledger.local.toml

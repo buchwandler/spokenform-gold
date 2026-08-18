@@ -1,0 +1,51 @@
+{
+  "version": "1.0.0",
+  "source": "async_tn",
+  "mappings": {
+    "ACRONYM": {
+      "category": "acronym",
+      "status": "exact",
+      "surface_pattern": "initialism"
+    },
+    "CURRENCY": {
+      "category": "currency",
+      "status": "exact",
+      "surface_pattern": "currency_symbol"
+    },
+    "DATE": {
+      "category": "date",
+      "status": "exact",
+      "surface_pattern": "slash_date"
+    },
+    "DECIMAL": {
+      "category": "decimal",
+      "status": "exact",
+      "surface_pattern": "plain_decimal"
+    },
+    "FRACTION": {
+      "category": "fraction",
+      "status": "exact",
+      "surface_pattern": "numeric_fraction"
+    },
+    "ID": {
+      "category": "identifier",
+      "status": "broader",
+      "surface_pattern": "mixed_identifier"
+    },
+    "IP": {
+      "category": "ip_address",
+      "status": "exact",
+      "surface_pattern": "ipv4"
+    },
+    "TIME": {
+      "category": "time",
+      "status": "exact",
+      "surface_pattern": "time_24h"
+    },
+    "VERSION": {
+      "category": "version",
+      "status": "exact",
+      "surface_pattern": "semantic_version"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0",
+  "source": "proteno",
+  "mappings": {
+    "currency": {
+      "category": "currency",
+      "status": "exact",
+      "surface_pattern": "currency_symbol"
+    },
+    "date": {
+      "category": "date",
+      "status": "exact",
+      "surface_pattern": "iso_date"
+    },
+    "identifier": {
+      "category": "identifier",
+      "status": "exact",
+      "surface_pattern": "mixed_identifier"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+[
+  {
+    "row_id": "mx1",
+    "languages": {
+      "de": {
+        "original_text": "Treffen um 09:30.",
+        "normalized_text": "Treffen um neun Uhr dreißig.",
+        "units": [
+          {"text": "09:30", "norm_category": "TIME"}
+        ]
+      },
+      "en": {
+        "original_text": "Meeting at 09:30.",
+        "normalized_text": "Meeting at nine thirty.",
+        "units": [
+          {"text": "09:30", "norm_category": "TIME"}
+        ]
+      }
+    }
+  }
+]

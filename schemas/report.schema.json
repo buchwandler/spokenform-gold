@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Spokenform Gold report",
+  "type": "object",
+  "required": ["kind", "version"],
+  "properties": {
+    "kind": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string" },
+    "records": { "type": "integer", "minimum": 0 },
+    "gaps": { "type": "array" },
+    "coverage": { "type": "array" },
+    "counts": { "type": "object" },
+    "file_hashes": { "type": "object" }
+  }
+}

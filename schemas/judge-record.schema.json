@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Spokenform Gold judge record",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "taxonomy_version",
+    "id",
+    "language",
+    "locale",
+    "category",
+    "input",
+    "expected_semantic",
+    "candidate",
+    "human_label",
+    "reason"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "minLength": 1 },
+    "taxonomy_version": { "type": "string", "minLength": 1 },
+    "id": { "type": "string", "minLength": 1 },
+    "language": { "type": "string", "minLength": 2 },
+    "locale": { "type": "string", "minLength": 2 },
+    "category": { "type": "string", "minLength": 1 },
+    "input": { "type": "string" },
+    "expected_semantic": { "type": "object" },
+    "candidate": { "type": "string" },
+    "human_label": { "enum": ["accept", "reject"] },
+    "reason": { "type": "string", "minLength": 1 }
+  }
+}
