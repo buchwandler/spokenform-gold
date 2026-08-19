@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from ..exclusions import infer_surface_shape
 from ..io import read_json, read_jsonl, sha256_text
 from ..taxonomy import load_mapping, source_manifest_map
 from .common import ImportResult, build_import_diagnostics
@@ -323,8 +324,12 @@ def import_polynorm(path: str | Path, *, format: str = "auto") -> ImportResult:
             exclusions.append(
                 {
                     "source_id": str(index),
+                    "source": "polynorm",
                     "reason": "malformed_row",
                     "detail": "row must be an object",
+                    "source_category": "unknown",
+                    "language": locale.split("-", 1)[0].lower(),
+                    "surface_shape": "unknown",
                 }
             )
             continue
@@ -342,8 +347,13 @@ def import_polynorm(path: str | Path, *, format: str = "auto") -> ImportResult:
             exclusions.append(
                 {
                     "source_id": str(source_id),
+                    "source": "polynorm",
                     "reason": reason,
                     "detail": detail,
+                    "source_category": str(row.get("category", "unknown")),
+                    "language": str(row.get("language") or locale.split("-", 1)[0].lower()),
+                    "surface": row.get("surface") or row.get("input") or row.get("original_text", ""),
+                    "surface_shape": infer_surface_shape(row.get("surface") or row.get("input") or row.get("original_text", "")),
                 }
             )
             continue

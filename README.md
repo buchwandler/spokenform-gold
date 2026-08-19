@@ -243,3 +243,26 @@ spokenform-gold source-lock --manifest sources/manifest.json --out sources/sourc
 ```
 
 Duplicate reports preserve every source identity and distinguish exact input overlap from conflicting upstream output. Family suggestions are review inputs only. They do not assign release split families or promote candidates.
+
+The complete deterministic workflow is available through one command. It expects source checkouts at the pinned revisions from `sources/manifest.json`; fetching remains an explicit external operation:
+
+```bash
+spokenform-gold ingest-upstreams \
+  --source-cache "$SPOKENFORM_GOLD_SOURCE_CACHE" \
+  --work-root "$SPOKENFORM_GOLD_WORK" \
+  --sources async_tn polynorm proteno \
+  --languages en de es fr it pt
+```
+
+The command imports Async English and multilingual JSON, the recursive PolyNorm official tree, and Proteno English and Spanish paired-list directories. It verifies Git revisions when checkout metadata is available, validates every generated candidate file, fails on row-accounting errors, and writes merge, dedupe, family, conflict, reviewed-coverage, ranking, exclusion, pool-summary, and review-batch artifacts under the work root.
+
+The individual analysis commands are also available:
+
+```bash
+spokenform-gold merge-candidates "$SPOKENFORM_GOLD_WORK/candidates/async_*.jsonl" --out "$SPOKENFORM_GOLD_WORK/candidates/all.jsonl"
+spokenform-gold analyze-exclusions "$SPOKENFORM_GOLD_WORK"/exclusions/*.json --out "$SPOKENFORM_GOLD_WORK/reports/exclusions.json"
+spokenform-gold rank-candidates "$SPOKENFORM_GOLD_WORK/candidates/async_*.jsonl" --against data/dev data/test --targets taxonomy/coverage_targets.json --out "$SPOKENFORM_GOLD_WORK/reports/ranked_candidates.jsonl"
+spokenform-gold review-batch "$SPOKENFORM_GOLD_WORK/reports/ranked_candidates.jsonl" --limit 100 --max-per-category 20 --max-per-family-suggestion 5 --out "$SPOKENFORM_GOLD_WORK/review_batches/batch-0001.jsonl"
+```
+
+These artifacts are candidate workflow outputs, not Gold. Imported records remain `status=quarantine`, retain `source.upstream_expected` and source hashes, and must be independently reviewed before promotion. Do not commit full restricted source bundles or change source `release_ready` flags during ingestion.

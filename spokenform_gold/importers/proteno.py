@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 from typing import ClassVar
 
+from ..exclusions import infer_surface_shape
 from ..io import read_json, sha256_text
 from ..taxonomy import load_mapping, source_manifest_map
 from .common import ImportResult, build_import_diagnostics
@@ -393,8 +394,12 @@ def import_proteno(path: str | Path, *, format: str = "auto") -> ImportResult:
             exclusions.append(
                 {
                     "source_id": str(index),
+                    "source": manifest.get("name", "proteno"),
                     "reason": "malformed_row",
                     "detail": "case must be an object",
+                    "source_category": "unknown",
+                    "language": language or "unknown",
+                    "surface_shape": "unknown",
                 }
             )
             continue
@@ -447,8 +452,13 @@ def import_proteno(path: str | Path, *, format: str = "auto") -> ImportResult:
                     "source_id": str(
                         case.get("case_id") or case.get("row_index") or index
                     ),
+                    "source": manifest.get("name", "proteno"),
                     "reason": reason,
                     "detail": detail,
+                    "source_category": str(case.get("category", "unknown")),
+                    "language": language or str(case.get("language", "unknown")),
+                    "surface": case.get("surface") or case.get("input") or detail,
+                    "surface_shape": infer_surface_shape(case.get("surface") or case.get("input") or detail),
                 }
             )
             continue

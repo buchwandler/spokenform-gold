@@ -8,10 +8,22 @@ from .adjudication import build_adjudication_queue
 from .conflicts import find_conflicts
 from .coverage import build_coverage, load_targets
 from .deduplication import deduplicate_candidates
+from .exclusions import build_exclusion_analysis, load_exclusions
 from .families import suggest_families
 from .importers import import_async, import_polynorm, import_proteno
-from .io import expand_jsonl_paths, read_json, read_records, write_json, write_jsonl
+from .ingestion import run_upstream_ingestion
+from .io import (
+    expand_jsonl_paths,
+    read_json,
+    read_jsonl,
+    read_records,
+    write_json,
+    write_jsonl,
+)
 from .judge_calibration import build_judge_calibration, load_judge_predictions
+from .merge import merge_candidate_files
+from .pool import build_candidate_pool_summary
+from .ranking import build_candidate_ranking, export_review_batch
 from .release import build_release
 from .scoring import load_predictions, score_records
 from .source_lock import build_source_lock
@@ -127,6 +139,82 @@ def cmd_family_suggestions(args):
     return 0
 
 
+def cmd_merge_candidates(args):
+    merged = merge_candidate_files(args.paths, args.out)
+    print(f"merged {len(merged)} candidates to {args.out}")
+    return 0
+
+def cmd_rank_candidates(args):
+    candidates = read_records(args.paths)
+    reviewed = read_records(args.against)
+    targets = load_targets(args.targets)
+    dedupe = read_json(args.dedupe) if args.dedupe else {}
+    conflicts = read_json(args.conflicts) if args.conflicts else []
+    ranked = build_candidate_ranking(
+        candidates,
+        reviewed,
+        targets=targets,
+        dedupe=dedupe,
+        conflicts=conflicts,
+    )
+    write_jsonl(args.out, ranked)
+    print(f"ranked {len(ranked)} candidates to {args.out}")
+    return 0
+
+def cmd_analyze_exclusions(args):
+    result = build_exclusion_analysis(load_exclusions(args.paths))
+    if args.out:
+        write_json(args.out, result)
+    else:
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_pool_stats(args):
+    candidates = read_records(args.paths)
+    exclusions = load_exclusions(args.exclusions) if args.exclusions else []
+    reports = [read_json(path) for path in args.reports] if args.reports else []
+    conflicts = read_json(args.conflicts) if args.conflicts else []
+    result = build_candidate_pool_summary(
+        candidates, exclusions=exclusions, conflicts=conflicts, import_reports=reports
+    )
+    if args.out:
+        write_json(args.out, result)
+    else:
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_review_batch(args):
+    ranked = []
+    for path in expand_jsonl_paths(args.ranked):
+        ranked.extend(read_jsonl(path))
+    batch = export_review_batch(
+        ranked,
+        limit=args.limit,
+        languages=set(args.languages or []),
+        max_per_category=args.max_per_category,
+        max_per_family_suggestion=args.max_per_family_suggestion,
+    )
+    write_jsonl(args.out, batch)
+    print(f"exported {len(batch)} review candidates to {args.out}")
+    return 0
+
+def cmd_ingest_upstreams(args):
+    summary = run_upstream_ingestion(
+        args.source_cache,
+        args.work_root,
+        sources=args.sources,
+        languages=args.languages,
+        reviewed_paths=args.reviewed,
+        targets_path=args.targets,
+        batch_limit=args.batch_limit,
+    )
+    print(
+        f"ingested {summary['records']} candidates and {summary['exclusions']} exclusions "
+        f"into {summary['work_root']}"
+    )
+    return 0
 def cmd_source_lock(args):
     write_json(args.out, build_source_lock(args.manifest))
     print(f"wrote source lock to {args.out}")
@@ -275,6 +363,52 @@ def build_parser():
     proteno_import.add_argument("--exclusions-out")
     proteno_import.add_argument("--report-out")
     proteno_import.set_defaults(func=cmd_import_proteno)
+
+    merge = sub.add_parser("merge-candidates")
+    merge.add_argument("paths", nargs="+")
+    merge.add_argument("--out", required=True)
+    merge.set_defaults(func=cmd_merge_candidates)
+
+    ranking = sub.add_parser("rank-candidates")
+    ranking.add_argument("paths", nargs="+")
+    ranking.add_argument("--against", nargs="+", required=True)
+    ranking.add_argument("--targets")
+    ranking.add_argument("--dedupe")
+    ranking.add_argument("--conflicts")
+    ranking.add_argument("--out", required=True)
+    ranking.set_defaults(func=cmd_rank_candidates)
+
+    exclusions = sub.add_parser("analyze-exclusions")
+    exclusions.add_argument("paths", nargs="+")
+    exclusions.add_argument("--out")
+    exclusions.set_defaults(func=cmd_analyze_exclusions)
+
+    pool = sub.add_parser("pool-stats")
+    pool.add_argument("paths", nargs="+")
+    pool.add_argument("--exclusions", nargs="*")
+    pool.add_argument("--reports", nargs="*")
+    pool.add_argument("--conflicts")
+    pool.add_argument("--out")
+    pool.set_defaults(func=cmd_pool_stats)
+
+    batch = sub.add_parser("review-batch")
+    batch.add_argument("ranked", nargs="+")
+    batch.add_argument("--limit", type=int, default=100)
+    batch.add_argument("--max-per-category", type=int)
+    batch.add_argument("--max-per-family-suggestion", type=int)
+    batch.add_argument("--languages", nargs="*")
+    batch.add_argument("--out", required=True)
+    batch.set_defaults(func=cmd_review_batch)
+
+    ingest = sub.add_parser("ingest-upstreams")
+    ingest.add_argument("--source-cache", required=True)
+    ingest.add_argument("--work-root", required=True)
+    ingest.add_argument("--sources", nargs="+", default=["async_tn", "polynorm", "proteno"])
+    ingest.add_argument("--languages", nargs="+", default=["en", "de", "es", "fr", "it", "pt"])
+    ingest.add_argument("--reviewed", nargs="+", default=None)
+    ingest.add_argument("--targets")
+    ingest.add_argument("--batch-limit", type=int, default=100)
+    ingest.set_defaults(func=cmd_ingest_upstreams)
 
     dedupe = sub.add_parser("dedupe-candidates")
     dedupe.add_argument("paths", nargs="+")

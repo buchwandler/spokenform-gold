@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from ..exclusions import infer_surface_shape
 from ..io import read_json, sha256_file, sha256_text
 from ..taxonomy import load_mapping, source_manifest_map
 from .common import ImportResult, build_import_diagnostics
@@ -203,8 +204,11 @@ def import_async(path: str | Path, *, suite: str = "english") -> ImportResult:
             exclusions.append(
                 {
                     "source_id": source_id,
+                    "source": "async_tn",
+                    "language": row.get("language", "unknown"),
                     "reason": "malformed_row",
                     "detail": "localized row must be an object",
+                    "surface_shape": "unknown",
                 }
             )
             continue
@@ -215,8 +219,11 @@ def import_async(path: str | Path, *, suite: str = "english") -> ImportResult:
             exclusions.append(
                 {
                     "source_id": source_id,
+                    "source": "async_tn",
+                    "language": language,
                     "reason": "unsupported_language",
                     "detail": str(language),
+                    "surface_shape": infer_surface_shape(row.get("original_text")),
                 }
             )
             continue
@@ -224,8 +231,11 @@ def import_async(path: str | Path, *, suite: str = "english") -> ImportResult:
             exclusions.append(
                 {
                     "source_id": source_id,
+                    "source": "async_tn",
+                    "language": language,
                     "reason": "malformed_row",
                     "detail": "original_text must be a string",
+                    "surface_shape": "unknown",
                 }
             )
             continue
@@ -237,8 +247,11 @@ def import_async(path: str | Path, *, suite: str = "english") -> ImportResult:
             exclusions.append(
                 {
                     "source_id": source_id,
+                    "source": "async_tn",
+                    "language": language,
                     "reason": "malformed_row",
                     "detail": "units must be a list",
+                    "surface_shape": infer_surface_shape(original_text),
                 }
             )
             continue
@@ -247,8 +260,12 @@ def import_async(path: str | Path, *, suite: str = "english") -> ImportResult:
         for unit_index, unit in enumerate(raw_units):
             if not isinstance(unit, dict) or not unit.get("text"):
                 unit_failure = {
+                    "source": "async_tn",
                     "reason": "malformed_unit",
                     "detail": "unit must include text",
+                    "source_category": "unknown",
+                    "language": language,
+                    "surface_shape": "unknown",
                 }
                 break
             unit = dict(unit)
@@ -256,8 +273,13 @@ def import_async(path: str | Path, *, suite: str = "english") -> ImportResult:
             mapped = _make_unit(original_text, unit, mapping)
             if mapped is None:
                 unit_failure = {
+                    "source": "async_tn",
                     "reason": "unmappable_or_unresolved_unit",
                     "detail": str(unit.get("norm_category")),
+                    "source_category": str(unit.get("norm_category")),
+                    "language": language,
+                    "surface": unit.get("text", ""),
+                    "surface_shape": infer_surface_shape(unit.get("text")),
                 }
                 break
             units.append(mapped)

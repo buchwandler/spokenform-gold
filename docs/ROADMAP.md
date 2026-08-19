@@ -31,9 +31,16 @@
 - cross-source candidate fingerprints and duplicate lineage reports
 - conservative family-clustering suggestions before promotion
 
+## Ingestion hardening completed
+
+- deterministic external-cache orchestration for Async, PolyNorm, and Proteno supported shards
+- deterministic candidate merging with duplicate-ID protection
+- coverage-aware candidate ranking with conflict and duplicate lineage reasons
+- exclusion grouping and candidate-pool yield summaries
+- balanced review-batch export that preserves quarantine status
+
 ## Next ingestion work
 
 - fetch pinned upstream bundles into external source caches
-- rank candidates by coverage deficit, ambiguity, negative-control need, and source disagreement
 - independently adjudicate candidates and assign Spokenform-owned family IDs
 - promote only reviewed, license-compatible records into experimental release data

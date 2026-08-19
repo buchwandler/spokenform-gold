@@ -49,3 +49,24 @@ Importer reports must account for every row as a candidate, a metadata-only cand
 Candidate deduplication is source-independent. Exact input matches retain all source identities, same-input and different-output groups are conflicts, and source overlap is reported before coverage counts are interpreted. Family clustering creates deterministic review suggestions only. Stable family IDs and split assignments belong to reviewed promotion.
 
 The repository records source metadata and hashes in `sources/source-lock.json` without embedding restricted full PolyNorm or Proteno corpora. Proteno English, Spanish, and Tamil remain separate source identities and license scopes. Tamil is not part of the current six-language release target.
+
+## External-cache orchestration
+
+Use `spokenform-gold ingest-upstreams` with a source cache containing:
+
+```text
+source-cache/
+  async_tn/data/sentences.json
+  async_tn/data/multilingual-sentences.json
+  polynorm/polynorm_bench/*/*_groundtruth.jsonl
+  proteno/data/English/{unnorm_list.pkl,norm_list.pkl}
+  proteno/data/Spanish/{unnorm_list.pkl,norm_list.pkl}
+```
+
+The command does not fetch data. It checks required paths, compares `git rev-parse HEAD` to the pinned manifest revision when Git metadata is present, and writes working candidates under an external work root. Each shard has JSONL candidates, an exclusions file, and a diagnostics report with `row_accounting_ok`. A false accounting result is fatal.
+
+The orchestrator then creates deterministic merged candidates, dedupe, conflict, family-suggestion, reviewed-coverage, ranking, exclusion, pool-summary, and review-batch artifacts. Ranking and batching are triage aids only. They do not adjudicate semantics, assign release splits, or promote candidates.
+
+The exclusion report groups observed failures by source, reason, source category, language, and surface shape. This evidence should guide narrowly scoped importer or mapping changes. Do not broaden recognizers or mappings from hypothetical cases.
+
+All source-derived rows remain quarantine candidates. Source policies, licenses, materialization policies, `release_ready`, upstream expected text, and source identity are not changed by ingestion.
