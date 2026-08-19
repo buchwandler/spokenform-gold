@@ -23,3 +23,9 @@ The canonical release pipeline also requires:
 
 ## Configuration controls
 Configuration-sensitive assertions use the separate control-record format in `schemas/control-record.schema.json`. A control record references fixed profile IDs from `taxonomy/evaluation_profiles.json`; it never embeds arbitrary runtime kwargs. Each profile expectation may declare an expected output plus required and forbidden benchmark-facing ownership rules. Control output, ownership, false-positive, language, and suite metrics are reported separately from canonical semantic Gold.
+
+## Split and candidate boundaries
+
+Canonical records use the frozen family-safe `train`, `dev`, and `test` assignments. The default assignment ratios are 70% train, 15% dev, and 15% test, but an existing family assignment always takes precedence over hash-based allocation. Existing families must not be moved to populate a newly added split.
+
+Candidate records use `split=candidate` and are never release data. Candidate regression rows may have null `expected_output` and unadjudicated policies, but must retain source identity, source version, source URL, source hash where applicable, and enough unit metadata for independent review.

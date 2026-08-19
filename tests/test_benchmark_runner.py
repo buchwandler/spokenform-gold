@@ -20,7 +20,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
             results_root = Path(tmpdir) / "results"
             build_release(
                 version="0.2.0-exp",
-                data_paths=[str(ROOT / "data/dev"), str(ROOT / "data/test")],
+                data_paths=[str(ROOT / "data/train"), str(ROOT / "data/dev"), str(ROOT / "data/test")],
                 out_root=release_root,
                 maturity="experimental",
                 registry_path=ROOT / "splits/family_assignments.json",
@@ -50,7 +50,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
             release_root = Path(tmpdir) / "release"
             build_release(
                 version="0.2.0-exp",
-                data_paths=[str(ROOT / "data/dev"), str(ROOT / "data/test")],
+                data_paths=[str(ROOT / "data/train"), str(ROOT / "data/dev"), str(ROOT / "data/test")],
                 control_paths=[str(ROOT / "data/controls")],
                 out_root=release_root,
                 maturity="experimental",
@@ -60,7 +60,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
             _, controls = load_release_control_records(release_root)
             self.assertEqual(len(records), 62)
             self.assertEqual(len(controls), 23)
-            self.assertTrue(all(record.get("split") in {"dev", "test"} for record in records))
+            self.assertTrue(all(record.get("split") in {"train", "dev", "test"} for record in records))
             self.assertTrue(all("control" in record for record in controls))
 
 

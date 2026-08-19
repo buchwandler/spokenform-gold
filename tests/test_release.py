@@ -16,7 +16,7 @@ class ReleaseTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             manifest = build_release(
                 version="0.2.0-exp",
-                data_paths=[str(ROOT / "data/dev"), str(ROOT / "data/test")],
+                data_paths=[str(ROOT / "data/train"), str(ROOT / "data/dev"), str(ROOT / "data/test")],
                 out_root=Path(tmpdir) / "release",
                 maturity="experimental",
                 registry_path=ROOT / "splits/family_assignments.json",
@@ -31,7 +31,7 @@ class ReleaseTests(unittest.TestCase):
             release_manifest = read_json(output_root / "manifest.json")
             self.assertEqual(
                 release_manifest["record_files"],
-                ["data/dev/sample.jsonl", "data/test/sample.jsonl"],
+                ["data/dev/sample.jsonl", "data/test/sample.jsonl", "data/train/sample.jsonl"],
             )
             self.assertEqual(release_manifest["control_files"], [])
             self.assertEqual(release_manifest["maturity"], "experimental")

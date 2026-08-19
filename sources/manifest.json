@@ -14,6 +14,11 @@
           "sha256": "dcec0092faab093df112b1e60e539a40aea1cf9c947ebc9612f8d87edc841822"
         },
         {
+          "path": "data/train/sample.jsonl",
+          "role": "benchmark-train",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
           "path": "data/judge_gold/sample.jsonl",
           "role": "judge-gold",
           "sha256": "7219aeb66425f3b9c81ded3a9232663ac0a0e581cf04dc6025e0e7c0b34f8075"
@@ -260,6 +265,26 @@
           "role": "official-normalized"
         }
       ]
+    },
+    {
+      "files": [
+        {
+          "path": "data/candidates/01_todo_regressions.jsonl",
+          "role": "candidate-regression-batch",
+          "sha256": "3b6ce7df9405305b35528f59653d15fe64d375a7f391bc2330c67808fd118f2e"
+        }
+      ],
+      "kind": "curated",
+      "license": "CC-BY-4.0",
+      "license_id": "CC-BY-4.0",
+      "license_scope": "repository:candidate-proposals",
+      "materialization_policy": "embedded_public",
+      "name": "spokenform_discovered",
+      "notes": "Repository-local candidate-only regression proposals; not reviewed Gold.",
+      "redistribution_status": "allowed",
+      "release_ready": false,
+      "revision": "01_todo.md",
+      "source_url": "local://spokenform-gold/01_todo.md"
     }
   ]
 }

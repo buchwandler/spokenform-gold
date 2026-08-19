@@ -158,8 +158,9 @@ make check
 
 ```text
 data/
-  test/
+  train/
   dev/
+  test/
   judge_gold/
   candidates/
 splits/
@@ -171,6 +172,13 @@ docs/
 reports/
 sources/
 ```
+
+## Split and candidate policy
+
+The canonical benchmark uses a family-safe 70/15/15 `train`/`dev`/`test` split. Existing family assignments are frozen in `splits/family_assignments.json`; adding a new family assigns it deterministically without moving earlier families. The initial `data/train/sample.jsonl` shard may be empty because the original reviewed families were already assigned to `dev` or `test`. Future promoted families must be split before they enter canonical data.
+
+Candidate-only regression proposals, including `data/candidates/01_todo_regressions.jsonl`, are not Gold. They require independent review, adjudication, a Spokenform-owned family ID, and an explicit source or license decision before promotion. Pinned upstream caches and raw review artifacts remain outside Git. Czech is a coverage target but requires independently reviewed data; it must not be filled by unreviewed translation.
+
 
 ## Growth loop
 
