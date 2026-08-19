@@ -63,6 +63,22 @@ class RestrictedUnpickler(pickle.Unpickler):
     }
 
     def find_class(self, module, name):
+        if module == "numpy.core.multiarray" and name == "scalar":
+            try:
+                from numpy.core.multiarray import scalar
+            except ImportError as exc:
+                raise pickle.UnpicklingError(
+                    "Proteno numpy scalar payload requires numpy"
+                ) from exc
+            return scalar
+        if module == "numpy" and name == "dtype":
+            try:
+                from numpy import dtype
+            except ImportError as exc:
+                raise pickle.UnpicklingError(
+                    "Proteno numpy dtype payload requires numpy"
+                ) from exc
+            return dtype
         if module in self.SAFE_BUILTINS and name in self.SAFE_BUILTINS[module]:
             return getattr(__import__(module), name)
         raise pickle.UnpicklingError(f"unsafe pickle global: {module}.{name}")
@@ -87,6 +103,14 @@ def _official_pair(path: Path) -> tuple[Path, Path]:
     if not unnorm_path.exists() or not norm_path.exists():
         raise ValueError(f"missing official Proteno pair under {path}")
     return unnorm_path, norm_path
+
+
+def _text_value(value):
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list) and all(isinstance(item, str) for item in value):
+        return " ".join(item for item in value if item)
+    return value
 
 
 def _iter_rows(
@@ -127,7 +151,11 @@ def _iter_rows(
         raise ValueError("Proteno pair length mismatch")
 
     rows = [
-        {"input": unnorm_value, "normalized": norm_value, "row_index": index}
+        {
+            "input": _text_value(unnorm_value),
+            "normalized": _text_value(norm_value),
+            "row_index": index,
+        }
         for index, (unnorm_value, norm_value) in enumerate(
             zip(unnorm_rows, norm_rows, strict=True), 1
         )

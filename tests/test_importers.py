@@ -171,6 +171,24 @@ class ImporterTests(unittest.TestCase):
             "url_or_email",
         )
 
+    def test_proteno_official_accepts_tokenized_pairs(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir) / "English"
+            root.mkdir(parents=True, exist_ok=True)
+            with (root / "unnorm_list.pkl").open("wb") as handle:
+                pickle.dump([["2006", "IUCN", "."]], handle)
+            with (root / "norm_list.pkl").open("wb") as handle:
+                pickle.dump([["two thousand six", "i u c n", ""]], handle)
+            result = import_proteno(root, format="official")
+        self.assertEqual(result.source_rows, 1)
+        self.assertEqual(len(result.records), 1)
+        self.assertEqual(result.records[0]["input"], "2006 IUCN .")
+        self.assertEqual(
+            result.records[0]["source"]["upstream_expected"],
+            "two thousand six i u c n",
+        )
+
+
     def test_proteno_official_rejects_length_mismatch(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir) / "English"
