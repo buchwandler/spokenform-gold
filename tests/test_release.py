@@ -29,6 +29,11 @@ class ReleaseTests(unittest.TestCase):
             self.assertTrue((output_root / "splits/family_assignments.json").exists())
             self.assertTrue((output_root / "RELEASE_NOTES.md").exists())
             release_manifest = read_json(output_root / "manifest.json")
+            self.assertEqual(
+                release_manifest["record_files"],
+                ["data/dev/sample.jsonl", "data/test/sample.jsonl"],
+            )
+            self.assertEqual(release_manifest["control_files"], [])
             self.assertEqual(release_manifest["maturity"], "experimental")
             self.assertEqual(release_manifest["profile_registry_version"], "1.0.0")
             self.assertTrue(release_manifest["profile_registry_hash"])
@@ -55,6 +60,61 @@ class ReleaseTests(unittest.TestCase):
             self.assertEqual(manifest["control_records"], 23)
             self.assertTrue((output_root / "data/controls/sequence_fallback.jsonl").exists())
             self.assertEqual(read_json(output_root / "control_coverage.json")["gaps"], [])
+
+
+    def test_release_rejects_external_canonical_inputs(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            external = Path(tmpdir) / "external.jsonl"
+            external.write_text(
+                (ROOT / "data/test/sample.jsonl").read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "repository-local canonical data"):
+                build_release(
+                    version="0.2.0-exp",
+                    data_paths=[str(external)],
+                    out_root=Path(tmpdir) / "release",
+                    maturity="experimental",
+                    registry_path=ROOT / "splits/family_assignments.json",
+                )
+
+
+    def test_release_rejects_missing_split_registry_family(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            registry = read_json(ROOT / "splits/family_assignments.json")
+            registry["families"].pop(next(iter(registry["families"])))
+            registry_path = Path(tmpdir) / "registry.json"
+            registry_path.write_text(
+                json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "missing from split registry"):
+                build_release(
+                    version="0.2.0-exp",
+                    data_paths=[str(ROOT / "data/dev"), str(ROOT / "data/test")],
+                    out_root=Path(tmpdir) / "release",
+                    maturity="experimental",
+                    registry_path=registry_path,
+                )
+
+    def test_release_rejects_split_registry_mismatch(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            registry = read_json(ROOT / "splits/family_assignments.json")
+            family_id, split = next(iter(registry["families"].items()))
+            registry["families"][family_id] = "test" if split == "dev" else "dev"
+            registry_path = Path(tmpdir) / "registry.json"
+            registry_path.write_text(
+                json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "does not match registry assignment"):
+                build_release(
+                    version="0.2.0-exp",
+                    data_paths=[str(ROOT / "data/dev"), str(ROOT / "data/test")],
+                    out_root=Path(tmpdir) / "release",
+                    maturity="experimental",
+                    registry_path=registry_path,
+                )
 
     def test_release_verifier_detects_nested_source_manifest_tampering(self):
         with tempfile.TemporaryDirectory() as tmpdir:

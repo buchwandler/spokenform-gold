@@ -61,6 +61,34 @@ def verify_release(gold_root: str | Path) -> dict:
     return {"manifest": manifest, "manifest_hash": manifest_hash}
 
 
+def _release_record_paths(
+    root: Path, manifest: dict, *, key: str, fallback_directories: tuple[str, ...]
+ ) -> list[Path]:
+    configured = manifest.get(key)
+    if configured is None:
+        return [
+            root / "data" / directory
+            for directory in fallback_directories
+            if (root / "data" / directory).exists()
+        ]
+    if not isinstance(configured, list) or not all(
+        isinstance(path, str) and path for path in configured
+    ):
+        raise ValueError(f"release manifest field {key} must be a list of paths")
+    root = root.resolve()
+    paths = []
+    for relative in configured:
+        path = (root / relative).resolve()
+        try:
+            path.relative_to(root)
+        except ValueError as exc:
+            raise ValueError(
+                f"release manifest field {key} contains non-local path: {relative}"
+            ) from exc
+        paths.append(path)
+    return paths
+
+
 def load_release_records(
     gold_root: str | Path,
     *,
@@ -74,7 +102,13 @@ def load_release_records(
 ) -> tuple[dict, list[dict]]:
     verification = verify_release(gold_root)
     root = Path(gold_root)
-    records = read_records([root / "data"])
+    records = read_records(
+        _release_record_paths(
+            root, verification["manifest"],
+            key="record_files",
+            fallback_directories=("train", "dev", "test", "challenge"),
+        )
+    )
     filtered: list[dict] = []
     for record in records:
         hydrated = resolve_release_record(record, source_loader=source_loader)
@@ -97,6 +131,22 @@ def load_release_records(
     return verification["manifest"] | {
         "manifest_hash": verification["manifest_hash"]
     }, filtered
+
+
+def load_release_control_records(gold_root: str | Path) -> tuple[dict, list[dict]]:
+    verification = verify_release(gold_root)
+    root = Path(gold_root)
+    records = read_records(
+        _release_record_paths(
+            root, verification["manifest"],
+            key="control_files",
+            fallback_directories=("controls",),
+        )
+    )
+    records.sort(key=lambda record: record.get("id", ""))
+    return verification["manifest"] | {
+        "manifest_hash": verification["manifest_hash"]
+    }, records
 
 
 def load_prepare_callable(reference: str) -> Callable[..., str]:

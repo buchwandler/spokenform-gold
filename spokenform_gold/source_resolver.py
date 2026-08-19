@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from copy import deepcopy
 
+from .validation import validate_records
+
 SourceTextLoader = Callable[[dict], str]
 
 
@@ -47,4 +49,12 @@ def resolve_release_record(
     input_text = source_loader(record)
     if not isinstance(input_text, str) or not input_text:
         raise ValueError("source_loader must return non-empty source text")
-    return hydrate_external_overlay(record, input_text=input_text)
+    hydrated = hydrate_external_overlay(record, input_text=input_text)
+    validation_record = deepcopy(hydrated)
+    validation_record["materialization"] = "embedded"
+    errors = validate_records([validation_record])
+    if errors:
+        raise ValueError(
+            "hydrated external_ref record is invalid: " + "; ".join(errors)
+        )
+    return hydrated

@@ -25,6 +25,7 @@ from .io import (
 from .judge_calibration import build_judge_calibration, load_judge_predictions
 from .merge import merge_candidate_files
 from .pool import build_candidate_pool_summary
+from .promotion import build_promoted_records
 from .ranking import build_candidate_ranking, export_review_batch
 from .release import build_release
 from .scoring import load_predictions, score_records
@@ -302,6 +303,22 @@ def cmd_release_check(args):
     return 0
 
 
+def cmd_promote_reviewed(args):
+    candidates = read_records(args.candidates)
+    decisions = read_records(args.decisions)
+    existing = read_records(args.against)
+    promoted, report = build_promoted_records(
+        candidates, decisions, existing
+    )
+    write_jsonl(args.out, promoted)
+    write_json(args.report, report)
+    print(
+        f"promoted {len(promoted)} of {len(candidates)} candidates to {args.out}; "
+        f"report={args.report}"
+    )
+    return 0
+
+
 def cmd_validate_controls(args):
     records = read_records(args.paths)
     errors = validate_control_records(records, registry_path=args.registry)
@@ -512,6 +529,15 @@ def build_parser():
     release.add_argument("--coverage-profile", default="none")
     release.add_argument("--controls", nargs="+")
     release.set_defaults(func=cmd_release_check)
+
+    promote = sub.add_parser("promote-reviewed")
+    promote.add_argument("--candidates", nargs="+", required=True)
+    promote.add_argument("--decisions", nargs="+", required=True)
+    promote.add_argument("--against", nargs="+", required=True)
+    promote.add_argument("--out", required=True)
+    promote.add_argument("--report", required=True)
+    promote.set_defaults(func=cmd_promote_reviewed)
+
 
     validate_controls = sub.add_parser("validate-controls")
     validate_controls.add_argument("paths", nargs="+")

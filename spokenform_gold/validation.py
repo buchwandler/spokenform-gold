@@ -94,7 +94,8 @@ def _validate_unit(
     policies: dict,
     ambiguities: dict,
     errors: list[str],
-) -> None:
+    check_surface: bool = True,
+ ) -> None:
     prefix = f"line {record.get('_source_line', '?')} ({record.get('id', '?')}): unit[{index}]"
     required = (
         "surface",
@@ -128,7 +129,7 @@ def _validate_unit(
         errors.append(f"{prefix}: surface must be non-empty string")
     if not isinstance(start, int) or not isinstance(end, int):
         errors.append(f"{prefix}: start/end must be integers")
-    elif text[start:end] != surface:
+    elif check_surface and text[start:end] != surface:
         errors.append(f"{prefix}: start/end do not select surface")
 
     semantic = unit.get("semantic")
@@ -263,6 +264,10 @@ def validate_records(
 
     for record in records:
         prefix = f"line {record.get('_source_line', '?')} ({record.get('id', '?')})"
+        materialization = record.get("materialization", "embedded")
+        if materialization not in {"embedded", "external_ref"}:
+            errors.append(f"{prefix}: invalid materialization {materialization!r}")
+            continue
         required = (
             "id",
             "language",
@@ -270,69 +275,83 @@ def validate_records(
             "split",
             "family_id",
             "status",
-            "input",
-            "expected_output",
             "source",
-            "units",
-            "negative_for",
-            "notes",
         )
+        if materialization == "embedded":
+            required += ("input", "expected_output", "units", "negative_for", "notes")
+            effective = record
+            check_surface = True
+        else:
+            required += ("annotation",)
+            annotation = record.get("annotation")
+            if not isinstance(annotation, dict):
+                errors.append(f"{prefix}: external_ref annotation must be an object")
+                effective = record
+            else:
+                for key in ("expected_output", "units", "negative_for", "notes"):
+                    if key not in annotation:
+                        errors.append(f"{prefix}: annotation missing field {key}")
+                effective = dict(record)
+                effective.update(annotation)
+                effective["input"] = ""
+            if "input" not in record or record.get("input") is not None:
+                errors.append(f"{prefix}: external_ref input must be null")
+            source = record.get("source")
+            if not isinstance(source, dict) or not isinstance(
+                source.get("source_artifact"), str
+            ) or not source.get("source_artifact"):
+                errors.append(f"{prefix}: external_ref source.source_artifact is required")
+            check_surface = False
         for key in required:
             if key not in record:
                 errors.append(f"{prefix}: missing field {key}")
-
         _validate_versions(record, prefix, errors)
-
         status = record.get("status")
         split = record.get("split")
         if status not in STATUSES:
             errors.append(f"{prefix}: invalid status {status!r}")
         if split not in SPLITS:
             errors.append(f"{prefix}: invalid split {split!r}")
-        if not isinstance(record.get("input"), str):
+        if materialization == "embedded" and not isinstance(record.get("input"), str):
             errors.append(f"{prefix}: input must be a string")
-        if not isinstance(record.get("units"), list):
+        if not isinstance(effective.get("units"), list):
             errors.append(f"{prefix}: units must be a list")
             continue
-        if not isinstance(record.get("negative_for"), list) or not all(
-            isinstance(item, str) for item in record.get("negative_for", [])
+        if not isinstance(effective.get("negative_for"), list) or not all(
+            isinstance(item, str) for item in effective.get("negative_for", [])
         ):
             errors.append(f"{prefix}: negative_for must be list[str]")
-        if not isinstance(record.get("notes"), str):
+        if not isinstance(effective.get("notes"), str):
             errors.append(f"{prefix}: notes must be a string")
-
         _validate_source(record, prefix, source_manifests, errors)
-
+        expected_output = effective.get("expected_output")
         if status == "no_change":
-            if record.get("units"):
+            if effective.get("units"):
                 errors.append(f"{prefix}: no_change records must not contain units")
-            if record.get("expected_output") != record.get("input"):
+            if materialization == "embedded" and expected_output != record.get("input"):
                 errors.append(f"{prefix}: no_change expected_output must equal input")
-            if not record.get("negative_for"):
+            if not effective.get("negative_for"):
                 errors.append(f"{prefix}: no_change requires negative_for")
         elif status in REVIEWED_STATUSES:
-            if not isinstance(record.get("expected_output"), str):
+            if not isinstance(expected_output, str):
                 errors.append(f"{prefix}: reviewed records require expected_output")
-        elif (
-            status in {"ambiguous", "quarantine"}
-            and record.get("expected_output") is not None
-        ):
+        elif status in {"ambiguous", "quarantine"} and expected_output is not None:
             errors.append(
                 f"{prefix}: ambiguous/quarantine records must use null expected_output"
             )
-
-        for index, unit in enumerate(record.get("units", [])):
+        for index, unit in enumerate(effective.get("units", [])):
             if not isinstance(unit, dict):
                 errors.append(f"{prefix}: unit[{index}] must be an object")
                 continue
             _validate_unit(
-                record,
+                effective,
                 unit,
                 index=index,
                 categories=categories,
                 policies=policies,
                 ambiguities=ambiguities,
                 errors=errors,
+                check_surface=check_surface,
             )
 
     family_splits = defaultdict(set)

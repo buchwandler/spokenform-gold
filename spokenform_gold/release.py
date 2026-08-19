@@ -15,6 +15,7 @@ from .source_manifest import (
     normalize_materialization_policy,
     referenced_source_names,
 )
+from .splitting import load_split_registry
 from .taxonomy import (
     policy_version,
     release_maturity_profiles,
@@ -40,6 +41,48 @@ def _copy_file(root: Path, output_root: Path, file_path: Path) -> None:
     target = output_root / rel
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(file_path, target)
+
+
+
+def _repository_local_jsonl_files(
+    root: Path, paths: list[str] | None, *, label: str
+ ) -> list[Path]:
+    files = expand_jsonl_paths(paths or [])
+    root = root.resolve()
+    for file_path in files:
+        try:
+            file_path.resolve().relative_to(root)
+        except ValueError as exc:
+            raise ValueError(
+                f"{label} must be repository-local canonical data; "
+                f"got {file_path}"
+            ) from exc
+    return files
+
+
+def validate_release_split_registry(records: list[dict], registry: dict) -> list[str]:
+    assignments = registry.get("families", {})
+    if not isinstance(assignments, dict):
+        return ["split registry families must be an object"]
+    errors = []
+    supported_splits = {"train", "dev", "test"}
+    for record in records:
+        record_id = record.get("id", "?")
+        family_id = record.get("family_id")
+        assigned = assignments.get(family_id)
+        if not family_id or assigned is None:
+            errors.append(f"record {record_id} family {family_id!r} is missing from split registry")
+            continue
+        if assigned not in supported_splits:
+            errors.append(
+                f"family {family_id!r} has unsupported registry split {assigned!r}"
+            )
+        if record.get("split") != assigned:
+            errors.append(
+                f"record {record_id} split {record.get('split')!r} does not match "
+                f"registry assignment {assigned!r} for family {family_id!r}"
+            )
+    return errors
 
 
 def _profile(name: str) -> dict:
@@ -269,12 +312,23 @@ def build_release(
         raise ValueError(f"missing split registry: {registry_source}")
     profile_registry_source = root / "taxonomy" / "evaluation_profiles.json"
     profile_registry = load_registry(profile_registry_source)
-    record_files = expand_jsonl_paths(data_paths)
+    record_files = _repository_local_jsonl_files(
+        root, data_paths, label="release data"
+    )
     records = read_records(record_files)
     validation_errors = validate_records(records)
     if validation_errors:
         raise ValueError("release validation failed: " + "; ".join(validation_errors))
-    control_files = expand_jsonl_paths(control_paths or [])
+    split_errors = validate_release_split_registry(
+        records, load_split_registry(registry_source)
+    )
+    if split_errors:
+        raise ValueError(
+            "release split registry validation failed: " + "; ".join(split_errors)
+        )
+    control_files = _repository_local_jsonl_files(
+        root, control_paths, label="release controls"
+    )
     control_records = read_records(control_files)
     control_errors = validate_control_records(control_records) if control_records else []
     if control_errors:
@@ -374,6 +428,8 @@ def build_release(
         "profile_registry_version": profile_registry["version"],
         "profile_registry_hash": registry_hash(profile_registry),
         "counts": counts,
+        "record_files": [str(path.relative_to(root)) for path in record_files],
+        "control_files": [str(path.relative_to(root)) for path in control_files],
         "control_records": len(control_records),
         "split_registry": f"splits/{registry_source.name}",
         "source_manifest": "sources/manifest.json",

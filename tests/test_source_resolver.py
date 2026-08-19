@@ -15,6 +15,7 @@ from spokenform_gold.source_resolver import (
     hydrate_external_overlay,
     resolve_release_record,
 )
+from spokenform_gold.validation import validate_records
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -29,6 +30,25 @@ class SourceResolverTests(unittest.TestCase):
         self.assertEqual(hydrated["input"], record["input"])
         self.assertEqual(hydrated["expected_output"], record["expected_output"])
         self.assertEqual(hydrated["units"], record["units"])
+
+
+    def test_external_overlay_validates_and_requires_source_artifact(self):
+        record = read_records([ROOT / "data/test/sample.jsonl"])[0]
+        overlay = build_external_overlay(record, source_artifact="bundle://sample-1")
+        self.assertEqual(validate_records([overlay]), [])
+        broken = dict(overlay)
+        broken["source"] = dict(overlay["source"])
+        broken["source"].pop("source_artifact")
+        self.assertTrue(
+            any("source_artifact" in error for error in validate_records([broken]))
+        )
+
+    def test_hydration_validates_surface_and_semantics(self):
+        record = read_records([ROOT / "data/test/sample.jsonl"])[0]
+        overlay = build_external_overlay(record, source_artifact="bundle://sample-1")
+        bad_input = "The time is 28:00."
+        with self.assertRaisesRegex(ValueError, "hydrated external_ref record is invalid"):
+            resolve_release_record(overlay, source_loader=lambda _: bad_input)
 
     def test_resolve_release_record_requires_loader_for_external_ref(self):
         record = read_records([ROOT / "data/test/sample.jsonl"])[0]

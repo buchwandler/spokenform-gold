@@ -2,7 +2,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from spokenform_gold.benchmark import run_benchmark
+from spokenform_gold.benchmark import (
+    load_release_control_records,
+    load_release_records,
+    run_benchmark,
+ )
 from spokenform_gold.io import read_json
 from spokenform_gold.release import build_release
 
@@ -39,6 +43,25 @@ class BenchmarkRunnerTests(unittest.TestCase):
             persisted = read_json(results_root / "summary.json")
             self.assertEqual(persisted["split"], "test")
             self.assertGreaterEqual(persisted["canonical_score"], 0.9)
+
+
+    def test_loader_separates_controls_from_canonical_records(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            release_root = Path(tmpdir) / "release"
+            build_release(
+                version="0.2.0-exp",
+                data_paths=[str(ROOT / "data/dev"), str(ROOT / "data/test")],
+                control_paths=[str(ROOT / "data/controls")],
+                out_root=release_root,
+                maturity="experimental",
+                registry_path=ROOT / "splits/family_assignments.json",
+            )
+            _, records = load_release_records(release_root)
+            _, controls = load_release_control_records(release_root)
+            self.assertEqual(len(records), 62)
+            self.assertEqual(len(controls), 23)
+            self.assertTrue(all(record.get("split") in {"dev", "test"} for record in records))
+            self.assertTrue(all("control" in record for record in controls))
 
 
 if __name__ == "__main__":

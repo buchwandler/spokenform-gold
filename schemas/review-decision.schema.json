@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Spokenform Gold reviewed promotion decision",
+  "type": "object",
+  "required": ["candidate_id", "decision", "reviewers", "adjudicator"],
+  "properties": {
+    "candidate_id": { "type": "string", "minLength": 1 },
+    "record_id": { "type": "string", "minLength": 1 },
+    "decision": {
+      "enum": [
+        "promote_curated",
+        "promote_upstream",
+        "keep_external",
+        "reject",
+        "quarantine",
+        "needs_review"
+      ]
+    },
+    "reviewers": {
+      "type": "array",
+      "minItems": 2,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "adjudicator": { "type": "string", "minLength": 1 },
+    "family_id": { "type": "string", "minLength": 1 },
+    "status": {
+      "enum": ["gold", "multi_valid", "policy_choice", "no_change"]
+    },
+    "language": { "type": "string", "minLength": 2 },
+    "locale": { "type": "string", "minLength": 2 },
+    "input": { "type": "string" },
+    "expected_output": { "type": ["string", "null"] },
+    "units": { "type": "array", "items": { "type": "object" } },
+    "negative_for": { "type": "array", "items": { "type": "string" } },
+    "notes": { "type": "string" },
+    "license_disposition": { "type": "string", "minLength": 1 },
+    "upstream_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["benchmark", "source_id"],
+        "properties": {
+          "benchmark": { "type": "string", "minLength": 1 },
+          "source_id": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}
