@@ -8,7 +8,9 @@
       "minimum_reviewed_languages": 1,
       "require_source_release_ready": false,
       "required_categories": [],
-      "required_patterns": {}
+      "required_patterns": {},
+      "required_control_suites": [],
+      "required_control_languages": []
     },
     "candidate": {
       "allow_coverage_gaps": true,
@@ -38,7 +40,9 @@
         "math_expression": ["division", "subtraction"],
         "score_or_range": ["countdown", "numeric_range", "score"],
         "url_or_email": ["email", "url"]
-      }
+      },
+      "required_control_suites": [],
+      "required_control_languages": []
     },
     "stable": {
       "allow_coverage_gaps": false,
@@ -56,7 +60,7 @@
       "blocked_gap_kinds": ["surface_pattern"],
       "minimum_negative_controls": 12,
       "minimum_records": 60,
-      "minimum_reviewed_languages": 6,
+      "minimum_reviewed_languages": 7,
       "require_source_release_ready": true,
       "required_categories": [
         "acronym",
@@ -83,7 +87,15 @@
         "score_or_range": ["countdown", "numeric_range", "score"],
         "time": ["leading_zero_time", "time_12h", "time_24h"],
         "url_or_email": ["email", "url"]
-      }
+      },
+      "required_control_suites": [
+        "allowed_domains",
+        "disabled_domains",
+        "interpretation_mode",
+        "normalize_literals",
+        "sequence_fallback_mode"
+      ],
+      "required_control_languages": ["cs", "de", "en", "es", "fr", "it", "pt"]
     }
   }
 }

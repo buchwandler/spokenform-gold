@@ -29,6 +29,9 @@ class BenchmarkRunnerTests(unittest.TestCase):
                 mode="canonical",
             )
             self.assertEqual(summary["profile_name"], "gold-v1")
+            self.assertEqual(summary["profile_id"], "gold-v1")
+            self.assertEqual(summary["profile_config"]["prepare_kwargs"]["sequence_fallback_mode"], "preserve")
+            self.assertTrue(summary["profile_registry_hash"])
             self.assertTrue((results_root / "summary.json").exists())
             self.assertTrue((results_root / "predictions.jsonl").exists())
             self.assertTrue((results_root / "failures.jsonl").exists())

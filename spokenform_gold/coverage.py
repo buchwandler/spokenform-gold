@@ -118,3 +118,57 @@ def build_coverage(records, targets=None):
         "coverage": rows,
         "gaps": gaps,
     }
+
+
+def build_control_coverage(records, targets=None):
+    targets = targets or {}
+    counts = defaultdict(Counter)
+    languages = defaultdict(set)
+    profiles = defaultdict(set)
+    for record in records:
+        control = record.get("control")
+        if not control:
+            continue
+        counts[control]["records"] += 1
+        languages[control].add(record.get("language"))
+        for expectation in record.get("expectations", []):
+            counts[control]["expectations"] += 1
+            profiles[control].add(expectation.get("profile_id"))
+            if expectation.get("required_rules") or expectation.get("forbidden_rules"):
+                counts[control]["assertion_expectations"] += 1
+    configured = targets.get("controls", {})
+    rows = []
+    gaps = []
+    for control in sorted(set(counts) | set(configured)):
+        requirement = configured.get(control, {})
+        observed_languages = sorted(value for value in languages[control] if value)
+        missing_languages = sorted(
+            set(requirement.get("required_languages", [])) - set(observed_languages)
+        )
+        minimum_records = int(requirement.get("min_records", 0))
+        row = {
+            "control": control,
+            "records": counts[control]["records"],
+            "expectations": counts[control]["expectations"],
+            "assertion_expectations": counts[control]["assertion_expectations"],
+            "languages": observed_languages,
+            "profiles": sorted(value for value in profiles[control] if value),
+            "missing_languages": missing_languages,
+        }
+        rows.append(row)
+        if counts[control]["records"] < minimum_records:
+            gaps.append({
+                "control": control,
+                "kind": "low_volume",
+                "have": counts[control]["records"],
+                "need": minimum_records,
+            })
+        for language in missing_languages:
+            gaps.append({"control": control, "kind": "language", "missing": language})
+    return {
+        "records": len(records),
+        "controls_observed": len(counts),
+        "controls_targeted": len(configured),
+        "coverage": rows,
+        "gaps": gaps,
+    }

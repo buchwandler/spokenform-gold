@@ -1,6 +1,6 @@
 {
   "taxonomy_version": "1.0.0",
-  "languages": ["en", "de", "es", "fr", "it", "pt"],
+  "languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
   "default": {
     "min_units": 20,
     "min_ambiguous": 2,
@@ -73,5 +73,15 @@
     "ip_address": ["ipv4"],
     "url_or_email": ["url", "email"],
     "acronym": ["initialism", "word_like_acronym", "plural_acronym"]
+  },
+  "controls": {
+    "sequence_fallback_mode": {
+      "min_records": 5,
+      "required_languages": ["cs", "de", "en", "es", "fr", "it", "pt"]
+    },
+    "allowed_domains": {"min_records": 2},
+    "disabled_domains": {"min_records": 1},
+    "interpretation_mode": {"min_records": 3},
+    "normalize_literals": {"min_records": 2}
   }
 }

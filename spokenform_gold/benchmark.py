@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import importlib
 import inspect
 from collections.abc import Callable
@@ -9,32 +8,29 @@ from pathlib import Path
 from typing import Any
 
 from .adapter import build_prediction_records
+from .evaluation_profiles import (
+    load_registry,
+    profile_hash,
+    registry_hash,
+    resolve_profile,
+ )
 from .io import read_json, read_records, sha256_file, write_json, write_jsonl
 from .scoring import score_records
 from .source_resolver import SourceTextLoader, resolve_release_record
 
 PrepareCallable = Callable[[str, str, str, dict[str, Any] | None], str]
 
-GOLD_PROFILE_V1 = {
-    "name": "gold-v1",
-    "prepare_kwargs": {
-        "use_spacy": False,
-        "normalize_literals": True,
-        "generic_acronym_mode": "spell_unknown",
-        "generic_acronym_case": "upper",
-        "registered_acronym_mode": "spell",
-        "symbol_mode": "none",
-        "long_number_mode": "contextual",
-    },
+GOLD_PROFILE_V1 = resolve_profile("gold-v1")
+BENCHMARK_PROFILES = {
+    name: resolve_profile(name) for name in load_registry()["profiles"]
 }
-BENCHMARK_PROFILES = {GOLD_PROFILE_V1["name"]: GOLD_PROFILE_V1}
 
 
-def benchmark_profile(name: str = GOLD_PROFILE_V1["name"]) -> dict[str, Any]:
-    try:
-        return copy.deepcopy(BENCHMARK_PROFILES[name])
-    except KeyError as exc:
-        raise ValueError(f"unsupported profile {name!r}") from exc
+def benchmark_profile(
+    name: str = GOLD_PROFILE_V1["name"],
+    registry_path: str | Path | None = None,
+ ) -> dict[str, Any]:
+    return resolve_profile(name, registry_path)
 
 
 def load_release_manifest(gold_root: str | Path) -> dict:
@@ -172,7 +168,10 @@ def run_benchmark(
     spokenform_commit: str = "unknown",
     source_loader: SourceTextLoader | None = None,
 ) -> dict:
-    profile = benchmark_profile(profile_name)
+    registry_path = Path(gold_root) / "taxonomy" / "evaluation_profiles.json"
+    if not registry_path.exists():
+        registry_path = None
+    profile = benchmark_profile(profile_name, registry_path)
     manifest, records = load_release_records(
         gold_root,
         split=split,
@@ -220,7 +219,12 @@ def run_benchmark(
         "split": split,
         "record_count": len(records),
         "profile_name": profile["name"],
+        "profile_id": profile["name"],
         "profile_config": profile,
+        "profile_hash": profile_hash(profile),
+        "profile_registry_version": load_registry(registry_path)["version"],
+        "profile_registry_hash": registry_hash(load_registry(registry_path)),
+        "policy_expansion": profile["policy_expansion"],
         "mode": mode,
         "canonical_score": summary["sentence_canonical_accuracy"],
         "accepted_score": summary["accepted_variant_accuracy"],

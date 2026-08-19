@@ -83,6 +83,35 @@ reviewed release data. Source manifests also carry a
 cannot be embedded accidentally; keep those sources local and use
 source-backed overlays when a benchmark needs external hydration.
 
+## Fixed profiles and control suites
+
+Canonical scoring uses the frozen `gold-v1` profile from
+`taxonomy/evaluation_profiles.json`. The registry records the complete runtime
+configuration, inheritance, policy-expansion status, and deterministic hashes.
+Benchmark and release artifacts include the selected profile and registry
+identity. Unknown profiles fail closed, and control rows cannot provide
+arbitrary runtime keyword arguments.
+
+Configuration-sensitive behavior is evaluated separately from canonical Gold.
+Control records live under `data/controls/`, reference one or more fixed profile
+IDs, and may assert expected output plus stable ownership rules such as
+`protected`, `semantic.quantities`, or `fallback.sequence`:
+
+```bash
+spokenform-gold validate-controls data/controls/*.jsonl
+spokenform-gold control-coverage data/controls/*.jsonl \
+  --targets taxonomy/coverage_targets.json \
+  --json reports/control_coverage.json
+spokenform-gold score-controls data/controls/*.jsonl \
+  --predictions predictions/control.jsonl \
+  --json reports/control_score.json
+```
+
+Control metrics are not merged into canonical accuracy. Policy-expanding
+profiles, such as sequence fallback spelling and literal promotion, remain
+labelled separately. Control records are curated benchmark assertions, not a
+mechanism for searching configurations to maximize score.
+
 ## External runner contract
 
 `spokenform-gold` owns benchmark policy, JSONL data, and scoring. External

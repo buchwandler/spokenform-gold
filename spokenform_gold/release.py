@@ -6,7 +6,9 @@ from collections import Counter
 from pathlib import Path
 
 from .conflicts import find_conflicts
-from .coverage import build_coverage, load_targets
+from .control_validation import validate_control_records
+from .coverage import build_control_coverage, build_coverage, load_targets
+from .evaluation_profiles import load_registry, registry_hash
 from .io import expand_jsonl_paths, read_records, sha256_file
 from .source_manifest import (
     load_and_validate_source_manifest,
@@ -101,9 +103,32 @@ def _enforce_maturity(
     records: list[dict],
     coverage: dict,
     source_manifest: dict,
+    control_coverage: dict | None = None,
 ) -> None:
     profile = _profile(profile_name)
     errors: list[str] = []
+    required_controls = set(profile.get("required_control_suites", []))
+    if required_controls:
+        observed_controls = {
+            item.get("control")
+            for item in (control_coverage or {}).get("coverage", [])
+        }
+        missing_controls = sorted(required_controls - observed_controls)
+        if missing_controls:
+            errors.append(
+                f"{profile_name} release is missing required control suites: {missing_controls}"
+            )
+        required_languages = set(profile.get("required_control_languages", []))
+        observed_languages = {
+            language
+            for item in (control_coverage or {}).get("coverage", [])
+            for language in item.get("languages", [])
+        }
+        missing_languages = sorted(required_languages - observed_languages)
+        if missing_languages:
+            errors.append(
+                f"{profile_name} release is missing required control languages: {missing_languages}"
+            )
     if profile.get("require_source_release_ready") and not all(
         source.get("release_ready", False)
         for source in source_manifest.get("sources", [])
@@ -225,6 +250,7 @@ def build_release(
     registry_path: str | Path | None = None,
     source_manifest_path: str | Path | None = None,
     coverage_profile: str = "none",
+    control_paths: list[str] | None = None,
 ) -> dict:
     _profile(maturity)
 
@@ -241,11 +267,20 @@ def build_release(
     )
     if not registry_source.exists():
         raise ValueError(f"missing split registry: {registry_source}")
+    profile_registry_source = root / "taxonomy" / "evaluation_profiles.json"
+    profile_registry = load_registry(profile_registry_source)
     record_files = expand_jsonl_paths(data_paths)
     records = read_records(record_files)
     validation_errors = validate_records(records)
     if validation_errors:
         raise ValueError("release validation failed: " + "; ".join(validation_errors))
+    control_files = expand_jsonl_paths(control_paths or [])
+    control_records = read_records(control_files)
+    control_errors = validate_control_records(control_records) if control_records else []
+    if control_errors:
+        raise ValueError("control validation failed: " + "; ".join(control_errors))
+    targets = load_targets(root / "taxonomy" / "coverage_targets.json")
+    control_coverage = build_control_coverage(control_records, targets)
 
     forbidden = sorted(
         record.get("id")
@@ -275,14 +310,13 @@ def build_release(
     )
     _enforce_source_materialization(records, manifest_source)
 
-    coverage = build_coverage(
-        records, load_targets(root / "taxonomy" / "coverage_targets.json")
-    )
+    coverage = build_coverage(records, targets)
     _enforce_maturity(
         profile_name=maturity,
         records=records,
         coverage=coverage,
         source_manifest=manifest_source,
+        control_coverage=control_coverage,
     )
 
     for relative in ("taxonomy", "schemas"):
@@ -293,8 +327,11 @@ def build_release(
     shutil.copy2(registry_source, output_root / "splits" / registry_source.name)
     for jsonl_path in record_files:
         _copy_file(root, output_root, Path(jsonl_path))
+    for jsonl_path in control_files:
+        _copy_file(root, output_root, Path(jsonl_path))
 
     _write_json(output_root / "coverage.json", coverage)
+    _write_json(output_root / "control_coverage.json", control_coverage)
     _write_json(output_root / "conflicts.json", conflicts)
 
     counts = {
@@ -334,9 +371,13 @@ def build_release(
         "policy_version": policy_version(),
         "coverage_profile": coverage_profile,
         "source_manifest_version": manifest_source.get("version"),
+        "profile_registry_version": profile_registry["version"],
+        "profile_registry_hash": registry_hash(profile_registry),
         "counts": counts,
+        "control_records": len(control_records),
         "split_registry": f"splits/{registry_source.name}",
         "source_manifest": "sources/manifest.json",
+        "evaluation_profiles": "taxonomy/evaluation_profiles.json",
         "source_integrity": {
             "release_ready": all(
                 source.get("release_ready", False)
@@ -347,6 +388,7 @@ def build_release(
         },
         "maturity_profile": _profile(maturity),
         "scoring_modes": ["canonical", "accepted"],
+        "control_scoring": "control_coverage.json",
         "file_hashes": {},
     }
 

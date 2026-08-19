@@ -29,12 +29,31 @@ class ReleaseTests(unittest.TestCase):
             self.assertTrue((output_root / "RELEASE_NOTES.md").exists())
             release_manifest = read_json(output_root / "manifest.json")
             self.assertEqual(release_manifest["maturity"], "experimental")
+            self.assertEqual(release_manifest["profile_registry_version"], "1.0.0")
+            self.assertTrue(release_manifest["profile_registry_hash"])
+            self.assertIn("taxonomy/evaluation_profiles.json", release_manifest["file_hashes"])
+            self.assertIn("control_coverage.json", release_manifest["file_hashes"])
             self.assertIn("sources/manifest.json", release_manifest["file_hashes"])
             source_manifest = read_json(output_root / "sources/manifest.json")
             self.assertEqual(
                 [source["name"] for source in source_manifest["sources"]],
                 ["spokenform_curated"],
             )
+
+    def test_release_copies_and_records_control_coverage(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_root = Path(tmpdir) / "release"
+            manifest = build_release(
+                version="0.3.0-exp",
+                data_paths=[str(ROOT / "data/dev"), str(ROOT / "data/test")],
+                control_paths=[str(ROOT / "data/controls")],
+                out_root=output_root,
+                maturity="experimental",
+                registry_path=ROOT / "splits/family_assignments.json",
+            )
+            self.assertEqual(manifest["control_records"], 23)
+            self.assertTrue((output_root / "data/controls/sequence_fallback.jsonl").exists())
+            self.assertEqual(read_json(output_root / "control_coverage.json")["gaps"], [])
 
     def test_release_verifier_detects_nested_source_manifest_tampering(self):
         with tempfile.TemporaryDirectory() as tmpdir:

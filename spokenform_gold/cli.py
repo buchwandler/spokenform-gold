@@ -6,7 +6,9 @@ from pathlib import Path
 
 from .adjudication import build_adjudication_queue
 from .conflicts import find_conflicts
-from .coverage import build_coverage, load_targets
+from .control_benchmark import load_control_predictions, score_control_records
+from .control_validation import validate_control_records
+from .coverage import build_control_coverage, build_coverage, load_targets
 from .deduplication import deduplicate_candidates
 from .exclusions import build_exclusion_analysis, load_exclusions
 from .families import suggest_families
@@ -69,6 +71,20 @@ def cmd_coverage(args):
         write_json(args.json, result)
     print(
         f"records={result['records']} observed_categories={result['categories_observed']} gaps={len(result['gaps'])}"
+    )
+    return 0
+
+
+def cmd_control_coverage(args):
+    records = read_records(args.paths)
+    errors = validate_control_records(records, registry_path=args.registry)
+    if errors:
+        raise ValueError("control validation failed: " + "; ".join(errors))
+    result = build_control_coverage(records, load_targets(args.targets))
+    if args.json:
+        write_json(args.json, result)
+    print(
+        f"records={result['records']} observed_controls={result['controls_observed']} gaps={len(result['gaps'])}"
     )
     return 0
 
@@ -274,6 +290,7 @@ def cmd_release_check(args):
         registry_path=args.registry,
         source_manifest_path=args.source_manifest,
         coverage_profile=args.coverage_profile,
+        control_paths=args.controls,
     )
     print(
         "release={version} records={records} families={families}".format(
@@ -282,6 +299,31 @@ def cmd_release_check(args):
             families=manifest["counts"]["families"],
         )
     )
+    return 0
+
+
+def cmd_validate_controls(args):
+    records = read_records(args.paths)
+    errors = validate_control_records(records, registry_path=args.registry)
+    if errors:
+        print(f"INVALID: {len(errors)} error(s)")
+        for error in errors:
+            print(f"- {error}")
+        return 1
+    print(f"OK: {len(records)} control record(s)")
+    return 0
+
+
+def cmd_score_controls(args):
+    records = read_records(args.paths)
+    errors = validate_control_records(records, registry_path=args.registry)
+    if errors:
+        raise ValueError("control validation failed: " + "; ".join(errors))
+    result = score_control_records(records, load_control_predictions(args.predictions), validate=False)
+    if args.json:
+        write_json(args.json, result)
+    else:
+        print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 
 
@@ -319,6 +361,13 @@ def build_parser():
     coverage.add_argument("--targets")
     coverage.add_argument("--json")
     coverage.set_defaults(func=cmd_coverage)
+
+    control_coverage = sub.add_parser("control-coverage")
+    control_coverage.add_argument("paths", nargs="+")
+    control_coverage.add_argument("--targets")
+    control_coverage.add_argument("--registry")
+    control_coverage.add_argument("--json")
+    control_coverage.set_defaults(func=cmd_control_coverage)
 
     conflicts = sub.add_parser("conflicts")
     conflicts.add_argument("paths", nargs="+")
@@ -461,7 +510,19 @@ def build_parser():
     release.add_argument("--registry")
     release.add_argument("--source-manifest")
     release.add_argument("--coverage-profile", default="none")
+    release.add_argument("--controls", nargs="+")
     release.set_defaults(func=cmd_release_check)
+
+    validate_controls = sub.add_parser("validate-controls")
+    validate_controls.add_argument("paths", nargs="+")
+    validate_controls.add_argument("--registry")
+    validate_controls.set_defaults(func=cmd_validate_controls)
+    score_controls = sub.add_parser("score-controls")
+    score_controls.add_argument("paths", nargs="+")
+    score_controls.add_argument("--predictions", nargs="+", required=True)
+    score_controls.add_argument("--registry")
+    score_controls.add_argument("--json")
+    score_controls.set_defaults(func=cmd_score_controls)
 
     judge_calibrate = sub.add_parser("judge-calibrate")
     judge_calibrate.add_argument("paths", nargs="+")
