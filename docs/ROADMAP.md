@@ -44,3 +44,10 @@
 - fetch pinned upstream bundles into external source caches
 - independently adjudicate candidates and assign Spokenform-owned family IDs
 - promote only reviewed, license-compatible records into experimental release data
+
+## Fixture expansion completed
+
+- expanded checked-in Async candidates from the English fixture plus six multilingual fixture rows;
+- expanded checked-in PolyNorm candidates from raw and official fixture projections while preserving duplicate lineage and metadata-only exclusions;
+- kept all imported rows quarantined and source-policy decisions unchanged;
+- documented the external-cache refresh and pool-statistics workflow.

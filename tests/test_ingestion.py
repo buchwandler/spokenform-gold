@@ -48,6 +48,43 @@ class IngestionTests(unittest.TestCase):
             self.assertTrue(all(record["status"] == "quarantine" for record in records))
             self.assertEqual(read_json(work / "reports" / "ingestion-summary.json"), summary)
 
+    def test_source_order_is_canonical_and_reruns_are_stable(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            cache = self._cache(root)
+            work = root / "work"
+            first = run_upstream_ingestion(
+                cache,
+                work,
+                sources=("proteno", "async_tn", "polynorm"),
+                languages=("pt", "en", "es"),
+                batch_limit=3,
+            )
+            first_bytes = {
+                path.relative_to(work): path.read_bytes()
+                for path in work.rglob("*")
+                if path.is_file()
+            }
+            second = run_upstream_ingestion(
+                cache,
+                work,
+                sources=("polynorm", "async_tn", "proteno"),
+                languages=("es", "en", "pt"),
+                batch_limit=3,
+            )
+            second_bytes = {
+                path.relative_to(work): path.read_bytes()
+                for path in work.rglob("*")
+                if path.is_file()
+            }
+            self.assertEqual(first["sources"], ["async_tn", "polynorm", "proteno"])
+            self.assertEqual(first["sources"], second["sources"])
+            self.assertEqual(first["languages"], ["en", "es", "pt"])
+            self.assertEqual(first_bytes, second_bytes)
+            self.assertEqual(first["records"], second["records"])
+            self.assertEqual(first["exclusions"], second["exclusions"])
+
+
     def test_missing_required_source_path_fails_before_ingestion(self):
         with tempfile.TemporaryDirectory() as tmpdir, self.assertRaisesRegex(
             ValueError, "missing source checkout"

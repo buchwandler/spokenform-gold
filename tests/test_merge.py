@@ -39,6 +39,18 @@ class MergeTests(unittest.TestCase):
             self.assertEqual([item["id"] for item in merged], ["two", "one"])
             self.assertEqual(merged[0]["source"]["benchmark"], "a")
 
+    def test_same_input_from_distinct_sources_is_retained(self):
+        first = self._record("async-1", "async_tn", "en", "en-US", "row-1")
+        second = self._record("proteno-1", "proteno_en", "en", "en-US", "proteno:en:1")
+        first["input"] = second["input"] = "Unicode café 3/4"
+        merged = merge_candidates([second, first])
+        self.assertEqual([record["id"] for record in merged], ["async-1", "proteno-1"])
+        self.assertEqual(
+            [record["source"]["source_id"] for record in merged],
+            ["row-1", "proteno:en:1"],
+        )
+
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -70,3 +70,11 @@ The orchestrator then creates deterministic merged candidates, dedupe, conflict,
 The exclusion report groups observed failures by source, reason, source category, language, and surface shape. This evidence should guide narrowly scoped importer or mapping changes. Do not broaden recognizers or mappings from hypothetical cases.
 
 All source-derived rows remain quarantine candidates. Source policies, licenses, materialization policies, `release_ready`, upstream expected text, and source identity are not changed by ingestion.
+
+## Fixture-derived candidate expansion
+
+The repository may include small candidate shards generated directly from checked-in importer fixtures. This does not grant permission to embed complete third-party corpora. The current fixture expansion contains eight Async records and six PolyNorm records, including raw and official PolyNorm projections where their source identities remain distinct.
+
+Every fixture-derived row remains `split=candidate` and `status=quarantine`, retains `source.upstream_expected`, source IDs, source hashes, and source revisions, and must pass the normal validator. Metadata-only rows remain visible when a source category is unsupported. Do not change `release_ready`, `materialization_policy`, or license scope as part of fixture expansion.
+
+For full upstream refreshes, fetch the pinned revisions outside Git, run `ingest-upstreams`, inspect row-accounting and exclusion reports, then run dedupe, conflicts, family suggestions, coverage, ranking, and review-batch export. Review and promotion are separate human-governed steps.

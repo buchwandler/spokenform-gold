@@ -17,8 +17,10 @@ class ReviewBatchTests(unittest.TestCase):
                 "status": "quarantine",
                 "family_id": family,
                 "language": language,
+                "input": "Keep provenance",
+                "source": {"benchmark": "async_tn", "source_id": record_id},
                 "units": [{"category": category}],
-            },
+            }
         }
 
     def test_batch_applies_limit_language_category_and_family_caps(self):
@@ -38,6 +40,10 @@ class ReviewBatchTests(unittest.TestCase):
         self.assertEqual([record["id"] for record in batch], ["c", "d"])
         self.assertTrue(all(record["status"] == "quarantine" for record in batch))
         self.assertEqual(batch[0]["review_priority"], 98)
+        self.assertEqual(batch[0]["review_reasons"], ["category_missing"])
+        self.assertEqual(batch[0]["source"]["benchmark"], "async_tn")
+        self.assertEqual(batch[0]["input"], "Keep provenance")
+
 
 
 if __name__ == "__main__":

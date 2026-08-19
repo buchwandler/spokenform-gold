@@ -52,6 +52,22 @@ class RankingTests(unittest.TestCase):
         self.assertIn("metadata_only", ranked[0]["reasons"])
         self.assertEqual(ranked[0]["record"]["status"], "quarantine")
 
+    def test_dedupe_conflicting_outputs_raise_source_disagreement(self):
+        candidate = self._record("dedupe-conflict", "date")
+        dedupe = {
+            "conflicting_output_groups": [
+                {
+                    "outputs": [
+                        {"members": [{"record_id": "dedupe-conflict"}]}
+                    ]
+                }
+            ]
+        }
+        ranked = build_candidate_ranking([candidate], [], dedupe=dedupe)
+        self.assertIn("source_disagreement", ranked[0]["reasons"])
+        self.assertEqual(ranked[0]["record"]["status"], "quarantine")
+
+
 
 if __name__ == "__main__":
     unittest.main()

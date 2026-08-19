@@ -266,3 +266,15 @@ spokenform-gold review-batch "$SPOKENFORM_GOLD_WORK/reports/ranked_candidates.js
 ```
 
 These artifacts are candidate workflow outputs, not Gold. Imported records remain `status=quarantine`, retain `source.upstream_expected` and source hashes, and must be independently reviewed before promotion. Do not commit full restricted source bundles or change source `release_ready` flags during ingestion.
+
+The repository keeps only fixture-derived candidate examples in Git. The checked-in fixture pool now contains eight Async candidates (English plus six multilingual rows) and six PolyNorm candidates (raw plus official projections, including the explicit metadata-only unsupported-category row). This expansion is provenance-preserving and all rows remain `status=quarantine`. Full pinned upstream bundles must remain in the external source cache.
+
+For a complete refresh, inspect per-shard row accounting before review:
+
+```bash
+spokenform-gold pool-stats "$SPOKENFORM_GOLD_WORK/candidates/*.jsonl" \
+  --exclusions "$SPOKENFORM_GOLD_WORK"/exclusions/*.json \
+  --reports "$SPOKENFORM_GOLD_WORK"/reports/imports/*.json \
+  --conflicts "$SPOKENFORM_GOLD_WORK/reports/dedupe.json" \
+  --out "$SPOKENFORM_GOLD_WORK/reports/upstream_pool_summary.json"
+```

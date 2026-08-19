@@ -193,6 +193,19 @@ class ImporterTests(unittest.TestCase):
             with self.assertRaises(pickle.UnpicklingError):
                 import_proteno(path)
 
+    def test_proteno_tamil_remains_separate_source_identity(self):
+        tamil = import_proteno(
+            ROOT / "tests/fixtures/importers/proteno_official/Tamil",
+            format="official",
+        )
+        self.assertTrue(tamil.records)
+        self.assertEqual({record["language"] for record in tamil.records}, {"ta"})
+        self.assertEqual(
+            {record["source"]["benchmark"] for record in tamil.records},
+            {"proteno_ta"},
+        )
+
+
 
 if __name__ == "__main__":
     unittest.main()

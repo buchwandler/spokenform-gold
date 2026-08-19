@@ -60,10 +60,13 @@ def _conflict_ids(conflicts: Iterable[dict]) -> set[str]:
     return result
 
 
-def _duplicate_indexes(dedupe: dict) -> tuple[set[str], set[str], set[str]]:
+def _duplicate_indexes(
+    dedupe: dict,
+    ) -> tuple[set[str], set[str], set[str], set[str]]:
     exact_pair_ids: set[str] = set()
     cross_source_ids: set[str] = set()
     duplicate_input_ids: set[str] = set()
+    conflicting_output_ids: set[str] = set()
     for group in dedupe.get("exact_pair_groups", []):
         members = group.get("members", [])
         ids = {item.get("record_id") for item in members if item.get("record_id")}
@@ -76,7 +79,13 @@ def _duplicate_indexes(dedupe: dict) -> tuple[set[str], set[str], set[str]]:
         duplicate_input_ids.update(ids)
         if len({item.get("benchmark") for item in members}) > 1:
             cross_source_ids.update(ids)
-    return exact_pair_ids, cross_source_ids, duplicate_input_ids
+    for group in dedupe.get("conflicting_output_groups", []):
+        for output in group.get("outputs", []):
+            for member in output.get("members", []):
+                record_id = member.get("record_id")
+                if record_id:
+                    conflicting_output_ids.add(record_id)
+    return exact_pair_ids, cross_source_ids, duplicate_input_ids, conflicting_output_ids
 
 
 def _add_reason(reasons: set[str], reason: str, score: int) -> int:
@@ -98,9 +107,13 @@ def build_candidate_ranking(
     coverage = build_coverage(list(reviewed), target_config)
     coverage_rows, category_languages, category_patterns = _coverage_indexes(coverage)
     conflict_ids = _conflict_ids(conflicts or [])
-    exact_pair_ids, cross_source_ids, duplicate_input_ids = _duplicate_indexes(
-        dedupe or {}
-    )
+    (
+        exact_pair_ids,
+        cross_source_ids,
+        duplicate_input_ids,
+        conflicting_output_ids,
+    ) = _duplicate_indexes(dedupe or {})
+    conflict_ids.update(conflicting_output_ids)
 
     candidates_list = list(candidates)
     surface_counts = Counter(

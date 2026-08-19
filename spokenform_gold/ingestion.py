@@ -99,8 +99,11 @@ def run_upstream_ingestion(
 ) -> dict:
     source_cache = Path(source_cache)
     work_root = Path(work_root)
-    selected_sources = tuple(dict.fromkeys(sources))
-    unknown_sources = sorted(set(selected_sources) - set(SUPPORTED_SOURCES))
+    requested_sources = set(sources)
+    selected_sources = tuple(
+        source for source in SUPPORTED_SOURCES if source in requested_sources
+    )
+    unknown_sources = sorted(requested_sources - set(SUPPORTED_SOURCES))
     if unknown_sources:
         raise ValueError(f"unsupported ingestion sources: {unknown_sources}")
     selected_languages = set(languages)

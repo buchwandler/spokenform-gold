@@ -36,7 +36,25 @@ class ExclusionTests(unittest.TestCase):
         ]
         result = build_candidate_pool_summary(
             records,
-            exclusions=[{"source": "async_tn", "reason": "bad"}],
+            exclusions=[
+                {
+                    "source": "async_tn",
+                    "reason": "bad",
+                    "source_category": "date",
+                    "language": "en",
+                    "detail": "03/04/2025",
+                }
+            ],
+            import_reports=[
+                {
+                    "source": "async_tn",
+                    "source_rows": 4,
+                    "records_created": 3,
+                    "exclusions": 1,
+                    "metadata_only_records": 1,
+                    "row_accounting_ok": True,
+                }
+            ],
             conflicts=[{"id": "conflict"}],
         )
         self.assertEqual(result["records"], 2)
@@ -44,8 +62,21 @@ class ExclusionTests(unittest.TestCase):
         self.assertEqual(result["metadata_only_records"], 1)
         self.assertEqual(result["multi_unit_records"], 0)
         self.assertEqual(result["conflicting_output_groups"], 1)
-        for key in ("sources", "languages", "categories", "surface_patterns", "mapping_status", "source_yields"):
+        for key in (
+            "sources",
+            "languages",
+            "categories",
+            "surface_patterns",
+            "mapping_status",
+            "source_yields",
+            "exclusions_by_source",
+            "exclusions_by_reason",
+        ):
             self.assertIn(key, result)
+        self.assertEqual(result["source_yields"]["async_tn"]["yield"], 0.75)
+        self.assertEqual(result["exclusions_by_reason"], {"bad": 1})
+        self.assertEqual(result["exclusions_by_source"], {"async_tn": 1})
+
 
 
 if __name__ == "__main__":

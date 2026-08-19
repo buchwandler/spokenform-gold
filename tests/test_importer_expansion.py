@@ -153,6 +153,28 @@ class ImporterExpansionTests(unittest.TestCase):
             result.exclusions[0]["reason"], "unmappable_or_unresolved_unit"
         )
 
+    def test_checked_in_fixture_candidates_are_expanded_and_quarantined(self):
+        async_records = (ROOT / "data/candidates/async_tn.jsonl").read_text(encoding="utf-8").splitlines()
+        polynorm_records = (ROOT / "data/candidates/polynorm.jsonl").read_text(encoding="utf-8").splitlines()
+        self.assertEqual(len(async_records), 8)
+        self.assertEqual(len(polynorm_records), 6)
+        from spokenform_gold.io import read_records
+        from spokenform_gold.validation import validate_records
+        records = read_records(
+            [ROOT / "data/candidates/async_tn.jsonl", ROOT / "data/candidates/polynorm.jsonl"]
+        )
+        self.assertEqual(validate_records(records), [])
+        self.assertTrue(all(record["status"] == "quarantine" for record in records))
+        self.assertEqual(
+            sum(record["source"]["benchmark"] == "async_tn" for record in records),
+            8,
+        )
+        self.assertEqual(
+            sum(record["source"]["benchmark"] == "polynorm" for record in records),
+            6,
+        )
+
+
 
 if __name__ == "__main__":
     unittest.main()

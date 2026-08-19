@@ -57,6 +57,7 @@ def build_candidate_pool_summary(
         }
 
     merged = merge_candidates(record_list) if record_list else []
+    exclusion_analysis = build_exclusion_analysis(exclusion_list)
     summary = {
         "records": len(merged),
         "unique_inputs": len(inputs),
@@ -66,10 +67,12 @@ def build_candidate_pool_summary(
         "surface_patterns": dict(sorted(pattern_counts.items())),
         "mapping_status": dict(sorted(mapping_counts.items())),
         "exclusions": len(exclusion_list),
+        "exclusions_by_source": exclusion_analysis["sources"],
+        "exclusions_by_reason": exclusion_analysis["reasons"],
         "conflicting_output_groups": sum(1 for _ in conflicts),
         "metadata_only_records": metadata_only,
         "multi_unit_records": multi_unit,
         "source_yields": dict(sorted(source_yields.items())),
-        "exclusion_analysis": build_exclusion_analysis(exclusion_list),
+        "exclusion_analysis": exclusion_analysis,
     }
     return summary
