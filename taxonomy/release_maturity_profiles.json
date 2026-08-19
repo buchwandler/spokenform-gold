@@ -47,17 +47,6 @@
     "stable": {
       "allow_coverage_gaps": false,
       "coverage_profile": "stable",
-      "blocked_gap_categories": [
-        "currency",
-        "date",
-        "decimal",
-        "fraction",
-        "identifier",
-        "ip_address",
-        "time",
-        "version"
-      ],
-      "blocked_gap_kinds": ["surface_pattern"],
       "minimum_negative_controls": 12,
       "minimum_records": 60,
       "minimum_reviewed_languages": 7,

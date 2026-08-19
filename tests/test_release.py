@@ -4,8 +4,9 @@ import unittest
 from pathlib import Path
 
 from spokenform_gold.benchmark import verify_release
-from spokenform_gold.io import read_json
-from spokenform_gold.release import build_release
+from spokenform_gold.coverage import build_coverage, load_targets
+from spokenform_gold.io import expand_jsonl_paths, read_json, read_records
+from spokenform_gold.release import _enforce_maturity, build_release
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -141,6 +142,23 @@ class ReleaseTests(unittest.TestCase):
                 registry_path=Path(tmpdir) / "missing.json",
             )
 
+    def test_stable_release_rejects_remaining_gaps_after_language_minimum(self):
+        records = read_records(
+            expand_jsonl_paths([str(ROOT / "data/dev"), str(ROOT / "data/test")])
+        )
+        records.append({"language": "cs"})
+        coverage = build_coverage(
+            records, load_targets(ROOT / "taxonomy" / "coverage_targets.json")
+        )
+        with self.assertRaisesRegex(
+            ValueError, "stable release does not allow coverage gaps"
+        ):
+            _enforce_maturity(
+                profile_name="stable",
+                records=records,
+                coverage=coverage,
+                source_manifest={"sources": [{"release_ready": True}]},
+            )
 
 if __name__ == "__main__":
     unittest.main()

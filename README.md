@@ -307,3 +307,11 @@ spokenform-gold pool-stats "$SPOKENFORM_GOLD_WORK/candidates/*.jsonl" \
   --conflicts "$SPOKENFORM_GOLD_WORK/reports/dedupe.json" \
   --out "$SPOKENFORM_GOLD_WORK/reports/upstream_pool_summary.json"
 ```
+
+## Data-growth execution status
+
+The deterministic ingestion workflow has been exercised against a local fixture cache using the pinned Async, PolyNorm, and Proteno source layouts. The run produced five row-accounted shards, 17 merged quarantine candidates, one explicit PolyNorm `unsupported_category` exclusion, zero conflicts, and a 17-record review batch. The candidate pool covered six languages (`de`, `en`, `es`, `fr`, `it`, `pt`); Czech remains a curated coverage target rather than an upstream ingestion language.
+
+The reviewed corpus remains 62 records with 15 observed categories and 390 reported coverage gaps. These gaps are intentionally visible. Stable maturity now rejects remaining coverage gaps unless an explicit allowed-gap policy is configured, so satisfying the language minimum alone cannot make an incomplete corpus stable.
+
+The fixture run is triage evidence only. Candidates retain quarantine status, source provenance, upstream expectations, and source hashes. Independent semantic review, Spokenform-owned family assignment, license/materialization decisions, and promotion remain outstanding. Full pinned upstream checkouts must still be supplied externally for a production refresh.

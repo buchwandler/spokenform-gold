@@ -187,22 +187,22 @@ def _enforce_maturity(
                 f"{category}: {missing_patterns}"
             )
 
-    blocked_gap_kinds = set(profile.get("blocked_gap_kinds", []))
-    blocked_gap_categories = set(profile.get("blocked_gap_categories", []))
-    if blocked_gap_kinds:
+    if not profile.get("allow_coverage_gaps", True):
+        allowed_gap_kinds = set(profile.get("allowed_gap_kinds", []))
+        allowed_gap_categories = set(profile.get("allowed_gap_categories", []))
         blocking = [
             gap
             for gap in coverage.get("gaps", [])
-            if gap.get("kind") in blocked_gap_kinds
-            and (
-                not blocked_gap_categories
-                or gap.get("category") in blocked_gap_categories
+            if not (
+                gap.get("kind") in allowed_gap_kinds
+                and (
+                    not allowed_gap_categories
+                    or gap.get("category") in allowed_gap_categories
+                )
             )
         ]
         if blocking:
-            errors.append(f"{profile_name} release coverage gate failed")
-    elif not profile.get("allow_coverage_gaps", True) and coverage.get("gaps"):
-        errors.append(f"{profile_name} release does not allow coverage gaps")
+            errors.append(f"{profile_name} release does not allow coverage gaps")
 
     if errors:
         raise ValueError("; ".join(errors))

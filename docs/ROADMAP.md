@@ -51,3 +51,12 @@
 - expanded checked-in PolyNorm candidates from raw and official fixture projections while preserving duplicate lineage and metadata-only exclusions;
 - kept all imported rows quarantined and source-policy decisions unchanged;
 - documented the external-cache refresh and pool-statistics workflow.
+
+## Data-growth execution status
+
+- Exercised the external-cache orchestrator with local fixture layouts for Async, PolyNorm, and Proteno; all five generated shards passed row accounting.
+- Generated a 17-record merged quarantine pool, deterministic dedupe/conflict/family/ranking/exclusion/pool reports, and a 17-record review batch.
+- Recorded one explicit PolyNorm unsupported-category exclusion and zero candidate conflicts. No candidate was promoted.
+- Reviewed coverage remains 62 records, 15 categories, and 390 visible gaps. The gaps are not suppressed to satisfy release gates.
+- Hardened stable release coverage semantics so `allow_coverage_gaps: false` rejects all remaining gaps unless explicit allowed-gap fields are configured.
+- Remaining work is external source-cache refresh, independent semantic adjudication, family assignment, license review, and reviewed promotion.
