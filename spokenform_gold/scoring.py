@@ -1,20 +1,14 @@
 from __future__ import annotations
 
-import itertools
 import json
-import unicodedata
 from collections import Counter
+
+from .oracle import explicit_accepted_outputs, normalize_text
 from collections.abc import Iterable
 from pathlib import Path
 
 EXCLUDED_STATUSES = {"ambiguous", "quarantine"}
 SCORABLE_STATUSES = {"gold", "multi_valid", "policy_choice", "no_change"}
-
-
-def normalize_text(value: str | None) -> str:
-    if value is None:
-        return ""
-    return " ".join(unicodedata.normalize("NFKC", value).split()).casefold()
 
 
 def load_predictions(path: str | Path) -> dict[str, str]:
@@ -29,56 +23,16 @@ def load_predictions(path: str | Path) -> dict[str, str]:
             record_id = payload.get("id")
             output = payload.get("output")
             if not isinstance(record_id, str) or not isinstance(output, str):
-                raise TypeError(
-                    f"{path}:{line_number}: prediction requires string id and output"
-                )
+                raise TypeError(f"{path}:{line_number}: prediction requires string id and output")
             predictions[record_id] = output
     return predictions
 
 
-def _render_variants(record: dict) -> set[str]:
-    units = sorted(record.get("units", []), key=lambda unit: unit.get("start", 0))
-    if not units:
-        expected = record.get("expected_output")
-        return {expected} if isinstance(expected, str) else set()
+def _render_legacy_implicit_variants(record: dict) -> set[str]:
+    """Compatibility-only view of unit Cartesian products; never stable Gold truth."""
+    from .oracle import _legacy_unit_variants
 
-    options: list[list[str]] = []
-    for unit in units:
-        accepted = [
-            value
-            for value in unit.get("accepted", [])
-            if isinstance(value, str) and value.strip()
-        ]
-        canonical = unit.get("canonical")
-        if isinstance(canonical, str) and canonical.strip():
-            accepted.append(canonical)
-        deduped = []
-        seen = set()
-        for value in accepted:
-            key = normalize_text(value)
-            if key not in seen:
-                deduped.append(value)
-                seen.add(key)
-        options.append(deduped or [unit.get("surface", "")])
-
-    rendered: set[str] = set()
-    original = record.get("input", "")
-    for variant_tuple in itertools.product(*options):
-        cursor = 0
-        parts: list[str] = []
-        for unit, replacement in zip(units, variant_tuple):
-            start = unit["start"]
-            end = unit["end"]
-            parts.append(original[cursor:start])
-            parts.append(replacement)
-            cursor = end
-        parts.append(original[cursor:])
-        rendered.add("".join(parts))
-        if len(rendered) > 256:
-            break
-    if isinstance(record.get("expected_output"), str):
-        rendered.add(record["expected_output"])
-    return rendered
+    return _legacy_unit_variants(record)
 
 
 def _status_bucket(target: dict[str, dict], key: str) -> dict:
@@ -106,8 +60,9 @@ def evaluate_records(
         if predicted is None:
             predicted = ""
         normalized_prediction = normalize_text(predicted)
-        canonical_target = normalize_text(record.get("expected_output"))
-        accepted_targets = {normalize_text(value) for value in _render_variants(record)}
+        oracle = record.get("oracle") or {}
+        canonical_target = normalize_text(oracle.get("canonical_output", record.get("expected_output")))
+        accepted_targets, legacy_oracle = explicit_accepted_outputs(record)
         is_canonical = normalized_prediction == canonical_target
         is_accepted = is_canonical or normalized_prediction in accepted_targets
         results.append(
@@ -121,7 +76,8 @@ def evaluate_records(
                 "prediction": predicted,
                 "canonical_match": is_canonical,
                 "accepted_match": is_accepted,
-                "accepted_variants": sorted(_render_variants(record)),
+                "accepted_variants": sorted(accepted_targets),
+                "legacy_oracle": legacy_oracle,
             }
         )
     return results

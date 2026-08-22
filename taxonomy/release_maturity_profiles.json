@@ -10,7 +10,9 @@
       "required_categories": [],
       "required_patterns": {},
       "required_control_suites": [],
-      "required_control_languages": []
+      "required_control_languages": [],
+      "require_oracle_complete": false,
+      "require_review_evidence": false
     },
     "candidate": {
       "allow_coverage_gaps": true,
@@ -36,13 +38,29 @@
         "version"
       ],
       "required_patterns": {
-        "acronym": ["initialism", "plural_acronym", "word_like_acronym"],
-        "math_expression": ["division", "subtraction"],
-        "score_or_range": ["countdown", "numeric_range", "score"],
-        "url_or_email": ["email", "url"]
+        "acronym": [
+          "initialism",
+          "plural_acronym",
+          "word_like_acronym"
+        ],
+        "math_expression": [
+          "division",
+          "subtraction"
+        ],
+        "score_or_range": [
+          "countdown",
+          "numeric_range",
+          "score"
+        ],
+        "url_or_email": [
+          "email",
+          "url"
+        ]
       },
       "required_control_suites": [],
-      "required_control_languages": []
+      "required_control_languages": [],
+      "require_oracle_complete": false,
+      "require_review_evidence": false
     },
     "stable": {
       "allow_coverage_gaps": false,
@@ -69,13 +87,41 @@
         "version"
       ],
       "required_patterns": {
-        "acronym": ["initialism", "plural_acronym", "word_like_acronym"],
-        "date": ["ambiguous_numeric_date", "month_name_date", "slash_date"],
-        "decimal": ["grouped_decimal", "leading_decimal", "negative_decimal"],
-        "math_expression": ["division", "power", "subtraction", "subscript"],
-        "score_or_range": ["countdown", "numeric_range", "score"],
-        "time": ["leading_zero_time", "time_12h", "time_24h"],
-        "url_or_email": ["email", "url"]
+        "acronym": [
+          "initialism",
+          "plural_acronym",
+          "word_like_acronym"
+        ],
+        "date": [
+          "ambiguous_numeric_date",
+          "month_name_date",
+          "slash_date"
+        ],
+        "decimal": [
+          "grouped_decimal",
+          "leading_decimal",
+          "negative_decimal"
+        ],
+        "math_expression": [
+          "division",
+          "power",
+          "subtraction",
+          "subscript"
+        ],
+        "score_or_range": [
+          "countdown",
+          "numeric_range",
+          "score"
+        ],
+        "time": [
+          "leading_zero_time",
+          "time_12h",
+          "time_24h"
+        ],
+        "url_or_email": [
+          "email",
+          "url"
+        ]
       },
       "required_control_suites": [
         "allowed_domains",
@@ -84,7 +130,19 @@
         "normalize_literals",
         "sequence_fallback_mode"
       ],
-      "required_control_languages": ["cs", "de", "en", "es", "fr", "it", "pt"]
+      "required_control_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "require_oracle_complete": true,
+      "require_review_evidence": true,
+      "oracle_schema_version": "1.0.0",
+      "comparison_profile": "sentence-exact-v1"
     }
   }
 }

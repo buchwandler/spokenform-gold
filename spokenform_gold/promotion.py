@@ -4,6 +4,7 @@ from collections import Counter
 from copy import deepcopy
 from typing import Any
 
+from .oracle import oracle_hash
 from .source_manifest import normalize_materialization_policy
 from .taxonomy import source_manifest_map
 from .validation import REVIEWED_STATUSES, validate_records
@@ -101,6 +102,17 @@ def _record_from_decision(
     record["source"] = _source_for_decision(
         candidate, decision, source_manifests=source_manifests
     )
+    record["oracle"] = deepcopy(decision["oracle"])
+    record["review"] = {
+        "protocol_version": decision.get("review_protocol_version", "1.0.0"),
+        "status": "adjudicated",
+        "reviewers": list(decision["reviewers"]),
+        "adjudicator": decision["adjudicator"],
+        "decision": decision["decision"],
+        "disagreement": deepcopy(decision.get("disagreement", {})),
+        "source_error_codes": list(decision.get("source_error_codes", [])),
+    }
+    record["oracle_hash"] = oracle_hash(record)
     if "notes" not in decision:
         record["notes"] = (
             f"Promoted after independent review of candidate {candidate['id']}."
@@ -142,7 +154,7 @@ def _validate_decision_shape(decision: dict) -> None:
                 f"decision for {decision['candidate_id']} has invalid promoted status "
                 f"{decision.get('status')!r}"
             )
-        for key in ("input", "expected_output", "units", "negative_for", "notes"):
+        for key in ("input", "expected_output", "units", "negative_for", "notes", "oracle"):
             if key not in decision:
                 raise _decision_error(
                     f"promoted decision for {decision['candidate_id']} is missing {key}"

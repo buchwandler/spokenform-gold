@@ -4,6 +4,7 @@ import subprocess
 from collections.abc import Iterable
 from pathlib import Path
 
+from .census import build_upstream_census, write_census_artifacts
 from .conflicts import find_conflicts
 from .coverage import build_coverage, load_targets
 from .deduplication import deduplicate_candidates
@@ -215,6 +216,11 @@ def run_upstream_ingestion(
     batch = export_review_batch(ranked, limit=batch_limit)
     write_jsonl(work_root / "review_batches" / "batch-0001.jsonl", batch)
 
+    census = build_upstream_census(candidates, all_exclusions, import_reports)
+    if not census["summary"]["row_accounting_ok"]:
+        raise ValueError("upstream census failed row accounting")
+    census_artifacts = write_census_artifacts(work_root, census)
+
     exclusion_analysis = build_exclusion_analysis(all_exclusions)
     write_json(report_root / "exclusions.json", exclusion_analysis)
     pool_summary = build_candidate_pool_summary(
@@ -245,11 +251,15 @@ def run_upstream_ingestion(
         "exclusions": len(all_exclusions),
         "conflicting_output_groups": len(dedupe.get("conflicting_output_groups", [])),
         "review_batch_records": len(batch),
+        "census": census["summary"],
         "artifacts": {
             "merged_candidates": str(merged_path),
             "ranked_candidates": str(ranked_path),
             "review_batch": str(work_root / "review_batches" / "batch-0001.jsonl"),
             "pool_summary": str(report_root / "upstream_pool_summary.json"),
+            "census_rows": census_artifacts["rows"],
+            "sentence_clusters": census_artifacts["sentence_clusters"],
+            "census_summary": census_artifacts["summary"],
         },
     }
     write_json(report_root / "ingestion-summary.json", summary)

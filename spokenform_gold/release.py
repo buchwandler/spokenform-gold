@@ -9,6 +9,7 @@ from .conflicts import find_conflicts
 from .control_validation import validate_control_records
 from .coverage import build_control_coverage, build_coverage, load_targets
 from .evaluation_profiles import load_registry, registry_hash
+from .gold_audit import audit_records
 from .io import expand_jsonl_paths, read_records, sha256_file
 from .source_manifest import (
     load_and_validate_source_manifest,
@@ -319,6 +320,9 @@ def build_release(
     validation_errors = validate_records(records)
     if validation_errors:
         raise ValueError("release validation failed: " + "; ".join(validation_errors))
+    oracle_audit = audit_records(records, strict=maturity == "stable")
+    if oracle_audit["errors"]:
+        raise ValueError("release oracle audit failed: " + "; ".join(oracle_audit["errors"]))
     split_errors = validate_release_split_registry(
         records, load_split_registry(registry_source)
     )
@@ -387,6 +391,7 @@ def build_release(
     _write_json(output_root / "coverage.json", coverage)
     _write_json(output_root / "control_coverage.json", control_coverage)
     _write_json(output_root / "conflicts.json", conflicts)
+    _write_json(output_root / "oracle_audit.json", oracle_audit)
 
     counts = {
         "records": len(records),
@@ -445,6 +450,12 @@ def build_release(
         "maturity_profile": _profile(maturity),
         "scoring_modes": ["canonical", "accepted"],
         "control_scoring": "control_coverage.json",
+        "oracle_schema_version": "1.0.0",
+        "comparison_profile": "sentence-exact-v1",
+        "oracle_complete": oracle_audit["oracle_complete"],
+        "oracle_audit": "oracle_audit.json",
+        "legacy_oracle_records": oracle_audit["legacy_oracle_records"],
+        "review_complete_records": oracle_audit["review_complete_records"],
         "file_hashes": {},
     }
 

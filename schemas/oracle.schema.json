@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Spokenform Gold sentence oracle",
+  "type": "object",
+  "required": [
+    "canonical_output",
+    "accepted_outputs",
+    "rejected_outputs",
+    "variant_mode"
+  ],
+  "properties": {
+    "canonical_output": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "accepted_outputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "rejected_outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "output",
+          "reason"
+        ],
+        "properties": {
+          "output": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "variant_mode": {
+      "enum": [
+        "explicit"
+      ]
+    },
+    "comparison_profile": {
+      "const": "sentence-exact-v1"
+    },
+    "interpretations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "label",
+          "semantic",
+          "accepted_outputs"
+        ],
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "semantic": {
+            "type": "object"
+          },
+          "accepted_outputs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

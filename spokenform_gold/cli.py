@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .adjudication import build_adjudication_queue
 from .conflicts import find_conflicts
+from .census import build_upstream_census, write_census_artifacts
 from .control_benchmark import load_control_predictions, score_control_records
 from .control_validation import validate_control_records
 from .coverage import build_control_coverage, build_coverage, load_targets
@@ -24,10 +25,14 @@ from .io import (
 )
 from .judge_calibration import build_judge_calibration, load_judge_predictions
 from .merge import merge_candidate_files
+from .gold_audit import audit_records
+from .oracle_diff import diff_records
+from .migration import migrate_jsonl
 from .pool import build_candidate_pool_summary
 from .promotion import build_promoted_records
 from .ranking import build_candidate_ranking, export_review_batch
 from .release import build_release
+from .review import blind_review_batch
 from .scoring import load_predictions, score_records
 from .source_lock import build_source_lock
 from .splitting import split_records
@@ -52,6 +57,12 @@ def cmd_stats(args):
     return 0
 
 
+def cmd_migrate_oracle(args):
+    count = migrate_jsonl(args.input, args.out)
+    print(f"migrated {count} records to {args.out}")
+    return 0
+
+
 def cmd_validate(args):
     records = read_records(args.paths)
     categories = load_categories(args.categories) if args.categories else None
@@ -62,6 +73,52 @@ def cmd_validate(args):
             print(f"- {error}")
         return 1
     print(f"OK: {len(records)} record(s)")
+    return 0
+
+
+def cmd_blind_review(args):
+    batch = blind_review_batch(read_records(args.paths), reviewer_slot=args.reviewer_slot)
+    write_jsonl(args.out, batch)
+    print(f"wrote {len(batch)} blind review records to {args.out}")
+    return 0
+
+
+def cmd_census_upstreams(args):
+    candidates = read_records(args.candidates)
+    exclusions = []
+    for path in args.exclusions or []:
+        payload = read_json(path)
+        exclusions.extend(payload if isinstance(payload, list) else payload.get("exclusions", []))
+    reports = [read_json(path) for path in args.reports or []]
+    census = build_upstream_census(candidates, exclusions, reports)
+    if not census["summary"]["row_accounting_ok"]:
+        raise ValueError("upstream census failed row accounting")
+    artifacts = write_census_artifacts(args.out_root, census)
+    print(json.dumps({"summary": census["summary"], "artifacts": artifacts}, ensure_ascii=False))
+    return 0
+
+
+def cmd_census_stats(args):
+    report = read_json(args.path)
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_gold_audit(args):
+    report = audit_records(read_records(args.paths), strict=args.strict)
+    if args.json:
+        write_json(args.json, report)
+    else:
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 1 if report["errors"] else 0
+
+
+def cmd_oracle_diff(args):
+    report = diff_records(read_records(args.old), read_records(args.new))
+    if args.json:
+        write_json(args.json, report)
+    else:
+        print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0
 
 
@@ -367,11 +424,45 @@ def build_parser():
     stats.add_argument("--json")
     stats.set_defaults(func=cmd_stats)
 
+    migrate = sub.add_parser("migrate-oracle")
+    migrate.add_argument("input")
+    migrate.add_argument("--out", required=True)
+    migrate.set_defaults(func=cmd_migrate_oracle)
+
     validate = sub.add_parser("validate")
     validate.add_argument("paths", nargs="+")
     validate.add_argument("--judge", action="store_true")
     validate.add_argument("--categories")
     validate.set_defaults(func=cmd_validate)
+
+    blind = sub.add_parser("blind-review")
+    blind.add_argument("paths", nargs="+")
+    blind.add_argument("--reviewer-slot", choices=["A", "B"], required=True)
+    blind.add_argument("--out", required=True)
+    blind.set_defaults(func=cmd_blind_review)
+
+    census = sub.add_parser("census-upstreams")
+    census.add_argument("candidates", nargs="+")
+    census.add_argument("--exclusions", nargs="*")
+    census.add_argument("--reports", nargs="*")
+    census.add_argument("--out-root", required=True)
+    census.set_defaults(func=cmd_census_upstreams)
+
+    census_stats = sub.add_parser("census-stats")
+    census_stats.add_argument("path")
+    census_stats.set_defaults(func=cmd_census_stats)
+
+    audit = sub.add_parser("gold-audit")
+    audit.add_argument("paths", nargs="+")
+    audit.add_argument("--strict", action="store_true")
+    audit.add_argument("--json")
+    audit.set_defaults(func=cmd_gold_audit)
+
+    oracle_diff = sub.add_parser("oracle-diff")
+    oracle_diff.add_argument("old", nargs="+")
+    oracle_diff.add_argument("--new", nargs="+", required=True)
+    oracle_diff.add_argument("--json")
+    oracle_diff.set_defaults(func=cmd_oracle_diff)
 
     coverage = sub.add_parser("coverage")
     coverage.add_argument("paths", nargs="+")

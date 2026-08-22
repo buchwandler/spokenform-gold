@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Spokenform Gold oracle correction",
+  "type": "object",
+  "required": [
+    "record_id",
+    "old_oracle_hash",
+    "new_oracle_hash",
+    "reason",
+    "reviewed_by",
+    "adjudicator"
+  ],
+  "properties": {
+    "record_id": {
+      "type": "string"
+    },
+    "old_oracle_hash": {
+      "type": "string"
+    },
+    "new_oracle_hash": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "reviewed_by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "adjudicator": {
+      "type": "string"
+    }
+  }
+}

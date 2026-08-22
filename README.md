@@ -16,6 +16,27 @@ canonical layer that can:
 - discover unseen token shapes in real text;
 - maintain a separate human-labelled judge-validation set.
 
+## Sentence-level oracle
+
+Canonical records use an explicit full-sentence oracle:
+
+```json
+"oracle": {
+  "canonical_output": "Use a three quarters inch bolt.",
+  "accepted_outputs": [
+    "Use a three quarters inch bolt.",
+    "Use a three fourths inch bolt."
+  ],
+  "rejected_outputs": [],
+  "variant_mode": "explicit",
+  "comparison_profile": "sentence-exact-v1"
+}
+```
+
+`expected_output` remains a compatibility alias and must equal `oracle.canonical_output` for reviewed records. Accepted scoring uses the explicit full-sentence list; it does not silently accept every Cartesian product of unit variants. `oracle_hash` covers the semantic assertion and excludes volatile notes and review metadata.
+
+Use `spokenform-gold gold-audit ... --strict` for stable-oracle checks, `spokenform-gold oracle-diff OLD --new NEW` for deterministic answer changes, `spokenform-gold migrate-oracle` for legacy seed migration, and `spokenform-gold blind-review` to create first-pass artifacts that hide upstream expected outputs.
+
 ## Status classes
 
 - `gold`

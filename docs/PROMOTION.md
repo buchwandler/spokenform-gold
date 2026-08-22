@@ -68,3 +68,10 @@ fields, and `quarantine=30`, with zero promoted records. These proposals remain
 external evidence only. No row from this batch is copied into `data/dev` or
 `data/test` until independent human review, adjudication, stable Spokenform
 family assignment, and source-policy decisions are complete.
+
+
+## Sentence-oracle promotion boundary
+
+A promotable decision must include an explicit `oracle` object with full-sentence `canonical_output`, `accepted_outputs`, `rejected_outputs`, and `variant_mode: explicit`. Promotion copies this reviewed assertion; it does not derive sentence variants from unit alternatives. Decisions may include `review_protocol_version`, structured `disagreement`, and `source_error_codes`.
+
+Two independent reviewer IDs and one adjudicator are required for promotion decisions. Historic migration rows may carry `review.status=legacy_review` without invented identities, but stable release rejects them until re-reviewed. Upstream expected output remains provenance evidence and is hidden from first-pass reviewers.

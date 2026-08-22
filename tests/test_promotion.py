@@ -29,6 +29,7 @@ class PromotionTests(unittest.TestCase):
             "units": copy.deepcopy(self.candidate["units"]),
             "negative_for": [],
             "notes": "Independently reviewed test record.",
+            "oracle": copy.deepcopy(self.candidate["oracle"]),
             "license_disposition": "spokenform_original",
             "upstream_refs": [{"benchmark": "async_tn", "source_id": "1001"}],
         }
