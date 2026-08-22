@@ -1,0 +1,265 @@
+{
+  "version": "2.0.0",
+  "source": "async_tn",
+  "aliases": {
+    "ID": "identifier",
+    "IP": "ip_address"
+  },
+  "mappings": {
+    "ACRONYM": {
+      "category": "acronym",
+      "status": "exact",
+      "surface_pattern": "initialism"
+    },
+    "CURRENCY": {
+      "category": "currency",
+      "status": "exact",
+      "surface_pattern": "currency_symbol"
+    },
+    "DATE": {
+      "category": "date",
+      "status": "exact",
+      "surface_pattern": "slash_date"
+    },
+    "DECIMAL": {
+      "category": "decimal",
+      "status": "exact",
+      "surface_pattern": "plain_decimal"
+    },
+    "FRACTION": {
+      "category": "fraction",
+      "status": "exact",
+      "surface_pattern": "numeric_fraction"
+    },
+    "ID": {
+      "category": "identifier",
+      "status": "broader",
+      "surface_pattern": "mixed_identifier"
+    },
+    "IP": {
+      "category": "ip_address",
+      "status": "exact",
+      "surface_pattern": "ipv4"
+    },
+    "TIME": {
+      "category": "time",
+      "status": "exact",
+      "surface_pattern": "time_24h"
+    },
+    "VERSION": {
+      "category": "version",
+      "status": "exact",
+      "surface_pattern": "semantic_version"
+    },
+    "abbreviation": {
+      "category": "abbreviation",
+      "status": "exact",
+      "surface_pattern": "abbreviation_token"
+    },
+    "acronym": {
+      "category": "acronym",
+      "status": "exact",
+      "surface_pattern": "initialism"
+    },
+    "address": {
+      "category": "address",
+      "status": "exact",
+      "surface_pattern": "street_address"
+    },
+    "api_token": {
+      "category": "api_token",
+      "status": "exact",
+      "surface_pattern": "token"
+    },
+    "biology": {
+      "category": "biology",
+      "status": "exact",
+      "surface_pattern": "binomial_name"
+    },
+    "cardinal": {
+      "category": "cardinal",
+      "status": "exact",
+      "surface_pattern": "plain_integer"
+    },
+    "chemical": {
+      "category": "chemical",
+      "status": "exact",
+      "surface_pattern": "chemical_formula"
+    },
+    "coordinates": {
+      "category": "coordinates",
+      "status": "exact",
+      "surface_pattern": "lat_lon"
+    },
+    "currency": {
+      "category": "currency",
+      "status": "exact",
+      "surface_pattern": "currency_symbol"
+    },
+    "date": {
+      "category": "date",
+      "status": "exact",
+      "surface_pattern": "slash_date"
+    },
+    "date_time_mixed": {
+      "category": "date_time_mixed",
+      "status": "exact",
+      "surface_pattern": "date_time"
+    },
+    "decimal": {
+      "category": "decimal",
+      "status": "exact",
+      "surface_pattern": "plain_decimal"
+    },
+    "dialogue": {
+      "category": "dialogue",
+      "status": "exact",
+      "surface_pattern": "quoted_text"
+    },
+    "file_path": {
+      "category": "file_path",
+      "status": "exact",
+      "surface_pattern": "path"
+    },
+    "fraction": {
+      "category": "fraction",
+      "status": "exact",
+      "surface_pattern": "numeric_fraction"
+    },
+    "identifier": {
+      "category": "identifier",
+      "status": "exact",
+      "surface_pattern": "mixed_identifier"
+    },
+    "ip_address": {
+      "category": "ip_address",
+      "status": "exact",
+      "surface_pattern": "ipv4"
+    },
+    "isbn": {
+      "category": "isbn",
+      "status": "exact",
+      "surface_pattern": "isbn13"
+    },
+    "legal_citation": {
+      "category": "legal_citation",
+      "status": "exact",
+      "surface_pattern": "legal_reference"
+    },
+    "math_expression": {
+      "category": "math_expression",
+      "status": "exact",
+      "surface_pattern": "math_expression"
+    },
+    "measurement_unit": {
+      "category": "measurement_unit",
+      "status": "exact",
+      "surface_pattern": "number_unit"
+    },
+    "mixed_doc": {
+      "category": "mixed_doc",
+      "status": "exact",
+      "surface_pattern": "mixed_document"
+    },
+    "music": {
+      "category": "music",
+      "status": "exact",
+      "surface_pattern": "musical_note"
+    },
+    "ordinal": {
+      "category": "ordinal",
+      "status": "exact",
+      "surface_pattern": "ordinal_numeric"
+    },
+    "password_token": {
+      "category": "password_token",
+      "status": "exact",
+      "surface_pattern": "token"
+    },
+    "phone": {
+      "category": "phone",
+      "status": "exact",
+      "surface_pattern": "phone_number"
+    },
+    "pin_passcode": {
+      "category": "pin_passcode",
+      "status": "exact",
+      "surface_pattern": "pin"
+    },
+    "product_code": {
+      "category": "product_code",
+      "status": "exact",
+      "surface_pattern": "product_code"
+    },
+    "promo_code": {
+      "category": "promo_code",
+      "status": "exact",
+      "surface_pattern": "promo_code"
+    },
+    "quantity": {
+      "category": "quantity",
+      "status": "exact",
+      "surface_pattern": "quantity"
+    },
+    "range": {
+      "category": "range",
+      "status": "exact",
+      "surface_pattern": "numeric_range"
+    },
+    "roman_numeral": {
+      "category": "roman_numeral",
+      "status": "exact",
+      "surface_pattern": "roman_numeral"
+    },
+    "scientific": {
+      "category": "scientific",
+      "status": "exact",
+      "surface_pattern": "scientific_notation"
+    },
+    "score_or_range": {
+      "category": "score_or_range",
+      "status": "exact",
+      "surface_pattern": "score"
+    },
+    "score_percent": {
+      "category": "score_percent",
+      "status": "exact",
+      "surface_pattern": "percent"
+    },
+    "serial_or_plate": {
+      "category": "serial_or_plate",
+      "status": "exact",
+      "surface_pattern": "serial_number"
+    },
+    "social_handle": {
+      "category": "social_handle",
+      "status": "exact",
+      "surface_pattern": "handle"
+    },
+    "ticker": {
+      "category": "ticker",
+      "status": "exact",
+      "surface_pattern": "ticker_symbol"
+    },
+    "time": {
+      "category": "time",
+      "status": "exact",
+      "surface_pattern": "time_24h"
+    },
+    "ui_copy": {
+      "category": "ui_copy",
+      "status": "exact",
+      "surface_pattern": "ui_text"
+    },
+    "url_or_email": {
+      "category": "url_or_email",
+      "status": "exact",
+      "surface_pattern": "url"
+    },
+    "version": {
+      "category": "version",
+      "status": "exact",
+      "surface_pattern": "semantic_version"
+    }
+  }
+}

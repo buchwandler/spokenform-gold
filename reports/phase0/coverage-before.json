@@ -1,0 +1,3062 @@
+{
+  "records": 62,
+  "categories_observed": 15,
+  "categories_targeted": 42,
+  "coverage": [
+    {
+      "category": "abbreviation",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 1,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "acronym",
+      "records": 3,
+      "units": 3,
+      "languages": [
+        "en"
+      ],
+      "locales": [
+        "en-US"
+      ],
+      "statuses": {
+        "gold": 2,
+        "policy_choice": 1
+      },
+      "negative_controls": 2,
+      "patterns": {
+        "initialism": 1,
+        "plural_acronym": 1,
+        "word_like_acronym": 1
+      },
+      "missing_languages": [
+        "cs",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "address",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "api_token",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "biology",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "cardinal",
+      "records": 1,
+      "units": 1,
+      "languages": [
+        "en"
+      ],
+      "locales": [
+        "en-US"
+      ],
+      "statuses": {
+        "gold": 1
+      },
+      "negative_controls": 1,
+      "patterns": {
+        "plain_number": 1
+      },
+      "missing_languages": [
+        "cs",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "chemical",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "coordinates",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "currency",
+      "records": 2,
+      "units": 2,
+      "languages": [
+        "en",
+        "es"
+      ],
+      "locales": [
+        "en-US",
+        "es-ES"
+      ],
+      "statuses": {
+        "gold": 2
+      },
+      "negative_controls": 1,
+      "patterns": {
+        "currency_symbol": 2
+      },
+      "missing_languages": [
+        "cs",
+        "de",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "date",
+      "records": 8,
+      "units": 8,
+      "languages": [
+        "de",
+        "en",
+        "es"
+      ],
+      "locales": [
+        "de-DE",
+        "en-US",
+        "es-ES"
+      ],
+      "statuses": {
+        "ambiguous": 3,
+        "policy_choice": 3,
+        "gold": 2
+      },
+      "negative_controls": 2,
+      "patterns": {
+        "ambiguous_numeric_date": 3,
+        "slash_date": 3,
+        "iso_date": 1,
+        "month_name_date": 1
+      },
+      "missing_languages": [
+        "cs",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "date_time_mixed",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "decimal",
+      "records": 6,
+      "units": 6,
+      "languages": [
+        "en"
+      ],
+      "locales": [
+        "en-US"
+      ],
+      "statuses": {
+        "gold": 6
+      },
+      "negative_controls": 3,
+      "patterns": {
+        "grouped_decimal": 1,
+        "leading_decimal": 2,
+        "leading_zero": 1,
+        "negative_decimal": 1,
+        "plain_decimal": 1
+      },
+      "missing_languages": [
+        "cs",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "dialogue",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "file_path",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "fraction",
+      "records": 4,
+      "units": 4,
+      "languages": [
+        "de",
+        "en"
+      ],
+      "locales": [
+        "de-DE",
+        "en-US"
+      ],
+      "statuses": {
+        "multi_valid": 2,
+        "gold": 2
+      },
+      "negative_controls": 0,
+      "patterns": {
+        "numeric_fraction": 3,
+        "fraction_vs_slash": 1
+      },
+      "missing_languages": [
+        "cs",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "identifier",
+      "records": 4,
+      "units": 4,
+      "languages": [
+        "en",
+        "es"
+      ],
+      "locales": [
+        "en-US",
+        "es-ES"
+      ],
+      "statuses": {
+        "gold": 4
+      },
+      "negative_controls": 1,
+      "patterns": {
+        "letters_digits": 1,
+        "identifier_vs_word": 1,
+        "mixed_identifier": 2
+      },
+      "missing_languages": [
+        "cs",
+        "de",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "ip_address",
+      "records": 1,
+      "units": 1,
+      "languages": [
+        "en"
+      ],
+      "locales": [
+        "en-US"
+      ],
+      "statuses": {
+        "gold": 1
+      },
+      "negative_controls": 0,
+      "patterns": {
+        "ipv4": 1
+      },
+      "missing_languages": [
+        "cs",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "isbn",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "legal_citation",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "math_expression",
+      "records": 4,
+      "units": 4,
+      "languages": [
+        "en",
+        "it",
+        "pt"
+      ],
+      "locales": [
+        "en-US",
+        "it-IT",
+        "pt-PT"
+      ],
+      "statuses": {
+        "gold": 4
+      },
+      "negative_controls": 0,
+      "patterns": {
+        "division": 1,
+        "subtraction": 1,
+        "power": 1,
+        "subscript": 1
+      },
+      "missing_languages": [
+        "cs",
+        "de",
+        "es",
+        "fr"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "measurement_unit",
+      "records": 1,
+      "units": 1,
+      "languages": [
+        "en"
+      ],
+      "locales": [
+        "en-US"
+      ],
+      "statuses": {
+        "gold": 1
+      },
+      "negative_controls": 0,
+      "patterns": {
+        "value_unit": 1
+      },
+      "missing_languages": [
+        "cs",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "mixed_doc",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "music",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "ordinal",
+      "records": 1,
+      "units": 1,
+      "languages": [
+        "en"
+      ],
+      "locales": [
+        "en-US"
+      ],
+      "statuses": {
+        "gold": 1
+      },
+      "negative_controls": 0,
+      "patterns": {
+        "ordinal_suffix": 1
+      },
+      "missing_languages": [
+        "cs",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "password_token",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "phone",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "pin_passcode",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "product_code",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "promo_code",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "quantity",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "range",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 1,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "roman_numeral",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "scientific",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "score_or_range",
+      "records": 3,
+      "units": 3,
+      "languages": [
+        "en"
+      ],
+      "locales": [
+        "en-US"
+      ],
+      "statuses": {
+        "gold": 3
+      },
+      "negative_controls": 1,
+      "patterns": {
+        "countdown": 1,
+        "score": 1,
+        "numeric_range": 1
+      },
+      "missing_languages": [
+        "cs",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "score_percent",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "serial_or_plate",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "social_handle",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "ticker",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "time",
+      "records": 5,
+      "units": 5,
+      "languages": [
+        "de",
+        "en",
+        "fr"
+      ],
+      "locales": [
+        "de-DE",
+        "en-US",
+        "fr-FR"
+      ],
+      "statuses": {
+        "gold": 5
+      },
+      "negative_controls": 1,
+      "patterns": {
+        "time_12h": 2,
+        "midnight": 1,
+        "leading_zero_time": 1,
+        "time_24h": 1
+      },
+      "missing_languages": [
+        "cs",
+        "es",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "ui_copy",
+      "records": 0,
+      "units": 0,
+      "languages": [],
+      "locales": [],
+      "statuses": {},
+      "negative_controls": 0,
+      "patterns": {},
+      "missing_languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "url_or_email",
+      "records": 2,
+      "units": 2,
+      "languages": [
+        "en"
+      ],
+      "locales": [
+        "en-US"
+      ],
+      "statuses": {
+        "gold": 2
+      },
+      "negative_controls": 1,
+      "patterns": {
+        "email": 1,
+        "url": 1
+      },
+      "missing_languages": [
+        "cs",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    },
+    {
+      "category": "version",
+      "records": 4,
+      "units": 4,
+      "languages": [
+        "en",
+        "es"
+      ],
+      "locales": [
+        "en-US",
+        "es-ES"
+      ],
+      "statuses": {
+        "gold": 4
+      },
+      "negative_controls": 2,
+      "patterns": {
+        "prerelease_version": 2,
+        "semantic_version": 1,
+        "simple_version": 1
+      },
+      "missing_languages": [
+        "cs",
+        "de",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "missing_patterns": []
+    }
+  ],
+  "gaps": [
+    {
+      "category": "abbreviation",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "abbreviation",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "abbreviation",
+      "kind": "negative_controls",
+      "have": 1,
+      "need": 2
+    },
+    {
+      "category": "abbreviation",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "abbreviation",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "abbreviation",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "abbreviation",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "abbreviation",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "abbreviation",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "abbreviation",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "acronym",
+      "kind": "low_volume",
+      "have": 3,
+      "need": 20
+    },
+    {
+      "category": "acronym",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "acronym",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "acronym",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "acronym",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "acronym",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "acronym",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "acronym",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "address",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "address",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "address",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "address",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "address",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "address",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "address",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "address",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "address",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "address",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "api_token",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "api_token",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "api_token",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "api_token",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "api_token",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "api_token",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "api_token",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "api_token",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "api_token",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "api_token",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "biology",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "biology",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "biology",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "biology",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "biology",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "biology",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "biology",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "biology",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "biology",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "biology",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "cardinal",
+      "kind": "low_volume",
+      "have": 1,
+      "need": 20
+    },
+    {
+      "category": "cardinal",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "cardinal",
+      "kind": "negative_controls",
+      "have": 1,
+      "need": 2
+    },
+    {
+      "category": "cardinal",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "cardinal",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "cardinal",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "cardinal",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "cardinal",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "cardinal",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "chemical",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "chemical",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "chemical",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "chemical",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "chemical",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "chemical",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "chemical",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "chemical",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "chemical",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "chemical",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "coordinates",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "coordinates",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "coordinates",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "coordinates",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "coordinates",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "coordinates",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "coordinates",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "coordinates",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "coordinates",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "coordinates",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "currency",
+      "kind": "low_volume",
+      "have": 2,
+      "need": 20
+    },
+    {
+      "category": "currency",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "currency",
+      "kind": "negative_controls",
+      "have": 1,
+      "need": 2
+    },
+    {
+      "category": "currency",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "currency",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "currency",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "currency",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "currency",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "date",
+      "kind": "low_volume",
+      "have": 8,
+      "need": 20
+    },
+    {
+      "category": "date",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "date",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "date",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "date",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "date_time_mixed",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "date_time_mixed",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "date_time_mixed",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "date_time_mixed",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "date_time_mixed",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "date_time_mixed",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "date_time_mixed",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "date_time_mixed",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "date_time_mixed",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "date_time_mixed",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "decimal",
+      "kind": "low_volume",
+      "have": 6,
+      "need": 20
+    },
+    {
+      "category": "decimal",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "decimal",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "decimal",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "decimal",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "decimal",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "decimal",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "decimal",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "dialogue",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "dialogue",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "dialogue",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "dialogue",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "dialogue",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "dialogue",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "dialogue",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "dialogue",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "dialogue",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "dialogue",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "file_path",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "file_path",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "file_path",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "file_path",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "file_path",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "file_path",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "file_path",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "file_path",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "file_path",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "file_path",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "fraction",
+      "kind": "low_volume",
+      "have": 4,
+      "need": 20
+    },
+    {
+      "category": "fraction",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "fraction",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "fraction",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "fraction",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "fraction",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "fraction",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "fraction",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "identifier",
+      "kind": "low_volume",
+      "have": 4,
+      "need": 20
+    },
+    {
+      "category": "identifier",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "identifier",
+      "kind": "negative_controls",
+      "have": 1,
+      "need": 2
+    },
+    {
+      "category": "identifier",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "identifier",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "identifier",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "identifier",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "identifier",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "ip_address",
+      "kind": "low_volume",
+      "have": 1,
+      "need": 20
+    },
+    {
+      "category": "ip_address",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "ip_address",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "ip_address",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "ip_address",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "ip_address",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "ip_address",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "ip_address",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "ip_address",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "isbn",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "isbn",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "isbn",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "isbn",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "isbn",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "isbn",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "isbn",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "isbn",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "isbn",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "isbn",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "legal_citation",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "legal_citation",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "legal_citation",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "legal_citation",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "legal_citation",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "legal_citation",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "legal_citation",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "legal_citation",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "legal_citation",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "legal_citation",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "math_expression",
+      "kind": "low_volume",
+      "have": 4,
+      "need": 20
+    },
+    {
+      "category": "math_expression",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "math_expression",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "math_expression",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "math_expression",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "math_expression",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "math_expression",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "measurement_unit",
+      "kind": "low_volume",
+      "have": 1,
+      "need": 20
+    },
+    {
+      "category": "measurement_unit",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "measurement_unit",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "measurement_unit",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "measurement_unit",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "measurement_unit",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "measurement_unit",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "measurement_unit",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "measurement_unit",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "mixed_doc",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "mixed_doc",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "mixed_doc",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "mixed_doc",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "mixed_doc",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "mixed_doc",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "mixed_doc",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "mixed_doc",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "mixed_doc",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "mixed_doc",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "music",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "music",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "music",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "music",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "music",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "music",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "music",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "music",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "music",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "music",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "ordinal",
+      "kind": "low_volume",
+      "have": 1,
+      "need": 20
+    },
+    {
+      "category": "ordinal",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "ordinal",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "ordinal",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "ordinal",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "ordinal",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "ordinal",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "ordinal",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "ordinal",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "password_token",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "password_token",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "password_token",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "password_token",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "password_token",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "password_token",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "password_token",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "password_token",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "password_token",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "password_token",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "phone",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "phone",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "phone",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "phone",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "phone",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "phone",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "phone",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "phone",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "phone",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "phone",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "pin_passcode",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "pin_passcode",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "pin_passcode",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "pin_passcode",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "pin_passcode",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "pin_passcode",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "pin_passcode",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "pin_passcode",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "pin_passcode",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "pin_passcode",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "product_code",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "product_code",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "product_code",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "product_code",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "product_code",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "product_code",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "product_code",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "product_code",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "product_code",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "product_code",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "promo_code",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "promo_code",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "promo_code",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "promo_code",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "promo_code",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "promo_code",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "promo_code",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "promo_code",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "promo_code",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "promo_code",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "quantity",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "quantity",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "quantity",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "quantity",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "quantity",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "quantity",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "quantity",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "quantity",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "quantity",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "quantity",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "range",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "range",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "range",
+      "kind": "negative_controls",
+      "have": 1,
+      "need": 2
+    },
+    {
+      "category": "range",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "range",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "range",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "range",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "range",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "range",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "range",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "roman_numeral",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "roman_numeral",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "roman_numeral",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "roman_numeral",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "roman_numeral",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "roman_numeral",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "roman_numeral",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "roman_numeral",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "roman_numeral",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "roman_numeral",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "scientific",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "scientific",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "scientific",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "scientific",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "scientific",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "scientific",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "scientific",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "scientific",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "scientific",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "scientific",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "score_or_range",
+      "kind": "low_volume",
+      "have": 3,
+      "need": 20
+    },
+    {
+      "category": "score_or_range",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "score_or_range",
+      "kind": "negative_controls",
+      "have": 1,
+      "need": 2
+    },
+    {
+      "category": "score_or_range",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "score_or_range",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "score_or_range",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "score_or_range",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "score_or_range",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "score_or_range",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "score_percent",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "score_percent",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "score_percent",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "score_percent",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "score_percent",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "score_percent",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "score_percent",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "score_percent",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "score_percent",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "score_percent",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "serial_or_plate",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "serial_or_plate",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "serial_or_plate",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "serial_or_plate",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "serial_or_plate",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "serial_or_plate",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "serial_or_plate",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "serial_or_plate",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "serial_or_plate",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "serial_or_plate",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "social_handle",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "social_handle",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "social_handle",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "social_handle",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "social_handle",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "social_handle",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "social_handle",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "social_handle",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "social_handle",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "social_handle",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "ticker",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "ticker",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "ticker",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "ticker",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "ticker",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "ticker",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "ticker",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "ticker",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "ticker",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "ticker",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "time",
+      "kind": "low_volume",
+      "have": 5,
+      "need": 20
+    },
+    {
+      "category": "time",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "time",
+      "kind": "negative_controls",
+      "have": 1,
+      "need": 2
+    },
+    {
+      "category": "time",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "time",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "time",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "time",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "ui_copy",
+      "kind": "low_volume",
+      "have": 0,
+      "need": 20
+    },
+    {
+      "category": "ui_copy",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "ui_copy",
+      "kind": "negative_controls",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "ui_copy",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "ui_copy",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "ui_copy",
+      "kind": "language",
+      "missing": "en"
+    },
+    {
+      "category": "ui_copy",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "ui_copy",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "ui_copy",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "ui_copy",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "url_or_email",
+      "kind": "low_volume",
+      "have": 2,
+      "need": 20
+    },
+    {
+      "category": "url_or_email",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "url_or_email",
+      "kind": "negative_controls",
+      "have": 1,
+      "need": 2
+    },
+    {
+      "category": "url_or_email",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "url_or_email",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "url_or_email",
+      "kind": "language",
+      "missing": "es"
+    },
+    {
+      "category": "url_or_email",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "url_or_email",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "url_or_email",
+      "kind": "language",
+      "missing": "pt"
+    },
+    {
+      "category": "version",
+      "kind": "low_volume",
+      "have": 4,
+      "need": 20
+    },
+    {
+      "category": "version",
+      "kind": "ambiguous",
+      "have": 0,
+      "need": 2
+    },
+    {
+      "category": "version",
+      "kind": "language",
+      "missing": "cs"
+    },
+    {
+      "category": "version",
+      "kind": "language",
+      "missing": "de"
+    },
+    {
+      "category": "version",
+      "kind": "language",
+      "missing": "fr"
+    },
+    {
+      "category": "version",
+      "kind": "language",
+      "missing": "it"
+    },
+    {
+      "category": "version",
+      "kind": "language",
+      "missing": "pt"
+    }
+  ]
+}

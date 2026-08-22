@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Spokenform Gold configuration control record",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "id",
+    "family_id",
+    "control",
+    "language",
+    "locale",
+    "input",
+    "source",
+    "expectations",
+    "notes"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "minLength": 1},
+    "id": {"type": "string", "minLength": 1},
+    "family_id": {"type": "string", "minLength": 1},
+    "control": {"type": "string", "minLength": 1},
+    "language": {"type": "string", "minLength": 2},
+    "locale": {"type": "string", "minLength": 2},
+    "input": {"type": "string"},
+    "source": {
+      "type": "object",
+      "required": ["benchmark", "source_id", "source_version", "source_url", "license"]
+    },
+    "expectations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["profile_id", "expected_output", "required_rules", "forbidden_rules"],
+        "properties": {
+          "profile_id": {"type": "string", "minLength": 1},
+          "expected_output": {"type": "string"},
+          "required_rules": {"type": "array", "items": {"type": "string"}},
+          "forbidden_rules": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "notes": {"type": "string"}
+  }
+}

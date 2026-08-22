@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Spokenform Gold evaluation profile registry",
+  "type": "object",
+  "required": ["version", "profiles"],
+  "properties": {
+    "version": {"type": "string", "minLength": 1},
+    "profiles": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["kind", "policy_expansion", "prepare_kwargs"],
+        "properties": {
+          "kind": {"enum": ["canonical", "control"]},
+          "policy_expansion": {"type": "boolean"},
+          "extends": {"type": "string", "minLength": 1},
+          "prepare_kwargs": {"type": "object"}
+        }
+      }
+    }
+  }
+}

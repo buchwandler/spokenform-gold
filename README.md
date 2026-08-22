@@ -364,3 +364,35 @@ Review artifacts and upstream caches belong in the disposable external work root
 They are not release data and must not be copied into `data/train`, `data/dev`, or
 `data/test` merely because a ranker, model, or current Spokenform output suggests
 an answer.
+
+
+## Strict re-review workflow
+
+Existing canonical records can be re-reviewed without mutating Git-tracked Gold.
+Generate independent blind artifacts into the external work root:
+
+```bash
+python -m spokenform_gold.cli blind-review   data/train data/dev data/test   --reviewer-slot A   --out ../spokenform-gold-work/reviews/existing-a.jsonl
+
+python -m spokenform_gold.cli blind-review   data/train data/dev data/test   --reviewer-slot B   --out ../spokenform-gold-work/reviews/existing-b.jsonl
+```
+
+After both genuine reviewers complete their annotations, compare them:
+
+```bash
+python -m spokenform_gold.cli compare-reviews   ../spokenform-gold-work/reviews/existing-a-completed.jsonl   ../spokenform-gold-work/reviews/existing-b-completed.jsonl   --out ../spokenform-gold-work/reviews/existing-comparison.jsonl
+```
+
+Apply adjudicated decisions only to a new output root:
+
+```bash
+python -m spokenform_gold.cli apply-reviewed-oracles   --records data/train data/dev data/test   --review-a ../spokenform-gold-work/reviews/existing-a-completed.jsonl   --review-b ../spokenform-gold-work/reviews/existing-b-completed.jsonl   --decisions ../spokenform-gold-work/reviews/existing-decisions.jsonl   --out-root ../spokenform-gold-work/canonical-reviewed
+```
+
+The workflow requires a deterministic sentence-oracle identity, matching
+input/language/locale, two distinct reviewer IDs, an adjudicator, and decisions
+that preserve the canonical record ID, family ID, source provenance, and review
+disagreement. It recomputes oracle_hash, validates every resulting record, and
+writes records.jsonl, comparisons.jsonl, and report.json only beneath a new
+isolated output root. It never invents reviewer evidence or promotes a row
+because current Spokenform output happens to match.

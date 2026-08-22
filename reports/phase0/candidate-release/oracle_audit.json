@@ -1,0 +1,19 @@
+{
+  "errors": [],
+  "legacy_oracle_records": [],
+  "missing_oracle_hash_records": [],
+  "oracle_complete": true,
+  "quarantine_records": [],
+  "records": 62,
+  "review_complete_records": 0,
+  "review_gap_records": [],
+  "reviewed_oracle_conflicts": [],
+  "status_counts": {
+    "ambiguous": 3,
+    "gold": 40,
+    "multi_valid": 2,
+    "no_change": 13,
+    "policy_choice": 4
+  },
+  "strict": false
+}

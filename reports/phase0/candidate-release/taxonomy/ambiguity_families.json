@@ -1,0 +1,29 @@
+{
+  "version": "1.0.0",
+  "families": {
+    "clock-vs-ratio": {
+      "categories": ["time", "score_or_range"]
+    },
+    "dot-vs-punctuation": {
+      "categories": ["decimal"]
+    },
+    "fraction-vs-division": {
+      "categories": ["fraction", "math_expression"]
+    },
+    "hyphen-semantics": {
+      "categories": ["score_or_range", "range"]
+    },
+    "ip-vs-version": {
+      "categories": ["ip_address", "version"]
+    },
+    "mdy-vs-dmy": {
+      "categories": ["date"]
+    },
+    "version-vs-decimal": {
+      "categories": ["version", "decimal"]
+    },
+    "word-vs-initialism": {
+      "categories": ["acronym", "identifier"]
+    }
+  }
+}

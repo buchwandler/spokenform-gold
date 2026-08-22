@@ -1,0 +1,158 @@
+{
+  "benchmark_version": "0.2.0-candidate.1",
+  "comparison_profile": "sentence-exact-v1",
+  "control_files": [
+    "data/controls/domain_policy.jsonl",
+    "data/controls/interpretation_mode.jsonl",
+    "data/controls/literal_promotion.jsonl",
+    "data/controls/sequence_fallback.jsonl"
+  ],
+  "control_records": 23,
+  "control_scoring": "control_coverage.json",
+  "counts": {
+    "families": 62,
+    "languages": {
+      "de": 5,
+      "en": 43,
+      "es": 6,
+      "fr": 3,
+      "it": 2,
+      "pt": 3
+    },
+    "locales": {
+      "de-DE": 5,
+      "en-US": 43,
+      "es-ES": 6,
+      "fr-FR": 3,
+      "it-IT": 2,
+      "pt-PT": 3
+    },
+    "records": 62,
+    "sources": {
+      "spokenform_curated": 62
+    },
+    "statuses": {
+      "ambiguous": 3,
+      "gold": 40,
+      "multi_valid": 2,
+      "no_change": 13,
+      "policy_choice": 4
+    }
+  },
+  "coverage_profile": "none",
+  "evaluation_profiles": "taxonomy/evaluation_profiles.json",
+  "file_hashes": {
+    "RELEASE_NOTES.md": "720ae23d55a635d05334e0207defb7bb77a6e198a91e0e2d1271c469277280eb",
+    "conflicts.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "control_coverage.json": "dfda03d8734bdf5ffc92dabd902bd0a49c3b4353beaba28a71a1410c33c720cd",
+    "coverage.json": "267f417c7fba40e9d02e8a3c0f4c7bbf5718290e554729dba5d0a303c340935f",
+    "data/controls/domain_policy.jsonl": "33e9ffe8e56af56be4f04e5dd00861bb9162f3b8c49cdf4755563f5f95ba5086",
+    "data/controls/interpretation_mode.jsonl": "4039e179eaeace2f9af383eca58ff8c7162843e38891a861a2c5b5286802b747",
+    "data/controls/literal_promotion.jsonl": "c0f0c5f77db35c6e95b30dcbabac3f477e997bdc40f2479ccf1d7109e68a82ed",
+    "data/controls/sequence_fallback.jsonl": "43f84bd67fddaf60a037fb65694b3de19466a66fb5ccf6d60264edf33924972f",
+    "data/dev/sample.jsonl": "3708b7800b96b5ea657ddbd544442ee6cd01baf0e1bb0ce2286ac1485ca914b8",
+    "data/test/sample.jsonl": "a6dc5acbdb808c19427d9c4f615fb2a092c8a617fa14634c3fecb2511102542e",
+    "data/train/sample.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "oracle_audit.json": "39f0e337317a50f83b8aff6119c050c02de1ea98f3d7cb39542d2b2bcce6b547",
+    "schemas/control-record.schema.json": "20061a18e3c60138d06f554d5d73f121cb9acd0604d499b28298d8f9859423a1",
+    "schemas/evaluation-profiles.schema.json": "a6f5c6758785cc6ac499d61bb91a6c926ce9273bfcab68fae5d9004367d65019",
+    "schemas/external-ref-record.schema.json": "1ffa051afe2c3d4208c13279cb23630c99e0faa577ffe5ba133e01a450ee99b6",
+    "schemas/judge-record.schema.json": "b6832e2e1cec9cb7b7b0b66bfc45d9279887d8646545fdf9df12a72dd8c593bb",
+    "schemas/oracle-correction.schema.json": "e1293a334c1b5460ed97c46599ea2423e899276cab804228101966dfc4c0010e",
+    "schemas/oracle-review.schema.json": "08789cd78e7cef4ffd0f823126029fcdf5c1369c1b325ee7f682aba1ca26d44e",
+    "schemas/oracle.schema.json": "79bd88950dde7067c3996163b07d4dabc18823a22f89bea5ef7692878d53052c",
+    "schemas/record.schema.json": "376e652f17a1fca21dc0fdcf67fd7d283d0065c917220af1016519dca079ba6f",
+    "schemas/report.schema.json": "04394e4aeffc81c711639ac656f6dfde79e9371a97421e204d0267bcfb9b63f7",
+    "schemas/review-decision.schema.json": "a2abbeeba8e68bd27ff1750495e7f76f5dabf87fdf20a86e57d2f9e1294c1a74",
+    "schemas/source-manifest.schema.json": "acefe13eeca07244ec8423ee4fca79a898fdd210a9a54f62ccc8f1d83a9c6344",
+    "sources/manifest.json": "e336f01ff27507a3050f4aeee37f6930f845c95c2253d9f6f353e236a76b58b7",
+    "splits/family_assignments.json": "638299a5233434140d8f2b0399210af3953a6828ddb3c920320b2593dfd228bf",
+    "taxonomy/ambiguity_families.json": "c3220e116c5c7ec25a37e574267f333baa13e655dfd960f8f8f0609852c4fd94",
+    "taxonomy/categories.json": "886711515a22f0b9f8385131d05328cba2c87526b036ebd564534fc8c6e071a4",
+    "taxonomy/coverage_targets.json": "cf12cea79eaf55ddc296c7699e309c3e1262957bd7b59e7651e2bbd144c62ecb",
+    "taxonomy/evaluation_profiles.json": "72dc4e74920e66aa67d486c5a42d9c95f189939f733ec4ba5de4a0f1c124ccd7",
+    "taxonomy/mappings/async_tn.json": "1e6553dd12b71e9d01ba62e0db4ce898d34f34953550bff5df90db276a010739",
+    "taxonomy/mappings/polynorm.json": "cf85d399f8e49d7cac8db8247b193bff0828f5d9bd00b6aa036da3b079198a9e",
+    "taxonomy/mappings/proteno.json": "79372c8efe624fac237bc8adde8df3560bad2f12950373922f9de7da608e4119",
+    "taxonomy/policies.json": "71c70c02f311d6b0d5cbd4fc38530e99245e8f39697937b3d964f8f3a764104b",
+    "taxonomy/release_maturity_profiles.json": "45393f213eed8f70d0e63b2aa1832b49fc8b64090252dad5abf8f53fcbd6cd28"
+  },
+  "legacy_oracle_records": [],
+  "maturity": "candidate",
+  "maturity_profile": {
+    "allow_coverage_gaps": true,
+    "minimum_negative_controls": 8,
+    "minimum_records": 40,
+    "minimum_reviewed_languages": 3,
+    "require_oracle_complete": false,
+    "require_review_evidence": false,
+    "require_source_release_ready": true,
+    "required_categories": [
+      "acronym",
+      "cardinal",
+      "currency",
+      "date",
+      "decimal",
+      "fraction",
+      "identifier",
+      "ip_address",
+      "math_expression",
+      "measurement_unit",
+      "ordinal",
+      "score_or_range",
+      "time",
+      "url_or_email",
+      "version"
+    ],
+    "required_control_languages": [],
+    "required_control_suites": [],
+    "required_patterns": {
+      "acronym": [
+        "initialism",
+        "plural_acronym",
+        "word_like_acronym"
+      ],
+      "math_expression": [
+        "division",
+        "subtraction"
+      ],
+      "score_or_range": [
+        "countdown",
+        "numeric_range",
+        "score"
+      ],
+      "url_or_email": [
+        "email",
+        "url"
+      ]
+    }
+  },
+  "oracle_audit": "oracle_audit.json",
+  "oracle_complete": true,
+  "oracle_schema_version": "1.0.0",
+  "policy_version": "1.0.0",
+  "profile_registry_hash": "56ff6dcd3493e23a11779d7d0734a95d3c5ce1761d17fb90bda029908a72d595",
+  "profile_registry_version": "1.0.0",
+  "record_files": [
+    "data/dev/sample.jsonl",
+    "data/test/sample.jsonl",
+    "data/train/sample.jsonl"
+  ],
+  "review_complete_records": 0,
+  "schema_version": "1.0.0",
+  "scoring_modes": [
+    "canonical",
+    "accepted"
+  ],
+  "source_integrity": {
+    "referenced_sources": [
+      "spokenform_curated"
+    ],
+    "release_ready": true,
+    "source_count": 1
+  },
+  "source_manifest": "sources/manifest.json",
+  "source_manifest_version": "3.0.0",
+  "split_registry": "splits/family_assignments.json",
+  "taxonomy_version": "1.0.0"
+}

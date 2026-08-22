@@ -1,0 +1,74 @@
+{
+  "version": "1.0.0",
+  "profiles": {
+    "gold-v1": {
+      "kind": "canonical",
+      "policy_expansion": true,
+      "prepare_kwargs": {
+        "use_spacy": false,
+        "normalize_literals": true,
+        "generic_acronym_mode": "spell_unknown",
+        "generic_acronym_case": "upper",
+        "registered_acronym_mode": "spell",
+        "symbol_mode": "none",
+        "long_number_mode": "contextual",
+        "sequence_fallback_mode": "preserve"
+      }
+    },
+    "spokenform-default-0.3": {
+      "kind": "control",
+      "policy_expansion": false,
+      "prepare_kwargs": {
+        "use_spacy": false
+      }
+    },
+    "fallback-spell-0.3": {
+      "kind": "control",
+      "policy_expansion": true,
+      "extends": "spokenform-default-0.3",
+      "prepare_kwargs": {
+        "sequence_fallback_mode": "spell"
+      }
+    },
+    "surface-0.3": {
+      "kind": "control",
+      "policy_expansion": false,
+      "extends": "spokenform-default-0.3",
+      "prepare_kwargs": {
+        "interpretation_mode": "surface"
+      }
+    },
+    "contextual-0.3": {
+      "kind": "control",
+      "policy_expansion": false,
+      "extends": "spokenform-default-0.3",
+      "prepare_kwargs": {
+        "interpretation_mode": "contextual"
+      }
+    },
+    "literal-promotion-0.3": {
+      "kind": "control",
+      "policy_expansion": true,
+      "extends": "spokenform-default-0.3",
+      "prepare_kwargs": {
+        "normalize_literals": true
+      }
+    },
+    "quantities-only-0.3": {
+      "kind": "control",
+      "policy_expansion": false,
+      "extends": "spokenform-default-0.3",
+      "prepare_kwargs": {
+        "allowed_domains": ["quantities"]
+      }
+    },
+    "chemistry-disabled-0.3": {
+      "kind": "control",
+      "policy_expansion": false,
+      "extends": "spokenform-default-0.3",
+      "prepare_kwargs": {
+        "disabled_domains": ["chemistry"]
+      }
+    }
+  }
+}

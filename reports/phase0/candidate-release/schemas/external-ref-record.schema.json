@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Spokenform Gold external reference record",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "taxonomy_version",
+    "policy_version",
+    "id",
+    "language",
+    "locale",
+    "split",
+    "family_id",
+    "status",
+    "materialization",
+    "input",
+    "annotation",
+    "source"
+  ],
+  "properties": {
+    "materialization": { "const": "external_ref" },
+    "input": { "type": "null" },
+    "annotation": {
+      "type": "object",
+      "required": ["expected_output", "units", "negative_for", "notes"],
+      "properties": {
+        "expected_output": { "type": ["string", "null"] },
+        "units": { "type": "array", "items": { "type": "object" } },
+        "negative_for": { "type": "array", "items": { "type": "string" } },
+        "notes": { "type": "string" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["benchmark", "source_id", "source_version", "license", "source_artifact"]
+    }
+  }
+}

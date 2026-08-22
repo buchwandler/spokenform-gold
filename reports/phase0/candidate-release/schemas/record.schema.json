@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Spokenform Gold record",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "taxonomy_version",
+    "policy_version",
+    "id",
+    "language",
+    "locale",
+    "split",
+    "family_id",
+    "status",
+    "input",
+    "expected_output",
+    "source",
+    "units",
+    "negative_for"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "taxonomy_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "policy_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "language": {
+      "type": "string",
+      "minLength": 2
+    },
+    "locale": {
+      "type": "string",
+      "minLength": 2
+    },
+    "split": {
+      "enum": [
+        "train",
+        "dev",
+        "test",
+        "challenge",
+        "judge_gold",
+        "candidate"
+      ]
+    },
+    "family_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "gold",
+        "multi_valid",
+        "policy_choice",
+        "ambiguous",
+        "quarantine",
+        "no_change"
+      ]
+    },
+    "input": {
+      "type": "string"
+    },
+    "expected_output": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "benchmark",
+        "source_id",
+        "source_version",
+        "license"
+      ]
+    },
+    "units": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "surface",
+          "start",
+          "end",
+          "category",
+          "semantic",
+          "policy",
+          "canonical",
+          "accepted",
+          "rejected",
+          "features"
+        ]
+      }
+    },
+    "negative_for": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "oracle": {
+      "$ref": "oracle.schema.json"
+    },
+    "oracle_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "review": {
+      "$ref": "oracle-review.schema.json"
+    }
+  }
+}

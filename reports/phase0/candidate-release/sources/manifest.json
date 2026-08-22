@@ -1,0 +1,40 @@
+{
+  "sources": [
+    {
+      "files": [
+        {
+          "path": "data/dev/sample.jsonl",
+          "role": "benchmark-dev",
+          "sha256": "3708b7800b96b5ea657ddbd544442ee6cd01baf0e1bb0ce2286ac1485ca914b8"
+        },
+        {
+          "path": "data/test/sample.jsonl",
+          "role": "benchmark-test",
+          "sha256": "a6dc5acbdb808c19427d9c4f615fb2a092c8a617fa14634c3fecb2511102542e"
+        },
+        {
+          "path": "data/train/sample.jsonl",
+          "role": "benchmark-train",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "data/judge_gold/sample.jsonl",
+          "role": "judge-gold",
+          "sha256": "7219aeb66425f3b9c81ded3a9232663ac0a0e581cf04dc6025e0e7c0b34f8075"
+        }
+      ],
+      "kind": "curated",
+      "license": "CC-BY-4.0",
+      "license_id": "CC-BY-4.0",
+      "license_scope": "repository:curated",
+      "materialization_policy": "embedded_public",
+      "name": "spokenform_curated",
+      "notes": "Repository-local reviewed benchmark and judge fixtures.",
+      "redistribution_status": "allowed",
+      "release_ready": true,
+      "revision": "2026-08-18",
+      "source_url": "https://github.com/buchwandler/spokenform-gold"
+    }
+  ],
+  "version": "3.0.0"
+}

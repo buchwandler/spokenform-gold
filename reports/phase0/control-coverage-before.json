@@ -1,0 +1,82 @@
+{
+  "records": 23,
+  "controls_observed": 5,
+  "controls_targeted": 5,
+  "coverage": [
+    {
+      "control": "allowed_domains",
+      "records": 3,
+      "expectations": 3,
+      "assertion_expectations": 3,
+      "languages": [
+        "en"
+      ],
+      "profiles": [
+        "quantities-only-0.3"
+      ],
+      "missing_languages": []
+    },
+    {
+      "control": "disabled_domains",
+      "records": 1,
+      "expectations": 1,
+      "assertion_expectations": 1,
+      "languages": [
+        "en"
+      ],
+      "profiles": [
+        "chemistry-disabled-0.3"
+      ],
+      "missing_languages": []
+    },
+    {
+      "control": "interpretation_mode",
+      "records": 4,
+      "expectations": 8,
+      "assertion_expectations": 8,
+      "languages": [
+        "en"
+      ],
+      "profiles": [
+        "contextual-0.3",
+        "surface-0.3"
+      ],
+      "missing_languages": []
+    },
+    {
+      "control": "normalize_literals",
+      "records": 3,
+      "expectations": 5,
+      "assertion_expectations": 5,
+      "languages": [
+        "en"
+      ],
+      "profiles": [
+        "literal-promotion-0.3",
+        "spokenform-default-0.3"
+      ],
+      "missing_languages": []
+    },
+    {
+      "control": "sequence_fallback_mode",
+      "records": 12,
+      "expectations": 16,
+      "assertion_expectations": 16,
+      "languages": [
+        "cs",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "pt"
+      ],
+      "profiles": [
+        "fallback-spell-0.3",
+        "spokenform-default-0.3"
+      ],
+      "missing_languages": []
+    }
+  ],
+  "gaps": []
+}

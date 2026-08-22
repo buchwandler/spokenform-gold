@@ -32,7 +32,12 @@ from .pool import build_candidate_pool_summary
 from .promotion import build_promoted_records
 from .ranking import build_candidate_ranking, export_review_batch
 from .release import build_release
-from .review import blind_review_batch
+from .review import (
+    apply_reviewed_oracles,
+    blind_review_batch,
+    compare_review_batches,
+    write_review_application,
+)
 from .scoring import load_predictions, score_records
 from .source_lock import build_source_lock
 from .splitting import split_records
@@ -80,6 +85,37 @@ def cmd_blind_review(args):
     batch = blind_review_batch(read_records(args.paths), reviewer_slot=args.reviewer_slot)
     write_jsonl(args.out, batch)
     print(f"wrote {len(batch)} blind review records to {args.out}")
+    return 0
+
+
+def cmd_compare_reviews(args):
+    comparisons = compare_review_batches(
+        read_records([args.review_a]), read_records([args.review_b])
+    )
+    write_jsonl(args.out, comparisons)
+    print(f"compared {len(comparisons)} review records to {args.out}")
+    return 0
+
+
+def cmd_apply_reviewed_oracles(args):
+    records = read_records(args.records)
+    review_a = read_records([args.review_a])
+    review_b = read_records([args.review_b])
+    decisions = read_records(args.decisions)
+    updated, comparisons, report = apply_reviewed_oracles(
+        records, review_a, review_b, decisions
+    )
+    write_review_application(
+        args.out_root,
+        updated,
+        comparisons,
+        report,
+        input_paths=[*args.records, args.review_a, args.review_b, *args.decisions],
+    )
+    print(
+        f"applied {len(updated)} reviewed oracles to {args.out_root}; "
+        f"agreement={report['agreement']} disagreement={report['disagreement']}"
+    )
     return 0
 
 
@@ -441,6 +477,20 @@ def build_parser():
     blind.add_argument("--reviewer-slot", choices=["A", "B"], required=True)
     blind.add_argument("--out", required=True)
     blind.set_defaults(func=cmd_blind_review)
+
+    compare_reviews = sub.add_parser("compare-reviews")
+    compare_reviews.add_argument("review_a")
+    compare_reviews.add_argument("review_b")
+    compare_reviews.add_argument("--out", required=True)
+    compare_reviews.set_defaults(func=cmd_compare_reviews)
+
+    apply_reviews = sub.add_parser("apply-reviewed-oracles")
+    apply_reviews.add_argument("--records", nargs="+", required=True)
+    apply_reviews.add_argument("--review-a", required=True)
+    apply_reviews.add_argument("--review-b", required=True)
+    apply_reviews.add_argument("--decisions", nargs="+", required=True)
+    apply_reviews.add_argument("--out-root", required=True)
+    apply_reviews.set_defaults(func=cmd_apply_reviewed_oracles)
 
     census = sub.add_parser("census-upstreams")
     census.add_argument("candidates", nargs="+")

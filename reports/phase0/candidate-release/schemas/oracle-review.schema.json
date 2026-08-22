@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Spokenform Gold oracle review evidence",
+  "type": "object",
+  "properties": {
+    "protocol_version": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "unreviewed",
+        "review_a_complete",
+        "review_b_complete",
+        "agreement",
+        "disagreement",
+        "adjudication_required",
+        "adjudicated",
+        "quality_audit_required",
+        "release_ready",
+        "superseded",
+        "legacy_review"
+      ]
+    },
+    "reviewers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "adjudicator": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "decision": {
+      "type": "string"
+    },
+    "disagreement": {
+      "type": "object"
+    },
+    "source_error_codes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
