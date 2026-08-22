@@ -23,7 +23,8 @@ The spokenform-gold benchmark is built through a structured review pipeline:
 6. **Validation** — after every batch: validate, audit, check coverage, check
    conflicts, check controls, build a release.
 
-The four templates below correspond to the four roles in this pipeline.
+The five role templates below cover preparation, independent review, adjudication,
+mechanical promotion/integration, and batch handoff.
 
 ---
 
@@ -87,6 +88,20 @@ inspection, final semantic interpretation, disposition decision
 
 ---
 
+### promote-split-commit-task.md
+
+**Use when:** adjudication is complete and a fresh-context integration operator
+must promote, split, validate, build a candidate release, and commit the approved
+canonical data.
+
+The template requires isolated promotion staging, an isolated copy of the frozen
+family registry, additions-only family assignments, canonical-next validation,
+coverage/oracle diff inspection, explicit-path staging, and a batch handoff. It
+forbids semantic reinterpretation, hand-picked splits, unrelated commits, and
+copying work-root artifacts into Gold.
+
+---
+
 ### batch-handoff.md
 
 **Use when:** a production batch is complete and you need to leave a structured
@@ -115,8 +130,8 @@ for handing off to the next agent or reviewer.
 1. **Read the relevant template** before starting the corresponding task.
 2. **Copy the template content** into your agent prompt, reviewer instructions,
    or handoff document.
-3. **Fill in the structured fields** (batch handoff) or **follow the
-   instructions** (coding agent, reviewer, adjudicator).
+3. **Fill in every placeholder and structured field** before use; then follow the
+   role boundary for preparation, review, adjudication, integration, or handoff.
 4. **Do not weaken the hard rules** — they exist to protect benchmark
    integrity.
 
