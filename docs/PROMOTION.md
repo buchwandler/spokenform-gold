@@ -75,3 +75,15 @@ family assignment, and source-policy decisions are complete.
 A promotable decision must include an explicit `oracle` object with full-sentence `canonical_output`, `accepted_outputs`, `rejected_outputs`, and `variant_mode: explicit`. Promotion copies this reviewed assertion; it does not derive sentence variants from unit alternatives. Decisions may include `review_protocol_version`, structured `disagreement`, and `source_error_codes`.
 
 Two independent reviewer IDs and one adjudicator are required for promotion decisions. Historic migration rows may carry `review.status=legacy_review` without invented identities, but stable release rejects them until re-reviewed. Upstream expected output remains provenance evidence and is hidden from first-pass reviewers.
+
+## Batch promotion boundary
+
+Batch preparation may produce ranked candidates, blind review inputs, coverage
+reports, and an empty or provisional decision queue. It may not promote a row
+without two independent reviewer IDs, an adjudicator, a full sentence oracle,
+a Spokenform-owned family ID, and an explicit license/materialization decision.
+
+When the source cache or independent review evidence is unavailable, the correct
+batch result is a quarantine-only handoff that names the blocker. A candidate
+release can be built from eligible reviewed data; a stable release cannot be
+claimed from proposals alone.

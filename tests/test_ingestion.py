@@ -85,6 +85,23 @@ class IngestionTests(unittest.TestCase):
             self.assertEqual(first["exclusions"], second["exclusions"])
 
 
+    def test_named_review_batch_is_deterministic_and_does_not_overwrite_default(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            cache = self._cache(root)
+            work = root / "work"
+            first = run_upstream_ingestion(cache, work, batch_name="batch-0002", batch_limit=3)
+            self.assertEqual(first["batch_name"], "batch-0002")
+            named = work / "review_batches" / "batch-0002.jsonl"
+            self.assertTrue(named.exists())
+            default = run_upstream_ingestion(cache, work, batch_limit=3)
+            self.assertEqual(default["batch_name"], "batch-0001")
+            self.assertTrue((work / "review_batches" / "batch-0001.jsonl").exists())
+            self.assertEqual(named.read_bytes(), (work / "review_batches" / "batch-0002.jsonl").read_bytes())
+            with self.assertRaisesRegex(ValueError, "batch_name"):
+                run_upstream_ingestion(cache, root / "invalid", batch_name="batch-2")
+
+
     def test_missing_required_source_path_fails_before_ingestion(self):
         with tempfile.TemporaryDirectory() as tmpdir, self.assertRaisesRegex(
             ValueError, "missing source checkout"

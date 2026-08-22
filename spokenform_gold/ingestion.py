@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import subprocess
 from collections.abc import Iterable
 from pathlib import Path
@@ -97,9 +98,12 @@ def run_upstream_ingestion(
     reviewed_paths: Iterable[str | Path] | None = None,
     targets_path: str | Path | None = None,
     batch_limit: int = 100,
+    batch_name: str = "batch-0001",
 ) -> dict:
     source_cache = Path(source_cache)
     work_root = Path(work_root)
+    if not re.fullmatch(r"batch-[0-9]{4}", batch_name):
+        raise ValueError("batch_name must match batch-NNNN")
     requested_sources = set(sources)
     selected_sources = tuple(
         source for source in SUPPORTED_SOURCES if source in requested_sources
@@ -214,7 +218,9 @@ def run_upstream_ingestion(
     ranked_path = report_root / "ranked_candidates.jsonl"
     write_jsonl(ranked_path, ranked)
     batch = export_review_batch(ranked, limit=batch_limit)
-    write_jsonl(work_root / "review_batches" / "batch-0001.jsonl", batch)
+    review_batch_path = work_root / "review_batches" / f"{batch_name}.jsonl"
+    review_batch_path.parent.mkdir(parents=True, exist_ok=True)
+    write_jsonl(review_batch_path, batch)
 
     census = build_upstream_census(candidates, all_exclusions, import_reports)
     if not census["summary"]["row_accounting_ok"]:
@@ -251,11 +257,12 @@ def run_upstream_ingestion(
         "exclusions": len(all_exclusions),
         "conflicting_output_groups": len(dedupe.get("conflicting_output_groups", [])),
         "review_batch_records": len(batch),
+        "batch_name": batch_name,
         "census": census["summary"],
         "artifacts": {
             "merged_candidates": str(merged_path),
             "ranked_candidates": str(ranked_path),
-            "review_batch": str(work_root / "review_batches" / "batch-0001.jsonl"),
+            "review_batch": str(review_batch_path),
             "pool_summary": str(report_root / "upstream_pool_summary.json"),
             "census_rows": census_artifacts["rows"],
             "sentence_clusters": census_artifacts["sentence_clusters"],

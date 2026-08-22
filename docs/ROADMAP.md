@@ -60,3 +60,20 @@
 - Reviewed coverage remains 62 records, 15 categories, and 390 visible gaps. The gaps are not suppressed to satisfy release gates.
 - Hardened stable release coverage semantics so `allow_coverage_gaps: false` rejects all remaining gaps unless explicit allowed-gap fields are configured.
 - Remaining work is external source-cache refresh, independent semantic adjudication, family assignment, license review, and reviewed promotion.
+
+## Batches 0–2 execution boundary
+
+The current data-growth milestone is bounded as follows:
+
+- Batch 0: verify repository checks, deterministic fixture behavior, release
+  split semantics, reviewer policy, and integration boundaries.
+- Batch 1: rank and review candidates for stable-required categories and patterns;
+  do not promote source rows without independent adjudication.
+- Batch 2: expand reviewed multilingual coverage and add Czech only from
+  independently authored/reviewed material; report the gap when it is absent.
+
+A batch handoff must include source revisions/availability, row accounting,
+candidate and exclusion counts, coverage before/after, review state, promotion
+dispositions, family/split changes, release result, benchmark availability, and
+unresolved conflicts. It must distinguish candidate preparation from Gold
+completion.

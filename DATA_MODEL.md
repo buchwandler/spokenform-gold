@@ -29,3 +29,15 @@ Configuration-sensitive assertions use the separate control-record format in `sc
 Canonical records use the frozen family-safe `train`, `dev`, and `test` assignments. The default assignment ratios are 70% train, 15% dev, and 15% test, but an existing family assignment always takes precedence over hash-based allocation. Existing families must not be moved to populate a newly added split.
 
 Candidate records use `split=candidate` and are never release data. Candidate regression rows may have null `expected_output` and unadjudicated policies, but must retain source identity, source version, source URL, source hash where applicable, and enough unit metadata for independent review.
+
+## Release split contract
+
+A release includes all canonical records from `train`, `dev`, and `test`, with
+frozen family assignments and no candidate rows. The benchmark runner's default
+held-out evaluation is `test`; callers that need `train`, `dev`, or `all` must
+select that split explicitly. A populated train shard therefore changes release
+contents but does not change the default benchmark target.
+
+Batch review artifacts use explicit names such as `batch-0001.jsonl` and live
+outside canonical data. Their rows remain `split=candidate` and
+`status=quarantine` until the promotion evidence and source policy gates pass.

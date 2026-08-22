@@ -45,6 +45,26 @@ class BenchmarkRunnerTests(unittest.TestCase):
             self.assertGreaterEqual(persisted["canonical_score"], 0.9)
 
 
+    def test_loader_keeps_test_default_distinct_from_explicit_all(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            release_root = Path(tmpdir) / "release"
+            build_release(
+                version="0.2.0-split-contract",
+                data_paths=[str(ROOT / "data/train"), str(ROOT / "data/dev"), str(ROOT / "data/test")],
+                out_root=release_root,
+                maturity="experimental",
+                registry_path=ROOT / "splits/family_assignments.json",
+            )
+            test_manifest, test_records = load_release_records(release_root, split="test")
+            all_manifest, all_records = load_release_records(release_root)
+            self.assertEqual(len(test_records), 11)
+            self.assertEqual(len(all_records), 62)
+            self.assertTrue(all(record["split"] == "test" for record in test_records))
+            self.assertEqual({record["split"] for record in all_records}, {"dev", "test"})
+            self.assertIn("data/train/sample.jsonl", all_manifest["record_files"])
+            self.assertEqual(test_manifest["record_files"], all_manifest["record_files"])
+
+
     def test_loader_separates_controls_from_canonical_records(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             release_root = Path(tmpdir) / "release"

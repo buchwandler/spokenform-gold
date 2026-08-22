@@ -344,3 +344,23 @@ The deterministic ingestion workflow has been exercised against a local fixture 
 The reviewed corpus remains 62 records with 15 observed categories and 390 reported coverage gaps. These gaps are intentionally visible. Stable maturity now rejects remaining coverage gaps unless an explicit allowed-gap policy is configured, so satisfying the language minimum alone cannot make an incomplete corpus stable.
 
 The fixture run is triage evidence only. Candidates retain quarantine status, source provenance, upstream expectations, and source hashes. Independent semantic review, Spokenform-owned family assignment, license/materialization decisions, and promotion remain outstanding. Full pinned upstream checkouts must still be supplied externally for a production refresh.
+
+## Data-growth batch contract
+
+Full-dataset growth is executed in bounded batches. The checked-in repository
+contains canonical `data/train`, `data/dev`, and `data/test` release inputs;
+`data/train` is part of release materialization, while the normal Spokenform
+benchmark defaults to the held-out `test` split. Selecting `all` is explicit and
+must not silently change the default benchmark split.
+
+Batch 0 is repository/process hygiene. Batch 1 targets stable-required category
+and surface coverage using only reviewed policy and available candidate evidence.
+Batch 2 expands multilingual coverage and reports Czech gaps until independently
+authored and reviewed Czech records exist. Upstream and discovered rows remain
+quarantine candidates until two independent reviews, adjudication, a
+Spokenform-owned family, and a source/materialization decision are recorded.
+
+Review artifacts and upstream caches belong in the disposable external work root.
+They are not release data and must not be copied into `data/train`, `data/dev`, or
+`data/test` merely because a ranker, model, or current Spokenform output suggests
+an answer.

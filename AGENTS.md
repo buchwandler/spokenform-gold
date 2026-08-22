@@ -1154,30 +1154,325 @@ make check
 
 ---
 
-# Recommended next implementation order
+# Current priority: produce the reviewed Gold corpus
 
-When continuing development, prioritize:
+The repository infrastructure is already substantially implemented: source
+manifests and locks, Async/PolyNorm/Proteno importers, candidate merge and
+deduplication, coverage analysis, family-aware splitting, sentence-oracle
+validation, promotion, control suites, scoring, release construction, and the
+Spokenform benchmark adapter all exist.
 
-1. harden schemas;
-2. add source manifests;
-3. implement exact PolyNorm importer;
-4. implement exact Proteno importer;
-5. add taxonomy mapping files;
-6. add semantic validators;
-7. add family-aware splitting;
-8. add canonical scorer;
-9. strengthen negative-control reporting;
-10. add deterministic semantic acceptance;
-11. add optional semantic judges;
-12. add judge calibration;
-13. add HTML/reporting UI;
-14. add private challenge set.
+Do **not** spend the next data-growth cycle rebuilding those mechanisms unless a
+concrete production run exposes a defect. The primary task is now to turn the
+full pinned upstream candidate pool plus curated regressions into reviewed,
+Git-tracked Gold records.
 
-Do not start by bulk-generating thousands of examples before the validation,
-provenance, conflict, and coverage infrastructure is reliable.
+A useful mental model is:
+
+```text
+external source cache
+        ↓
+deterministic quarantine candidate pool
+        ↓
+coverage/conflict/dedup ranking
+        ↓
+blind review A + blind review B
+        ↓
+adjudication + source-policy decision
+        ↓
+promotion staging
+        ↓
+frozen family split
+        ↓
+Git-tracked train/dev/test Gold
+        ↓
+candidate release
+        ↓
+stable release after strict review + coverage gates
+        ↓
+Spokenform pins immutable Gold release
+```
+
+## What "full Gold dataset" means
+
+A full Gold dataset is **not** a copy of PolyNorm, Proteno, or Async TN and is
+not a merged file of upstream expected outputs.
+
+It is the reviewed canonical corpus under `data/train`, `data/dev`, and
+`data/test`, where every release record:
+
+- has a stable ID and Spokenform-owned `family_id`;
+- has explicit language, locale, status, units, policy, source provenance, and
+  full-sentence oracle;
+- keeps accepted outputs explicit and rejected variants separate;
+- records ambiguity instead of guessing;
+- has a source/materialization decision compatible with redistribution;
+- belongs to exactly one frozen family split;
+- passes validation, conflict, oracle, coverage, and release checks.
+
+The external work directory is disposable build state. The Git-tracked reviewed
+records and immutable release artifact are the benchmark.
+
+## Production data-growth loop
+
+For a production refresh, keep upstream repositories outside Git:
+
+```bash
+export SPOKENFORM_GOLD_SOURCE_CACHE=/path/to/spokenform-gold-source-cache
+export SPOKENFORM_GOLD_WORK=/path/to/spokenform-gold-work
+```
+
+Populate the cache at the exact revisions from `sources/manifest.json`, then run:
+
+```bash
+spokenform-gold source-lock \
+  --manifest sources/manifest.json \
+  --out sources/source-lock.json
+
+spokenform-gold ingest-upstreams \
+  --source-cache "$SPOKENFORM_GOLD_SOURCE_CACHE" \
+  --work-root "$SPOKENFORM_GOLD_WORK" \
+  --sources async_tn polynorm proteno \
+  --languages en de es fr it pt \
+  --reviewed data/train data/dev data/test \
+  --targets taxonomy/coverage_targets.json \
+  --batch-limit 100
+```
+
+Before annotation, inspect at minimum:
+
+```text
+reports/ingestion-summary.json
+reports/upstream_pool_summary.json
+reports/dedupe.json
+reports/conflicts.json
+reports/coverage-reviewed.json
+reports/ranked_candidates.jsonl
+reports/exclusions.json
+census/summary.json
+review_batches/batch-0001.jsonl
+```
+
+Reject the run if row accounting fails, pinned source revisions are wrong,
+candidate validation fails, or source/output conflicts are silently collapsed.
+
+## Review batches
+
+Work in bounded batches. Prefer 50–100 records, then regenerate ranking after
+each promotion so the next batch follows the remaining coverage gaps.
+
+Create blind reviewer artifacts from the selected review batch:
+
+```bash
+spokenform-gold blind-review \
+  "$SPOKENFORM_GOLD_WORK/review_batches/batch-0001.jsonl" \
+  --reviewer-slot A \
+  --out "$SPOKENFORM_GOLD_WORK/reviews/batch-0001-a.jsonl"
+
+spokenform-gold blind-review \
+  "$SPOKENFORM_GOLD_WORK/review_batches/batch-0001.jsonl" \
+  --reviewer-slot B \
+  --out "$SPOKENFORM_GOLD_WORK/reviews/batch-0001-b.jsonl"
+```
+
+Reviewer A and reviewer B must not see `source.upstream_expected`, each other's
+annotation, or Spokenform's current output before committing their independent
+semantic judgment.
+
+Automation or an LLM may prepare proposals, find spans, detect disagreements,
+and suggest variants. Proposal generation does not make a row Gold. For a
+stable release, preserve genuinely independent review evidence and an
+adjudicator rather than inventing reviewer identities.
+
+## Adjudication and decision files
+
+For each candidate, produce exactly one review decision compatible with
+`schemas/review-decision.schema.json`.
+
+Promotion decisions must include at least:
+
+```text
+candidate_id
+decision
+reviewers (2+ independent IDs)
+adjudicator
+family_id
+status
+input
+expected_output
+units
+negative_for
+notes
+oracle
+license_disposition
+```
+
+Use `promote_curated` by default when the sentence/oracle is independently
+authored and upstream material is only lineage evidence. Use
+`promote_upstream` only when the source manifest explicitly permits embedding
+the upstream material. Otherwise use `keep_external`, `reject`, `quarantine`,
+or `needs_review`.
+
+Never change Gold to match current Spokenform output.
+
+## Promotion, split, and canonical merge
+
+Promote one completed batch to staging:
+
+```bash
+spokenform-gold promote-reviewed \
+  --candidates "$SPOKENFORM_GOLD_WORK/review_batches/batch-0001.jsonl" \
+  --decisions "$SPOKENFORM_GOLD_WORK/reviews/batch-0001-decisions.jsonl" \
+  --against data/train data/dev data/test \
+  --out "$SPOKENFORM_GOLD_WORK/promotion_staging/batch-0001.jsonl" \
+  --report "$SPOKENFORM_GOLD_WORK/promotion_staging/batch-0001-report.json"
+```
+
+Do not hand-pick a split. Run the frozen family splitter over the complete
+canonical corpus plus the new promotion staging records:
+
+```bash
+spokenform-gold split \
+  data/train data/dev data/test \
+  "$SPOKENFORM_GOLD_WORK/promotion_staging/batch-0001.jsonl" \
+  --registry splits/family_assignments.json \
+  --out-root "$SPOKENFORM_GOLD_WORK/canonical-next"
+```
+
+Inspect the split-registry diff before copying the generated `train/dev/test`
+files into Git. Existing family assignments are immutable.
+
+After merging, run:
+
+```bash
+spokenform-gold validate data/train data/dev data/test
+spokenform-gold gold-audit data/train data/dev data/test
+spokenform-gold conflicts data/train data/dev data/test --mode unit
+
+spokenform-gold coverage \
+  data/train data/dev data/test \
+  --targets taxonomy/coverage_targets.json \
+  --json "$SPOKENFORM_GOLD_WORK/reports/coverage-after.json"
+
+spokenform-gold validate-controls data/controls
+spokenform-gold control-coverage \
+  data/controls \
+  --targets taxonomy/coverage_targets.json \
+  --json "$SPOKENFORM_GOLD_WORK/reports/control-coverage.json"
+```
+
+Then regenerate candidate ranking against the updated reviewed corpus before
+starting the next batch.
+
+## Release ladder
+
+Use maturity levels deliberately.
+
+### Candidate release
+
+A candidate release is the practical next milestone. Build it after each
+meaningful reviewed-data increment:
+
+```bash
+spokenform-gold release-check \
+  --version 0.x.y-candidate.N \
+  --data data/train data/dev data/test \
+  --controls data/controls \
+  --maturity candidate \
+  --out "$SPOKENFORM_GOLD_WORK/releases/0.x.y-candidate.N"
+```
+
+A candidate release is suitable for integration testing with Spokenform, but it
+is not a claim that all stable coverage and review requirements are complete.
+
+### Stable release
+
+Before declaring stable, require:
+
+```bash
+spokenform-gold gold-audit data/train data/dev data/test --strict
+```
+
+and then:
+
+```bash
+spokenform-gold release-check \
+  --version X.Y.Z \
+  --data data/train data/dev data/test \
+  --controls data/controls \
+  --maturity stable \
+  --coverage-profile stable \
+  --out "$SPOKENFORM_GOLD_WORK/releases/X.Y.Z"
+```
+
+Do not weaken stable gates to make a release pass. Fix review evidence,
+coverage, controls, provenance, or policy instead.
+
+## Spokenform integration
+
+Spokenform should consume an immutable Gold release, never the candidate work
+directory.
+
+During development, test a local release explicitly:
+
+```bash
+python -m benchmarks.spokenform_gold \
+  --gold-root "$SPOKENFORM_GOLD_WORK/releases/0.x.y-candidate.N" \
+  --split test
+```
+
+Only after the release is accepted should the Spokenform repository update its
+pinned Gold commit/release constants and tests. Keep the default benchmark on
+the held-out `test` split.
+
+When Gold starts shipping a populated `data/train`, confirm that Spokenform's
+release materialization contract intentionally includes or excludes that split;
+do not let `--split all` silently change meaning.
+
+## Coverage-driven stopping rule
+
+Do not define "full" as a fixed row count. Define it by release gates and
+coverage.
+
+After every batch, inspect remaining gaps and select the next batch from those
+gaps. Prioritize:
+
+1. missing stable-required category or surface pattern;
+2. missing language for an existing category;
+3. negative controls in high false-positive-risk families;
+4. ambiguity examples;
+5. cross-source disagreements;
+6. rare multi-unit and boundary cases;
+7. only then more examples of already well-covered shapes.
+
+The stable target is reached when strict oracle/review audit passes, stable
+release-check passes without allowed-gap exceptions, the control suite passes,
+and the held-out Spokenform benchmark can consume the immutable release.
+
+## Agent deliverables for each data-growth batch
+
+A coding/annotation agent should leave behind a concise machine-readable and
+human-readable handoff containing:
+
+```text
+source revisions used
+ingestion row-accounting summary
+candidate count and exclusion count
+coverage gaps before
+selected review batch IDs
+review/adjudication status
+promotion disposition counts
+new/changed family assignments
+coverage gaps after
+candidate/stable release-check result
+Spokenform benchmark result on the resulting release
+unresolved source or semantic conflicts
+```
+
+The agent must not claim completion when only candidate import or annotation
+proposals exist.
 
 ---
-
 # When an agent encounters uncertainty
 
 If a source record appears wrong:

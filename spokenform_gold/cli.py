@@ -283,6 +283,7 @@ def cmd_ingest_upstreams(args):
         reviewed_paths=args.reviewed,
         targets_path=args.targets,
         batch_limit=args.batch_limit,
+        batch_name=args.batch_name,
     )
     print(
         f"ingested {summary['records']} candidates and {summary['exclusions']} exclusions "
@@ -565,6 +566,7 @@ def build_parser():
     ingest.add_argument("--reviewed", nargs="+", default=None)
     ingest.add_argument("--targets")
     ingest.add_argument("--batch-limit", type=int, default=100)
+    ingest.add_argument("--batch-name", default="batch-0001")
     ingest.set_defaults(func=cmd_ingest_upstreams)
 
     dedupe = sub.add_parser("dedupe-candidates")

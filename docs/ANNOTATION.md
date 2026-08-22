@@ -23,3 +23,16 @@ Reviewers work independently on the sentence context and locale. The first pass 
 Each reviewer records exact spans, categories, semantic objects, ambiguity, policy, unit canonical/accepted/rejected variants, the canonical full sentence, and every explicitly accepted full-sentence output. Compare disagreements by span, category, semantics, ambiguity, policy, unit realization, sentence canonical, sentence accepted set, and rejected variants. Only after both independent passes may an adjudicator inspect upstream expectations.
 
 Use structured source error codes such as `source_wrong_semantics`, `source_policy_difference`, `source_ambiguous_context`, `source_span_error`, or `source_duplicate`; free-text notes do not replace these codes. Review states (`unreviewed`, `agreement`, `adjudication_required`, `adjudicated`, `release_ready`, and `legacy_review`) are distinct from semantic record statuses.
+
+## Batch artifact and reviewer identity policy
+
+Ingestion and ranking artifacts are proposals, not annotations. Each reviewer
+slot receives a blind artifact that omits upstream expected text and current
+Spokenform output. Reviewer A and reviewer B must complete independent semantic
+judgments before comparison; an adjudicator then records the disagreement and
+source-policy decision. Do not invent reviewer identities when only automated or
+single-agent proposals exist.
+
+Batch IDs are explicit and deterministic. External work roots may contain
+`batch-0000`, `batch-0001`, and `batch-0002` artifacts, but those artifacts do not
+alter canonical records or frozen split assignments.
