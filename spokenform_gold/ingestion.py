@@ -9,7 +9,8 @@ from .census import build_upstream_census, write_census_artifacts
 from .conflicts import find_conflicts
 from .coverage import build_coverage, load_targets
 from .deduplication import deduplicate_candidates
-from .exclusions import build_exclusion_analysis
+from .exclusions import build_exclusion_analysis, infer_surface_shape
+from .importers.common import ImportResult, build_import_diagnostics
 from .families import suggest_families
 from .importers import import_async, import_polynorm, import_proteno
 from .io import read_records, write_json, write_jsonl
@@ -21,6 +22,41 @@ from .validation import validate_records
 
 SUPPORTED_SOURCES = ("async_tn", "polynorm", "proteno")
 SUPPORTED_LANGUAGES = ("en", "de", "es", "fr", "it", "pt")
+
+
+def _filter_result_languages(
+    result: ImportResult, selected_languages: set[str]
+) -> ImportResult:
+    records = []
+    exclusions = list(result.exclusions)
+    for record in result.records:
+        language = record.get("language")
+        if language in selected_languages:
+            records.append(record)
+            continue
+        source = record.get("source", {})
+        exclusions.append(
+            {
+                "source_id": source.get("source_id", record.get("id", "unknown")),
+                "source": source.get("benchmark", "unknown"),
+                "language": language or "unknown",
+                "reason": "language_not_selected",
+                "detail": f"language {language!r} was not requested",
+                "surface_shape": infer_surface_shape(record.get("input")),
+            }
+        )
+    diagnostics = build_import_diagnostics(
+        records=records,
+        exclusions=exclusions,
+        source_rows=result.source_rows,
+        source_hashes=result.diagnostics.get("source_hashes", []),
+    )
+    return ImportResult(
+        records=records,
+        exclusions=exclusions,
+        source_rows=result.source_rows,
+        diagnostics=diagnostics,
+    )
 
 
 def _git_revision(path: Path) -> str | None:
@@ -143,7 +179,7 @@ def run_upstream_ingestion(
         nonlocal shard_paths, all_exclusions, import_reports
         candidate_path, _, report, exclusions = _write_shard(
             name=name,
-            result=result,
+            result=_filter_result_languages(result, selected_languages),
             candidate_dir=candidate_dir,
             exclusion_dir=exclusion_dir,
             report_dir=report_dir,

@@ -80,6 +80,14 @@ class IngestionTests(unittest.TestCase):
             self.assertEqual(first["sources"], ["async_tn", "polynorm", "proteno"])
             self.assertEqual(first["sources"], second["sources"])
             self.assertEqual(first["languages"], ["en", "es", "pt"])
+            records = read_records([work / "candidates" / "all.jsonl"])
+            self.assertTrue(records)
+            self.assertLessEqual(
+                {record["language"] for record in records}, {"en", "es", "pt"}
+            )
+            exclusions = read_json(work / "reports" / "exclusions.json")
+            self.assertIn("language_not_selected", exclusions["reasons"])
+            self.assertTrue(all(item["row_accounting_ok"] for item in first["shards"]))
             self.assertEqual(first_bytes, second_bytes)
             self.assertEqual(first["records"], second["records"])
             self.assertEqual(first["exclusions"], second["exclusions"])
