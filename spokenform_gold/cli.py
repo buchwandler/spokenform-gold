@@ -2,9 +2,17 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 from .adjudication import build_adjudication_queue
+from .config import (
+    ConfigError,
+    default_config_path,
+    load_config,
+    require_runtime_paths,
+    resolve_runtime_paths,
+)
 from .conflicts import find_conflicts
 from .census import build_upstream_census, write_census_artifacts
 from .control_benchmark import load_control_predictions, score_control_records
@@ -311,9 +319,18 @@ def cmd_review_batch(args):
     return 0
 
 def cmd_ingest_upstreams(args):
+    config_path = args.config if args.config is not None else default_config_path()
+    config = load_config(config_path, explicit=args.config is not None)
+    paths = require_runtime_paths(
+        resolve_runtime_paths(
+            config=config,
+            source_cache=args.source_cache,
+            work_root=args.work_root,
+        )
+    )
     summary = run_upstream_ingestion(
-        args.source_cache,
-        args.work_root,
+        paths.source_cache,
+        paths.work_root,
         sources=args.sources,
         languages=args.languages,
         reviewed_paths=args.reviewed,
@@ -454,6 +471,12 @@ def cmd_judge_calibrate(args):
 
 def build_parser():
     parser = argparse.ArgumentParser(prog="spokenform-gold")
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=None,
+        help="Project-local TOML configuration file for runtime paths.",
+    )
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     stats = sub.add_parser("stats")
@@ -609,8 +632,8 @@ def build_parser():
     batch.set_defaults(func=cmd_review_batch)
 
     ingest = sub.add_parser("ingest-upstreams")
-    ingest.add_argument("--source-cache", required=True)
-    ingest.add_argument("--work-root", required=True)
+    ingest.add_argument("--source-cache", type=Path, default=None)
+    ingest.add_argument("--work-root", type=Path, default=None)
     ingest.add_argument("--sources", nargs="+", default=["async_tn", "polynorm", "proteno"])
     ingest.add_argument("--languages", nargs="+", default=["en", "de", "es", "fr", "it", "pt"])
     ingest.add_argument("--reviewed", nargs="+", default=None)
@@ -702,8 +725,13 @@ def build_parser():
 
 
 def main(argv=None):
-    args = build_parser().parse_args(argv)
-    return args.func(args)
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    try:
+        return args.func(args)
+    except ConfigError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

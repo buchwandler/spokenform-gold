@@ -1,6 +1,6 @@
 # Coding Agent — First Task Template
 
-> Extracted from `spokenform-gold-full-dataset-production-plan.md` §20.
+> Operational template for the Spokenform Gold production workflow. See `docs/DATA_GROWTH_BATCHES.md` and `docs/ANNOTATION.md`.
 
 ---
 
@@ -49,17 +49,16 @@ Tasks:
    - Inspect and report row accounting, exclusions, dedupe groups, conflicts,
      family suggestions, coverage-before, and selected review IDs.
 
-4. Verify the strict-review upgrade path for the existing 62 canonical records.
+4. Exercise the existing strict-review upgrade path for the existing 62
+   canonical records.
    - The current records are legacy_review and stable audit requires two
      independent reviewers plus an adjudicator.
-   - Determine whether the current repository has a deterministic supported
-     workflow to take completed blind-review A/B artifacts + adjudication and
-     apply that evidence to existing canonical records.
-   - Also determine whether there is a CLI path to compare completed A/B
-     sentence-oracle reviews.
-   - If these capabilities already exist, exercise them with tests.
-   - If they are absent, implement only the smallest deterministic tooling
-     needed. Do not create a new annotation framework.
+   - Use the existing deterministic workflow for completed blind-review A/B
+     artifacts, comparison, adjudication, and application to canonical records.
+   - Use the existing CLI path to compare completed A/B sentence-oracle
+     reviews.
+   - Do not reimplement the review framework; report a concrete production
+     blocker if the existing workflow fails.
 
 5. Produce blind review inputs, but do not fill them using upstream expected
    output.

@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from spokenform_gold.io import read_records, write_jsonl
+from spokenform_gold.io import read_records
 from spokenform_gold.oracle import oracle_hash
 from spokenform_gold.review import (
     apply_reviewed_oracles,

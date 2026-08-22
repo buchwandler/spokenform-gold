@@ -14,8 +14,10 @@ Defaults::
     cache-root  ../spokenform-gold-source-cache   (next to the repo checkout)
     work-root   ../spokenform-gold-work            (next to the repo checkout)
 
-After the script finishes, export the two environment variables that the
-production tooling expects::
+After the script finishes, the repository-root ``config.toml`` points at
+the default sibling cache and work directories, so production commands can
+run without path flags. The environment variables below remain optional
+overrides for custom locations::
 
     export SPOKENFORM_GOLD_SOURCE_CACHE="$(cd ../spokenform-gold-source-cache && pwd)"
     export SPOKENFORM_GOLD_WORK="$(cd ../spokenform-gold-work && pwd)"
@@ -30,11 +32,9 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import shutil
 import subprocess
-import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
 
@@ -151,7 +151,7 @@ def clone_or_update(source: UpstreamSource, cache_root: Path) -> Path:
     except subprocess.CalledProcessError:
         # Some hosts (HF Spaces) don't allow shallow clone by arbitrary SHA.
         # Fall back to a full clone + checkout.
-        print(f"  Shallow clone by SHA failed; falling back to full clone…")
+        print("  Shallow clone by SHA failed; falling back to full clone…")
         if dest.exists():
             shutil.rmtree(dest)
         git("clone", source.clone_url, str(dest))
@@ -250,7 +250,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     f"  ⚠ {src.name}: script revision {src.revision[:12]} "
                     f"≠ manifest revision {mrev[:12]}"
                 )
-                print(f"    Update this script or re-pin the manifest.")
+                print("    Update this script or re-pin the manifest.")
         print()
 
     # ── Clone / verify each source ───────────────────────────────────────
@@ -278,11 +278,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 f"  ⚠ HEAD is {actual_rev[:12]}, expected {src.revision[:12]}"
             )
             if not args.verify_only:
-                print(f"  Attempting checkout…")
+                print("  Attempting checkout…")
                 git("checkout", src.revision, cwd=checkout)
                 actual_rev = git("rev-parse", "HEAD", cwd=checkout).stdout.strip()
                 if actual_rev != src.revision:
-                    print(f"  ✗ Could not reach pinned revision")
+                    print("  ✗ Could not reach pinned revision")
                     all_ok = False
         else:
             print(f"  ✓ Revision {src.revision[:12]}")
@@ -290,18 +290,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         # Verify expected files
         missing = verify_source(src, checkout)
         if missing:
-            print(f"  ✗ Missing expected paths:")
+            print("  ✗ Missing expected paths:")
             for p in missing:
                 print(f"      {p}")
             all_ok = False
         else:
-            print(f"  ✓ All expected paths present")
+            print("  ✓ All expected paths present")
 
         print()
 
     # ── Work directory ───────────────────────────────────────────────────
     if not args.skip_work_dir:
-        print(f"── work directory ──")
+        print("── work directory ──")
         create_work_dir(work_root)
         print()
 
@@ -314,7 +314,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("  Some issues may be expected (e.g. HF Space auth).")
 
     print()
-    print("Set these environment variables for production tooling:")
+    print("The repository config.toml points at these default sibling paths.")
+    print("Use the following only as overrides when custom paths are needed:")
     print(f'  export SPOKENFORM_GOLD_SOURCE_CACHE="{cache_root}"')
     print(f'  export SPOKENFORM_GOLD_WORK="{work_root}"')
     print()

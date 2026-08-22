@@ -1,6 +1,6 @@
 # Reviewer A/B Task Template
 
-> Extracted from `spokenform-gold-full-dataset-production-plan.md` §21.
+> Operational template for the Spokenform Gold production workflow. See `docs/DATA_GROWTH_BATCHES.md` and `docs/ANNOTATION.md`.
 
 Run this in **separate isolated contexts** for reviewer A and reviewer B.
 

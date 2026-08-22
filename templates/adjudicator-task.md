@@ -1,6 +1,6 @@
 # Adjudicator Task Template
 
-> Extracted from `spokenform-gold-full-dataset-production-plan.md` §22.
+> Operational template for the Spokenform Gold production workflow. See `docs/DATA_GROWTH_BATCHES.md` and `docs/ANNOTATION.md`.
 
 ---
 

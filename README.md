@@ -48,7 +48,8 @@ Use `spokenform-gold gold-audit ... --strict` for stable-oracle checks, `spokenf
 
 ## Quick start
 
-Requires Python 3.10+ and no runtime dependencies. Install the optional dev
+Requires Python 3.10+; Python 3.10 installs the small TOML compatibility
+dependency automatically. Install the optional dev
 tooling when you want the benchmark checks, lint, and report regeneration
 commands:
 
@@ -262,6 +263,35 @@ git push -u origin main
 Do not add full upstream datasets until redistribution terms and attribution
 requirements have been checked.
 
+## Runtime path configuration
+
+The repository-root `config.toml` is the normal local configuration for the
+external source cache and disposable work root:
+
+```toml
+[paths]
+source_cache = "../spokenform-gold-source-cache"
+work = "../spokenform-gold-work"
+```
+
+After `python scripts/setup-source-cache.py`, run the orchestrator from the
+repository root without path flags:
+
+```bash
+spokenform-gold ingest-upstreams \
+  --sources async_tn polynorm proteno \
+  --languages en de es fr it pt \
+  --reviewed data/train data/dev data/test \
+  --targets taxonomy/coverage_targets.json \
+  --batch-limit 100
+```
+
+Path precedence is `CLI > environment > config.toml`. Use
+`SPOKENFORM_GOLD_SOURCE_CACHE` and `SPOKENFORM_GOLD_WORK`, or the explicit
+`--source-cache` and `--work-root` flags, as overrides for custom locations.
+The cache and work directories remain external runtime state and are not
+created by configuration loading.
+
 ## Scaled upstream candidate ingestion
 
 The importers consume local source bundles and never require network access at runtime. Keep source bundles outside the repository:
@@ -306,8 +336,6 @@ The complete deterministic workflow is available through one command. It expects
 
 ```bash
 spokenform-gold ingest-upstreams \
-  --source-cache "$SPOKENFORM_GOLD_SOURCE_CACHE" \
-  --work-root "$SPOKENFORM_GOLD_WORK" \
   --sources async_tn polynorm proteno \
   --languages en de es fr it pt
 ```

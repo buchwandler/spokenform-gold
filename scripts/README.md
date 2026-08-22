@@ -32,15 +32,23 @@ spokenform-gold-work/             ← production work directory (disposable, not
 
 ### After the script finishes
 
-Export the environment variables that the production tooling expects:
+The committed repository-root `config.toml` already points at these sibling
+directories, so the normal production command needs no path exports or flags:
 
 ```bash
-export SPOKENFORM_GOLD_SOURCE_CACHE="$(cd ../spokenform-gold-source-cache && pwd)"
-export SPOKENFORM_GOLD_WORK="$(cd ../spokenform-gold-work && pwd)"
+spokenform-gold ingest-upstreams --sources async_tn polynorm proteno
 ```
 
-Add these to your shell profile (`.bashrc`, `.zshrc`, etc.) if you work in
-this repository regularly.
+Environment variables and CLI flags remain available as overrides:
+
+```bash
+SPOKENFORM_GOLD_SOURCE_CACHE=/custom/cache \
+SPOKENFORM_GOLD_WORK=/custom/work \
+spokenform-gold ingest-upstreams --sources async_tn
+```
+
+The precedence is `CLI > environment > config.toml`. Custom bootstrap paths
+must therefore be supplied through an override or a custom config file.
 
 ### Options
 

@@ -1215,14 +1215,18 @@ records and immutable release artifact are the benchmark.
 
 ## Production data-growth loop
 
-For a production refresh, keep upstream repositories outside Git:
+For a production refresh, keep upstream repositories outside Git. The
+repository-root `config.toml` normally points at the sibling directories created
+by `scripts/setup-source-cache.py`:
 
-```bash
-export SPOKENFORM_GOLD_SOURCE_CACHE=/path/to/spokenform-gold-source-cache
-export SPOKENFORM_GOLD_WORK=/path/to/spokenform-gold-work
+```toml
+[paths]
+source_cache = "../spokenform-gold-source-cache"
+work = "../spokenform-gold-work"
 ```
 
-Populate the cache at the exact revisions from `sources/manifest.json`, then run:
+Populate the cache at the exact revisions from `sources/manifest.json`, then run
+this from the repository root:
 
 ```bash
 spokenform-gold source-lock \
@@ -1230,14 +1234,17 @@ spokenform-gold source-lock \
   --out sources/source-lock.json
 
 spokenform-gold ingest-upstreams \
-  --source-cache "$SPOKENFORM_GOLD_SOURCE_CACHE" \
-  --work-root "$SPOKENFORM_GOLD_WORK" \
   --sources async_tn polynorm proteno \
   --languages en de es fr it pt \
   --reviewed data/train data/dev data/test \
   --targets taxonomy/coverage_targets.json \
   --batch-limit 100
 ```
+
+CLI path flags override environment variables, which override `config.toml`.
+Use `SPOKENFORM_GOLD_SOURCE_CACHE` / `SPOKENFORM_GOLD_WORK` or
+`--source-cache` / `--work-root` for custom locations; these are overrides, not
+required setup.
 
 Before annotation, inspect at minimum:
 
