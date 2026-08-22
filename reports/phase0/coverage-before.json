@@ -12,27 +12,15 @@
       "statuses": {},
       "negative_controls": 1,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
       "category": "acronym",
       "records": 3,
       "units": 3,
-      "languages": [
-        "en"
-      ],
-      "locales": [
-        "en-US"
-      ],
+      "languages": ["en"],
+      "locales": ["en-US"],
       "statuses": {
         "gold": 2,
         "policy_choice": 1
@@ -43,14 +31,7 @@
         "plural_acronym": 1,
         "word_like_acronym": 1
       },
-      "missing_languages": [
-        "cs",
-        "de",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -62,15 +43,7 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -82,15 +55,7 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -102,27 +67,15 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
       "category": "cardinal",
       "records": 1,
       "units": 1,
-      "languages": [
-        "en"
-      ],
-      "locales": [
-        "en-US"
-      ],
+      "languages": ["en"],
+      "locales": ["en-US"],
       "statuses": {
         "gold": 1
       },
@@ -130,14 +83,7 @@
       "patterns": {
         "plain_number": 1
       },
-      "missing_languages": [
-        "cs",
-        "de",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -149,15 +95,7 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -169,29 +107,15 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
       "category": "currency",
       "records": 2,
       "units": 2,
-      "languages": [
-        "en",
-        "es"
-      ],
-      "locales": [
-        "en-US",
-        "es-ES"
-      ],
+      "languages": ["en", "es"],
+      "locales": ["en-US", "es-ES"],
       "statuses": {
         "gold": 2
       },
@@ -199,29 +123,15 @@
       "patterns": {
         "currency_symbol": 2
       },
-      "missing_languages": [
-        "cs",
-        "de",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
       "category": "date",
       "records": 8,
       "units": 8,
-      "languages": [
-        "de",
-        "en",
-        "es"
-      ],
-      "locales": [
-        "de-DE",
-        "en-US",
-        "es-ES"
-      ],
+      "languages": ["de", "en", "es"],
+      "locales": ["de-DE", "en-US", "es-ES"],
       "statuses": {
         "ambiguous": 3,
         "policy_choice": 3,
@@ -234,12 +144,7 @@
         "iso_date": 1,
         "month_name_date": 1
       },
-      "missing_languages": [
-        "cs",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -251,27 +156,15 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
       "category": "decimal",
       "records": 6,
       "units": 6,
-      "languages": [
-        "en"
-      ],
-      "locales": [
-        "en-US"
-      ],
+      "languages": ["en"],
+      "locales": ["en-US"],
       "statuses": {
         "gold": 6
       },
@@ -283,14 +176,7 @@
         "negative_decimal": 1,
         "plain_decimal": 1
       },
-      "missing_languages": [
-        "cs",
-        "de",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -302,15 +188,7 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -322,29 +200,15 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
       "category": "fraction",
       "records": 4,
       "units": 4,
-      "languages": [
-        "de",
-        "en"
-      ],
-      "locales": [
-        "de-DE",
-        "en-US"
-      ],
+      "languages": ["de", "en"],
+      "locales": ["de-DE", "en-US"],
       "statuses": {
         "multi_valid": 2,
         "gold": 2
@@ -354,27 +218,15 @@
         "numeric_fraction": 3,
         "fraction_vs_slash": 1
       },
-      "missing_languages": [
-        "cs",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
       "category": "identifier",
       "records": 4,
       "units": 4,
-      "languages": [
-        "en",
-        "es"
-      ],
-      "locales": [
-        "en-US",
-        "es-ES"
-      ],
+      "languages": ["en", "es"],
+      "locales": ["en-US", "es-ES"],
       "statuses": {
         "gold": 4
       },
@@ -384,25 +236,15 @@
         "identifier_vs_word": 1,
         "mixed_identifier": 2
       },
-      "missing_languages": [
-        "cs",
-        "de",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
       "category": "ip_address",
       "records": 1,
       "units": 1,
-      "languages": [
-        "en"
-      ],
-      "locales": [
-        "en-US"
-      ],
+      "languages": ["en"],
+      "locales": ["en-US"],
       "statuses": {
         "gold": 1
       },
@@ -410,14 +252,7 @@
       "patterns": {
         "ipv4": 1
       },
-      "missing_languages": [
-        "cs",
-        "de",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -429,15 +264,7 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -449,31 +276,15 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
       "category": "math_expression",
       "records": 4,
       "units": 4,
-      "languages": [
-        "en",
-        "it",
-        "pt"
-      ],
-      "locales": [
-        "en-US",
-        "it-IT",
-        "pt-PT"
-      ],
+      "languages": ["en", "it", "pt"],
+      "locales": ["en-US", "it-IT", "pt-PT"],
       "statuses": {
         "gold": 4
       },
@@ -484,24 +295,15 @@
         "power": 1,
         "subscript": 1
       },
-      "missing_languages": [
-        "cs",
-        "de",
-        "es",
-        "fr"
-      ],
+      "missing_languages": ["cs", "de", "es", "fr"],
       "missing_patterns": []
     },
     {
       "category": "measurement_unit",
       "records": 1,
       "units": 1,
-      "languages": [
-        "en"
-      ],
-      "locales": [
-        "en-US"
-      ],
+      "languages": ["en"],
+      "locales": ["en-US"],
       "statuses": {
         "gold": 1
       },
@@ -509,14 +311,7 @@
       "patterns": {
         "value_unit": 1
       },
-      "missing_languages": [
-        "cs",
-        "de",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -528,15 +323,7 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -548,27 +335,15 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
       "category": "ordinal",
       "records": 1,
       "units": 1,
-      "languages": [
-        "en"
-      ],
-      "locales": [
-        "en-US"
-      ],
+      "languages": ["en"],
+      "locales": ["en-US"],
       "statuses": {
         "gold": 1
       },
@@ -576,14 +351,7 @@
       "patterns": {
         "ordinal_suffix": 1
       },
-      "missing_languages": [
-        "cs",
-        "de",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -595,15 +363,7 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -615,15 +375,7 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -635,15 +387,7 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -655,15 +399,7 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -675,15 +411,7 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -695,15 +423,7 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -715,15 +435,7 @@
       "statuses": {},
       "negative_controls": 1,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -735,15 +447,7 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -755,27 +459,15 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
       "category": "score_or_range",
       "records": 3,
       "units": 3,
-      "languages": [
-        "en"
-      ],
-      "locales": [
-        "en-US"
-      ],
+      "languages": ["en"],
+      "locales": ["en-US"],
       "statuses": {
         "gold": 3
       },
@@ -785,14 +477,7 @@
         "score": 1,
         "numeric_range": 1
       },
-      "missing_languages": [
-        "cs",
-        "de",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -804,15 +489,7 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -824,15 +501,7 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -844,15 +513,7 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -864,31 +525,15 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
       "category": "time",
       "records": 5,
       "units": 5,
-      "languages": [
-        "de",
-        "en",
-        "fr"
-      ],
-      "locales": [
-        "de-DE",
-        "en-US",
-        "fr-FR"
-      ],
+      "languages": ["de", "en", "fr"],
+      "locales": ["de-DE", "en-US", "fr-FR"],
       "statuses": {
         "gold": 5
       },
@@ -899,12 +544,7 @@
         "leading_zero_time": 1,
         "time_24h": 1
       },
-      "missing_languages": [
-        "cs",
-        "es",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "es", "it", "pt"],
       "missing_patterns": []
     },
     {
@@ -916,27 +556,15 @@
       "statuses": {},
       "negative_controls": 0,
       "patterns": {},
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
       "category": "url_or_email",
       "records": 2,
       "units": 2,
-      "languages": [
-        "en"
-      ],
-      "locales": [
-        "en-US"
-      ],
+      "languages": ["en"],
+      "locales": ["en-US"],
       "statuses": {
         "gold": 2
       },
@@ -945,28 +573,15 @@
         "email": 1,
         "url": 1
       },
-      "missing_languages": [
-        "cs",
-        "de",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "es", "fr", "it", "pt"],
       "missing_patterns": []
     },
     {
       "category": "version",
       "records": 4,
       "units": 4,
-      "languages": [
-        "en",
-        "es"
-      ],
-      "locales": [
-        "en-US",
-        "es-ES"
-      ],
+      "languages": ["en", "es"],
+      "locales": ["en-US", "es-ES"],
       "statuses": {
         "gold": 4
       },
@@ -976,13 +591,7 @@
         "semantic_version": 1,
         "simple_version": 1
       },
-      "missing_languages": [
-        "cs",
-        "de",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "fr", "it", "pt"],
       "missing_patterns": []
     }
   ],

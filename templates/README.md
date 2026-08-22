@@ -35,6 +35,7 @@ The four templates below correspond to the four roles in this pipeline.
 repository.
 
 Covers:
+
 - establishing the real baseline (tests, validation, coverage, candidate release);
 - verifying source-cache readiness;
 - running the first full-source ingestion;
@@ -54,6 +55,7 @@ production baseline and a batch-0001 review package.
 
 Run this in **separate isolated contexts** for each reviewer. Neither reviewer
 should see:
+
 - `source.upstream_expected`;
 - current Spokenform output;
 - the other reviewer's annotation;
@@ -71,6 +73,7 @@ canonical realization, accepted/rejected variants, sentence oracle, etc.).
 compare them and produce a final decision.
 
 Inputs to provide:
+
 - completed blind reviewer A artifact;
 - completed blind reviewer B artifact;
 - A/B comparison;
@@ -90,6 +93,7 @@ inspection, final semantic interpretation, disposition decision
 handoff report.
 
 Fill in every section:
+
 - source cache revisions and checks;
 - ingestion row accounting;
 - coverage before/after;

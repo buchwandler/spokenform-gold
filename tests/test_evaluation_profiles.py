@@ -41,7 +41,9 @@ class EvaluationProfileTests(unittest.TestCase):
         registry = load_registry()
         self.assertEqual(registry_hash(registry), registry_hash(load_registry()))
         profile = resolve_profile("gold-v1")
-        self.assertEqual(profile_hash(profile), profile_hash(resolve_profile("gold-v1")))
+        self.assertEqual(
+            profile_hash(profile), profile_hash(resolve_profile("gold-v1"))
+        )
 
     def test_unknown_profile_fails_closed(self):
         with self.assertRaises(ValueError):

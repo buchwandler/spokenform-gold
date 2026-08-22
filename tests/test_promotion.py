@@ -40,7 +40,9 @@ class PromotionTests(unittest.TestCase):
         promoted, report = build_promoted_records(
             [self.candidate], [self.decision()], [self.existing]
         )
-        self.assertEqual([record["id"] for record in promoted], ["curated-promotion-001"])
+        self.assertEqual(
+            [record["id"] for record in promoted], ["curated-promotion-001"]
+        )
         self.assertEqual(promoted[0]["source"]["benchmark"], "spokenform_curated")
         self.assertEqual(promoted[0]["source"]["informed_by"][0]["source_id"], "1001")
         self.assertEqual(report["new_families"], ["curated-promotion-family"])
@@ -102,7 +104,9 @@ class PromotionTests(unittest.TestCase):
     def test_existing_record_id_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "already exists"):
             build_promoted_records(
-                [self.candidate], [self.decision(record_id=self.existing["id"])], [self.existing]
+                [self.candidate],
+                [self.decision(record_id=self.existing["id"])],
+                [self.existing],
             )
 
     def test_family_language_conflict_is_rejected(self):

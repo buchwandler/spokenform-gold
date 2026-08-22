@@ -44,14 +44,7 @@
       "minLength": 2
     },
     "split": {
-      "enum": [
-        "train",
-        "dev",
-        "test",
-        "challenge",
-        "judge_gold",
-        "candidate"
-      ]
+      "enum": ["train", "dev", "test", "challenge", "judge_gold", "candidate"]
     },
     "family_id": {
       "type": "string",
@@ -71,19 +64,11 @@
       "type": "string"
     },
     "expected_output": {
-      "type": [
-        "string",
-        "null"
-      ]
+      "type": ["string", "null"]
     },
     "source": {
       "type": "object",
-      "required": [
-        "benchmark",
-        "source_id",
-        "source_version",
-        "license"
-      ]
+      "required": ["benchmark", "source_id", "source_version", "license"]
     },
     "units": {
       "type": "array",

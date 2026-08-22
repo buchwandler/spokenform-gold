@@ -34,7 +34,9 @@ class ConfigTests(unittest.TestCase):
             config = load_config(config_path, explicit=True)
 
             self.assertEqual(config.path, config_path.resolve())
-            self.assertEqual(config.paths.source_cache, (root.parent / "cache").resolve())
+            self.assertEqual(
+                config.paths.source_cache, (root.parent / "cache").resolve()
+            )
             self.assertEqual(config.paths.work, (root.parent / "work").resolve())
 
     def test_absolute_and_tilde_paths_are_expanded(self):
@@ -48,10 +50,15 @@ class ConfigTests(unittest.TestCase):
             config = load_config(config_path, explicit=True)
 
             self.assertEqual(config.paths.source_cache, absolute.resolve())
-            self.assertEqual(config.paths.work, (Path.home() / "spokenform-work").resolve())
+            self.assertEqual(
+                config.paths.work, (Path.home() / "spokenform-work").resolve()
+            )
 
     def test_loaded_relative_paths_do_not_depend_on_later_working_directory(self):
-        with tempfile.TemporaryDirectory() as tmpdir, tempfile.TemporaryDirectory() as other:
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            tempfile.TemporaryDirectory() as other,
+        ):
             root = Path(tmpdir) / "project"
             root.mkdir()
             config_path = self._write_config(root, '[paths]\nwork = "../work"\n')
@@ -66,12 +73,16 @@ class ConfigTests(unittest.TestCase):
     def test_missing_default_config_is_allowed(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             config = load_config(Path(tmpdir) / "missing.toml", explicit=False)
-            self.assertEqual(config, ProjectConfig(path=None, paths=PathsConfig(None, None)))
+            self.assertEqual(
+                config, ProjectConfig(path=None, paths=PathsConfig(None, None))
+            )
 
     def test_explicit_missing_config_fails_clearly(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "missing.toml"
-            with self.assertRaisesRegex(ConfigError, r"config file not found:.*missing.toml"):
+            with self.assertRaisesRegex(
+                ConfigError, r"config file not found:.*missing.toml"
+            ):
                 load_config(path, explicit=True)
 
     def test_invalid_toml_fails_clearly(self):
@@ -99,7 +110,9 @@ class ConfigTests(unittest.TestCase):
             work_root=None,
             environ={},
         )
-        self.assertEqual(result, RuntimePaths(Path("/config-cache"), Path("/config-work")))
+        self.assertEqual(
+            result, RuntimePaths(Path("/config-cache"), Path("/config-work"))
+        )
 
     def test_environment_overrides_config_and_can_be_mixed(self):
         config = ProjectConfig(
@@ -146,11 +159,16 @@ class ConfigTests(unittest.TestCase):
 
     def test_cli_integration_preserves_explicit_path_form(self):
         summary = {"records": 0, "exclusions": 0, "work_root": "/work"}
-        with tempfile.TemporaryDirectory() as tmpdir, mock.patch.object(
-            cli, "run_upstream_ingestion", return_value=summary
-        ) as ingest, mock.patch.object(
-            cli, "default_config_path", return_value=Path(tmpdir) / "absent.toml"
-        ), mock.patch.dict(os.environ, {}, clear=True):
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            mock.patch.object(
+                cli, "run_upstream_ingestion", return_value=summary
+            ) as ingest,
+            mock.patch.object(
+                cli, "default_config_path", return_value=Path(tmpdir) / "absent.toml"
+            ),
+            mock.patch.dict(os.environ, {}, clear=True),
+        ):
             result = cli.main(
                 [
                     "ingest-upstreams",
@@ -164,7 +182,9 @@ class ConfigTests(unittest.TestCase):
             )
 
         self.assertEqual(result, 0)
-        self.assertEqual(ingest.call_args.args[:2], (Path(tmpdir) / "cache", Path(tmpdir) / "work"))
+        self.assertEqual(
+            ingest.call_args.args[:2], (Path(tmpdir) / "cache", Path(tmpdir) / "work")
+        )
 
     def test_cli_integration_uses_config_without_path_flags(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -174,23 +194,38 @@ class ConfigTests(unittest.TestCase):
                 '[paths]\nsource_cache = "cache"\nwork = "work"\n',
             )
             summary = {"records": 0, "exclusions": 0, "work_root": str(root / "work")}
-            with mock.patch.object(
-                cli, "run_upstream_ingestion", return_value=summary
-            ) as ingest, mock.patch.dict(os.environ, {}, clear=True):
+            with (
+                mock.patch.object(
+                    cli, "run_upstream_ingestion", return_value=summary
+                ) as ingest,
+                mock.patch.dict(os.environ, {}, clear=True),
+            ):
                 result = cli.main(
-                    ["--config", str(config_path), "ingest-upstreams", "--sources", "async_tn"]
+                    [
+                        "--config",
+                        str(config_path),
+                        "ingest-upstreams",
+                        "--sources",
+                        "async_tn",
+                    ]
                 )
 
             self.assertEqual(result, 0)
             self.assertEqual(
-                ingest.call_args.args[:2], ((root / "cache").resolve(), (root / "work").resolve())
+                ingest.call_args.args[:2],
+                ((root / "cache").resolve(), (root / "work").resolve()),
             )
 
     def test_cli_missing_paths_is_actionable(self):
         stderr = io.StringIO()
-        with tempfile.TemporaryDirectory() as tmpdir, mock.patch.object(
-            cli, "default_config_path", return_value=Path(tmpdir) / "absent.toml"
-        ), mock.patch.dict(os.environ, {}, clear=True), contextlib.redirect_stderr(stderr):
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            mock.patch.object(
+                cli, "default_config_path", return_value=Path(tmpdir) / "absent.toml"
+            ),
+            mock.patch.dict(os.environ, {}, clear=True),
+            contextlib.redirect_stderr(stderr),
+        ):
             result = cli.main(["ingest-upstreams", "--sources", "async_tn"])
 
         self.assertEqual(result, 2)
@@ -204,9 +239,18 @@ class ConfigTests(unittest.TestCase):
             config_path = self._write_config(
                 Path(tmpdir), '[paths]\nsource_cache = "cache"\n'
             )
-            with mock.patch.dict(os.environ, {}, clear=True), contextlib.redirect_stderr(stderr):
+            with (
+                mock.patch.dict(os.environ, {}, clear=True),
+                contextlib.redirect_stderr(stderr),
+            ):
                 result = cli.main(
-                    ["--config", str(config_path), "ingest-upstreams", "--sources", "async_tn"]
+                    [
+                        "--config",
+                        str(config_path),
+                        "ingest-upstreams",
+                        "--sources",
+                        "async_tn",
+                    ]
                 )
 
         self.assertEqual(result, 2)
@@ -215,7 +259,10 @@ class ConfigTests(unittest.TestCase):
 
     def test_cli_explicit_missing_config_is_actionable(self):
         stderr = io.StringIO()
-        with tempfile.TemporaryDirectory() as tmpdir, contextlib.redirect_stderr(stderr):
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            contextlib.redirect_stderr(stderr),
+        ):
             result = cli.main(
                 ["--config", str(Path(tmpdir) / "missing.toml"), "ingest-upstreams"]
             )

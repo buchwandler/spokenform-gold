@@ -49,7 +49,10 @@ def _source_for_decision(
             )
         manifest = source_manifests[benchmark]
         policy = normalize_materialization_policy(manifest)
-        if policy != "embedded_public" or manifest.get("redistribution_status") != "allowed":
+        if (
+            policy != "embedded_public"
+            or manifest.get("redistribution_status") != "allowed"
+        ):
             raise _decision_error(
                 f"source {benchmark!r} is not permitted for embedded upstream promotion"
             )
@@ -154,14 +157,22 @@ def _validate_decision_shape(decision: dict) -> None:
                 f"decision for {decision['candidate_id']} has invalid promoted status "
                 f"{decision.get('status')!r}"
             )
-        for key in ("input", "expected_output", "units", "negative_for", "notes", "oracle"):
+        for key in (
+            "input",
+            "expected_output",
+            "units",
+            "negative_for",
+            "notes",
+            "oracle",
+        ):
             if key not in decision:
                 raise _decision_error(
                     f"promoted decision for {decision['candidate_id']} is missing {key}"
                 )
-        if not isinstance(decision.get("license_disposition"), str) or not decision[
-            "license_disposition"
-        ]:
+        if (
+            not isinstance(decision.get("license_disposition"), str)
+            or not decision["license_disposition"]
+        ):
             raise _decision_error(
                 f"promoted decision for {decision['candidate_id']} requires license_disposition"
             )
@@ -189,7 +200,9 @@ def build_promoted_records(
         _validate_decision_shape(decision)
         candidate_id = decision["candidate_id"]
         if candidate_id not in candidate_map:
-            raise _decision_error(f"decision references unknown candidate {candidate_id}")
+            raise _decision_error(
+                f"decision references unknown candidate {candidate_id}"
+            )
         if candidate_id in decision_map:
             raise _decision_error(f"duplicate decision for candidate {candidate_id}")
         decision_map[candidate_id] = decision
@@ -209,9 +222,7 @@ def build_promoted_records(
         dispositions[disposition] += 1
         if disposition not in PROMOTABLE_DECISIONS:
             continue
-        record = _record_from_decision(
-            candidate, decision, source_manifests=manifests
-        )
+        record = _record_from_decision(candidate, decision, source_manifests=manifests)
         family_records = [
             item
             for item in existing_records
@@ -233,7 +244,9 @@ def build_promoted_records(
 
     validation_errors = validate_records(promoted, source_manifests=manifests)
     if validation_errors:
-        raise _decision_error("promoted records are invalid: " + "; ".join(validation_errors))
+        raise _decision_error(
+            "promoted records are invalid: " + "; ".join(validation_errors)
+        )
 
     promoted.sort(key=lambda record: record["id"])
     report = {
@@ -252,7 +265,9 @@ def build_promoted_records(
         "existing_families": sorted(
             {record["family_id"] for record in promoted} & existing_families
         ),
-        "languages": dict(sorted(Counter(record["language"] for record in promoted).items())),
+        "languages": dict(
+            sorted(Counter(record["language"] for record in promoted).items())
+        ),
         "sources": dict(
             sorted(
                 Counter(record["source"]["benchmark"] for record in promoted).items()

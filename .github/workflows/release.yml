@@ -1,0 +1,116 @@
+name: publish benchmark release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Benchmark version without the v prefix"
+        required: true
+        type: string
+      maturity:
+        description: "Release maturity"
+        required: true
+        default: candidate
+        type: choice
+        options:
+          - experimental
+          - candidate
+          - stable
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Resolve release identity
+        id: release
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_MATURITY: ${{ inputs.maturity }}
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            version="${INPUT_VERSION}"
+            maturity="${INPUT_MATURITY}"
+            tag="v${version}"
+          else
+            tag="${GITHUB_REF_NAME}"
+            version="${tag#v}"
+            case "${version}" in
+              *candidate*) maturity="candidate" ;;
+              *exp*) maturity="experimental" ;;
+              *) maturity="stable" ;;
+            esac
+          fi
+          [[ "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "maturity=${maturity}" >> "${GITHUB_OUTPUT}"
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+          if [[ "${maturity}" == "stable" ]]; then
+            echo "prerelease=false" >> "${GITHUB_OUTPUT}"
+          else
+            echo "prerelease=true" >> "${GITHUB_OUTPUT}"
+          fi
+      - name: Install project
+        run: python -m pip install -e ".[dev]"
+      - name: Validate repository
+        run: make check
+      - name: Build release and downloadable archives
+        shell: bash
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+          MATURITY: ${{ steps.release.outputs.maturity }}
+        run: |
+          set -euo pipefail
+          name="spokenform-gold-v${VERSION}"
+          rm -rf "dist/${name}"
+          spokenform-gold release-check \
+            --version "${VERSION}" \
+            --data data/train data/dev data/test \
+            --controls data/controls \
+            --registry splits/family_assignments.json \
+            --maturity "${MATURITY}" \
+            --coverage-profile "${MATURITY}" \
+            --out "dist/${name}"
+          python - "${name}" <<'PY'
+          import shutil
+          import sys
+
+          name = sys.argv[1]
+          shutil.make_archive(f"dist/{name}", "gztar", root_dir="dist", base_dir=name)
+          shutil.make_archive(f"dist/{name}", "zip", root_dir="dist", base_dir=name)
+          PY
+          (cd dist && sha256sum "${name}.tar.gz" "${name}.zip" > "${name}-archive-SHA256SUMS")
+      - name: Publish GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.release.outputs.version }}
+          TAG: ${{ steps.release.outputs.tag }}
+          PRERELEASE: ${{ steps.release.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+          name="spokenform-gold-v${VERSION}"
+          args=(release create "${TAG}" \
+            "dist/${name}.tar.gz" \
+            "dist/${name}.zip" \
+            "dist/${name}-archive-SHA256SUMS" \
+            --title "Spokenform Gold ${VERSION}" \
+            --notes-file "dist/${name}/RELEASE_NOTES.md" \
+            --target "${GITHUB_SHA}")
+          if [[ "${PRERELEASE}" == "true" ]]; then
+            args+=(--prerelease)
+          fi
+          gh "${args[@]}"

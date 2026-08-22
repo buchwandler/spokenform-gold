@@ -20,7 +20,7 @@ class ReviewBatchTests(unittest.TestCase):
                 "input": "Keep provenance",
                 "source": {"benchmark": "async_tn", "source_id": record_id},
                 "units": [{"category": category}],
-            }
+            },
         }
 
     def test_batch_applies_limit_language_category_and_family_caps(self):
@@ -43,7 +43,6 @@ class ReviewBatchTests(unittest.TestCase):
         self.assertEqual(batch[0]["review_reasons"], ["category_missing"])
         self.assertEqual(batch[0]["source"]["benchmark"], "async_tn")
         self.assertEqual(batch[0]["input"], "Keep provenance")
-
 
 
 if __name__ == "__main__":

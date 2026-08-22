@@ -18,7 +18,12 @@ def classify_change(old: dict, new: dict) -> str:
     if old_oracle.get("canonical_output") != new_oracle.get("canonical_output"):
         return "canonical_change"
     if old_oracle.get("accepted_outputs") != new_oracle.get("accepted_outputs"):
-        return "variant_addition" if len(new_oracle.get("accepted_outputs", [])) > len(old_oracle.get("accepted_outputs", [])) else "variant_removal"
+        return (
+            "variant_addition"
+            if len(new_oracle.get("accepted_outputs", []))
+            > len(old_oracle.get("accepted_outputs", []))
+            else "variant_removal"
+        )
     if old.get("units") != new.get("units"):
         return "semantic_change"
     if old.get("status") != new.get("status"):
@@ -33,20 +38,38 @@ def diff_records(old_records: list[dict], new_records: list[dict]) -> dict:
     removed = sorted(set(old_map) - set(new_map))
     changed = []
     for record_id in sorted(set(old_map) & set(new_map)):
-        old_assertion, new_assertion = _assertion(old_map[record_id]), _assertion(new_map[record_id])
+        old_assertion, new_assertion = (
+            _assertion(old_map[record_id]),
+            _assertion(new_map[record_id]),
+        )
         if old_assertion != new_assertion:
-            changed.append({
-                "record_id": record_id,
-                "old_oracle_hash": old_assertion["oracle_hash"],
-                "new_oracle_hash": new_assertion["oracle_hash"],
-                "classification": classify_change(old_map[record_id], new_map[record_id]),
-                "old": old_assertion,
-                "new": new_assertion,
-            })
-    return {"added": added, "removed": removed, "changed": changed, "counts": {"added": len(added), "removed": len(removed), "changed": len(changed)}}
+            changed.append(
+                {
+                    "record_id": record_id,
+                    "old_oracle_hash": old_assertion["oracle_hash"],
+                    "new_oracle_hash": new_assertion["oracle_hash"],
+                    "classification": classify_change(
+                        old_map[record_id], new_map[record_id]
+                    ),
+                    "old": old_assertion,
+                    "new": new_assertion,
+                }
+            )
+    return {
+        "added": added,
+        "removed": removed,
+        "changed": changed,
+        "counts": {
+            "added": len(added),
+            "removed": len(removed),
+            "changed": len(changed),
+        },
+    }
 
 
-def correction_record(old: dict, new: dict, *, reason: str, reviewed_by: list[str], adjudicator: str) -> dict:
+def correction_record(
+    old: dict, new: dict, *, reason: str, reviewed_by: list[str], adjudicator: str
+) -> dict:
     return {
         "record_id": new.get("id"),
         "old_oracle_hash": old.get("oracle_hash") or oracle_hash(old),

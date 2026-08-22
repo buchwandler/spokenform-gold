@@ -11,7 +11,6 @@ The generated artifact intentionally omits upstream expected output and leaves `
 
 A completed review should record `review_schema_version`, a lifecycle `review.status`, at least two independent reviewers, an adjudicator, a protocol version, structured disagreement dimensions, and any source error reason codes.
 
-
 ## Applying completed A/B evidence
 
 The strict re-review commands are:

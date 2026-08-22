@@ -6,15 +6,7 @@
       "category": "abbreviation",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 1,
       "patterns": {},
@@ -24,20 +16,9 @@
     },
     {
       "category": "acronym",
-      "languages": [
-        "en"
-      ],
-      "locales": [
-        "en-US"
-      ],
-      "missing_languages": [
-        "cs",
-        "de",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "languages": ["en"],
+      "locales": ["en-US"],
+      "missing_languages": ["cs", "de", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 2,
       "patterns": {
@@ -56,15 +37,7 @@
       "category": "address",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -76,15 +49,7 @@
       "category": "api_token",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -96,15 +61,7 @@
       "category": "biology",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -114,20 +71,9 @@
     },
     {
       "category": "cardinal",
-      "languages": [
-        "en"
-      ],
-      "locales": [
-        "en-US"
-      ],
-      "missing_languages": [
-        "cs",
-        "de",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "languages": ["en"],
+      "locales": ["en-US"],
+      "missing_languages": ["cs", "de", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 1,
       "patterns": {
@@ -143,15 +89,7 @@
       "category": "chemical",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -163,15 +101,7 @@
       "category": "coordinates",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -181,21 +111,9 @@
     },
     {
       "category": "currency",
-      "languages": [
-        "en",
-        "es"
-      ],
-      "locales": [
-        "en-US",
-        "es-ES"
-      ],
-      "missing_languages": [
-        "cs",
-        "de",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "languages": ["en", "es"],
+      "locales": ["en-US", "es-ES"],
+      "missing_languages": ["cs", "de", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 1,
       "patterns": {
@@ -209,22 +127,9 @@
     },
     {
       "category": "date",
-      "languages": [
-        "de",
-        "en",
-        "es"
-      ],
-      "locales": [
-        "de-DE",
-        "en-US",
-        "es-ES"
-      ],
-      "missing_languages": [
-        "cs",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "languages": ["de", "en", "es"],
+      "locales": ["de-DE", "en-US", "es-ES"],
+      "missing_languages": ["cs", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 2,
       "patterns": {
@@ -245,15 +150,7 @@
       "category": "date_time_mixed",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -263,20 +160,9 @@
     },
     {
       "category": "decimal",
-      "languages": [
-        "en"
-      ],
-      "locales": [
-        "en-US"
-      ],
-      "missing_languages": [
-        "cs",
-        "de",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "languages": ["en"],
+      "locales": ["en-US"],
+      "missing_languages": ["cs", "de", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 3,
       "patterns": {
@@ -296,15 +182,7 @@
       "category": "dialogue",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -316,15 +194,7 @@
       "category": "file_path",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -334,21 +204,9 @@
     },
     {
       "category": "fraction",
-      "languages": [
-        "de",
-        "en"
-      ],
-      "locales": [
-        "de-DE",
-        "en-US"
-      ],
-      "missing_languages": [
-        "cs",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "languages": ["de", "en"],
+      "locales": ["de-DE", "en-US"],
+      "missing_languages": ["cs", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {
@@ -364,21 +222,9 @@
     },
     {
       "category": "identifier",
-      "languages": [
-        "en",
-        "es"
-      ],
-      "locales": [
-        "en-US",
-        "es-ES"
-      ],
-      "missing_languages": [
-        "cs",
-        "de",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "languages": ["en", "es"],
+      "locales": ["en-US", "es-ES"],
+      "missing_languages": ["cs", "de", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 1,
       "patterns": {
@@ -394,20 +240,9 @@
     },
     {
       "category": "ip_address",
-      "languages": [
-        "en"
-      ],
-      "locales": [
-        "en-US"
-      ],
-      "missing_languages": [
-        "cs",
-        "de",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "languages": ["en"],
+      "locales": ["en-US"],
+      "missing_languages": ["cs", "de", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {
@@ -423,15 +258,7 @@
       "category": "isbn",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -443,15 +270,7 @@
       "category": "legal_citation",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -461,22 +280,9 @@
     },
     {
       "category": "math_expression",
-      "languages": [
-        "en",
-        "it",
-        "pt"
-      ],
-      "locales": [
-        "en-US",
-        "it-IT",
-        "pt-PT"
-      ],
-      "missing_languages": [
-        "cs",
-        "de",
-        "es",
-        "fr"
-      ],
+      "languages": ["en", "it", "pt"],
+      "locales": ["en-US", "it-IT", "pt-PT"],
+      "missing_languages": ["cs", "de", "es", "fr"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {
@@ -493,20 +299,9 @@
     },
     {
       "category": "measurement_unit",
-      "languages": [
-        "en"
-      ],
-      "locales": [
-        "en-US"
-      ],
-      "missing_languages": [
-        "cs",
-        "de",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "languages": ["en"],
+      "locales": ["en-US"],
+      "missing_languages": ["cs", "de", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {
@@ -522,15 +317,7 @@
       "category": "mixed_doc",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -542,15 +329,7 @@
       "category": "music",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -560,20 +339,9 @@
     },
     {
       "category": "ordinal",
-      "languages": [
-        "en"
-      ],
-      "locales": [
-        "en-US"
-      ],
-      "missing_languages": [
-        "cs",
-        "de",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "languages": ["en"],
+      "locales": ["en-US"],
+      "missing_languages": ["cs", "de", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {
@@ -589,15 +357,7 @@
       "category": "password_token",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -609,15 +369,7 @@
       "category": "phone",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -629,15 +381,7 @@
       "category": "pin_passcode",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -649,15 +393,7 @@
       "category": "product_code",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -669,15 +405,7 @@
       "category": "promo_code",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -689,15 +417,7 @@
       "category": "quantity",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -709,15 +429,7 @@
       "category": "range",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 1,
       "patterns": {},
@@ -729,15 +441,7 @@
       "category": "roman_numeral",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -749,15 +453,7 @@
       "category": "scientific",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -767,20 +463,9 @@
     },
     {
       "category": "score_or_range",
-      "languages": [
-        "en"
-      ],
-      "locales": [
-        "en-US"
-      ],
-      "missing_languages": [
-        "cs",
-        "de",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "languages": ["en"],
+      "locales": ["en-US"],
+      "missing_languages": ["cs", "de", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 1,
       "patterns": {
@@ -798,15 +483,7 @@
       "category": "score_percent",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -818,15 +495,7 @@
       "category": "serial_or_plate",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -838,15 +507,7 @@
       "category": "social_handle",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -858,15 +519,7 @@
       "category": "ticker",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -876,22 +529,9 @@
     },
     {
       "category": "time",
-      "languages": [
-        "de",
-        "en",
-        "fr"
-      ],
-      "locales": [
-        "de-DE",
-        "en-US",
-        "fr-FR"
-      ],
-      "missing_languages": [
-        "cs",
-        "es",
-        "it",
-        "pt"
-      ],
+      "languages": ["de", "en", "fr"],
+      "locales": ["de-DE", "en-US", "fr-FR"],
+      "missing_languages": ["cs", "es", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 1,
       "patterns": {
@@ -910,15 +550,7 @@
       "category": "ui_copy",
       "languages": [],
       "locales": [],
-      "missing_languages": [
-        "cs",
-        "de",
-        "en",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "missing_languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 0,
       "patterns": {},
@@ -928,20 +560,9 @@
     },
     {
       "category": "url_or_email",
-      "languages": [
-        "en"
-      ],
-      "locales": [
-        "en-US"
-      ],
-      "missing_languages": [
-        "cs",
-        "de",
-        "es",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "languages": ["en"],
+      "locales": ["en-US"],
+      "missing_languages": ["cs", "de", "es", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 1,
       "patterns": {
@@ -956,21 +577,9 @@
     },
     {
       "category": "version",
-      "languages": [
-        "en",
-        "es"
-      ],
-      "locales": [
-        "en-US",
-        "es-ES"
-      ],
-      "missing_languages": [
-        "cs",
-        "de",
-        "fr",
-        "it",
-        "pt"
-      ],
+      "languages": ["en", "es"],
+      "locales": ["en-US", "es-ES"],
+      "missing_languages": ["cs", "de", "fr", "it", "pt"],
       "missing_patterns": [],
       "negative_controls": 2,
       "patterns": {

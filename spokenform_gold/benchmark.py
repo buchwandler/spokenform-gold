@@ -13,7 +13,7 @@ from .evaluation_profiles import (
     profile_hash,
     registry_hash,
     resolve_profile,
- )
+)
 from .io import read_json, read_records, sha256_file, write_json, write_jsonl
 from .scoring import score_records
 from .source_resolver import SourceTextLoader, resolve_release_record
@@ -29,7 +29,7 @@ BENCHMARK_PROFILES = {
 def benchmark_profile(
     name: str = GOLD_PROFILE_V1["name"],
     registry_path: str | Path | None = None,
- ) -> dict[str, Any]:
+) -> dict[str, Any]:
     return resolve_profile(name, registry_path)
 
 
@@ -63,7 +63,7 @@ def verify_release(gold_root: str | Path) -> dict:
 
 def _release_record_paths(
     root: Path, manifest: dict, *, key: str, fallback_directories: tuple[str, ...]
- ) -> list[Path]:
+) -> list[Path]:
     configured = manifest.get(key)
     if configured is None:
         return [
@@ -104,7 +104,8 @@ def load_release_records(
     root = Path(gold_root)
     records = read_records(
         _release_record_paths(
-            root, verification["manifest"],
+            root,
+            verification["manifest"],
             key="record_files",
             fallback_directories=("train", "dev", "test", "challenge"),
         )
@@ -138,7 +139,8 @@ def load_release_control_records(gold_root: str | Path) -> tuple[dict, list[dict
     root = Path(gold_root)
     records = read_records(
         _release_record_paths(
-            root, verification["manifest"],
+            root,
+            verification["manifest"],
             key="control_files",
             fallback_directories=("controls",),
         )

@@ -188,7 +188,6 @@ class ImporterTests(unittest.TestCase):
             "two thousand six i u c n",
         )
 
-
     def test_proteno_official_rejects_length_mismatch(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir) / "English"
@@ -222,7 +221,6 @@ class ImporterTests(unittest.TestCase):
             {record["source"]["benchmark"] for record in tamil.records},
             {"proteno_ta"},
         )
-
 
 
 if __name__ == "__main__":

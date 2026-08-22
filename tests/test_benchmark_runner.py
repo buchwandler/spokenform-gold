@@ -6,7 +6,7 @@ from spokenform_gold.benchmark import (
     load_release_control_records,
     load_release_records,
     run_benchmark,
- )
+)
 from spokenform_gold.io import read_json
 from spokenform_gold.release import build_release
 
@@ -20,7 +20,11 @@ class BenchmarkRunnerTests(unittest.TestCase):
             results_root = Path(tmpdir) / "results"
             build_release(
                 version="0.2.0-exp",
-                data_paths=[str(ROOT / "data/train"), str(ROOT / "data/dev"), str(ROOT / "data/test")],
+                data_paths=[
+                    str(ROOT / "data/train"),
+                    str(ROOT / "data/dev"),
+                    str(ROOT / "data/test"),
+                ],
                 out_root=release_root,
                 maturity="experimental",
                 registry_path=ROOT / "splits/family_assignments.json",
@@ -34,7 +38,10 @@ class BenchmarkRunnerTests(unittest.TestCase):
             )
             self.assertEqual(summary["profile_name"], "gold-v1")
             self.assertEqual(summary["profile_id"], "gold-v1")
-            self.assertEqual(summary["profile_config"]["prepare_kwargs"]["sequence_fallback_mode"], "preserve")
+            self.assertEqual(
+                summary["profile_config"]["prepare_kwargs"]["sequence_fallback_mode"],
+                "preserve",
+            )
             self.assertTrue(summary["profile_registry_hash"])
             self.assertTrue((results_root / "summary.json").exists())
             self.assertTrue((results_root / "predictions.jsonl").exists())
@@ -44,33 +51,45 @@ class BenchmarkRunnerTests(unittest.TestCase):
             self.assertEqual(persisted["split"], "test")
             self.assertGreaterEqual(persisted["canonical_score"], 0.9)
 
-
     def test_loader_keeps_test_default_distinct_from_explicit_all(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             release_root = Path(tmpdir) / "release"
             build_release(
                 version="0.2.0-split-contract",
-                data_paths=[str(ROOT / "data/train"), str(ROOT / "data/dev"), str(ROOT / "data/test")],
+                data_paths=[
+                    str(ROOT / "data/train"),
+                    str(ROOT / "data/dev"),
+                    str(ROOT / "data/test"),
+                ],
                 out_root=release_root,
                 maturity="experimental",
                 registry_path=ROOT / "splits/family_assignments.json",
             )
-            test_manifest, test_records = load_release_records(release_root, split="test")
+            test_manifest, test_records = load_release_records(
+                release_root, split="test"
+            )
             all_manifest, all_records = load_release_records(release_root)
             self.assertEqual(len(test_records), 11)
             self.assertEqual(len(all_records), 62)
             self.assertTrue(all(record["split"] == "test" for record in test_records))
-            self.assertEqual({record["split"] for record in all_records}, {"dev", "test"})
+            self.assertEqual(
+                {record["split"] for record in all_records}, {"dev", "test"}
+            )
             self.assertIn("data/train/sample.jsonl", all_manifest["record_files"])
-            self.assertEqual(test_manifest["record_files"], all_manifest["record_files"])
-
+            self.assertEqual(
+                test_manifest["record_files"], all_manifest["record_files"]
+            )
 
     def test_loader_separates_controls_from_canonical_records(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             release_root = Path(tmpdir) / "release"
             build_release(
                 version="0.2.0-exp",
-                data_paths=[str(ROOT / "data/train"), str(ROOT / "data/dev"), str(ROOT / "data/test")],
+                data_paths=[
+                    str(ROOT / "data/train"),
+                    str(ROOT / "data/dev"),
+                    str(ROOT / "data/test"),
+                ],
                 control_paths=[str(ROOT / "data/controls")],
                 out_root=release_root,
                 maturity="experimental",
@@ -80,7 +99,12 @@ class BenchmarkRunnerTests(unittest.TestCase):
             _, controls = load_release_control_records(release_root)
             self.assertEqual(len(records), 62)
             self.assertEqual(len(controls), 23)
-            self.assertTrue(all(record.get("split") in {"train", "dev", "test"} for record in records))
+            self.assertTrue(
+                all(
+                    record.get("split") in {"train", "dev", "test"}
+                    for record in records
+                )
+            )
             self.assertTrue(all("control" in record for record in controls))
 
 

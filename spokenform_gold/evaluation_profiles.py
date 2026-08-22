@@ -74,7 +74,9 @@ def _resolve_profile(
     else:
         resolved = _resolve_profile(registry, parent_name, stack=[*stack, name])
     resolved = copy.deepcopy(resolved)
-    resolved.update({key: value for key, value in raw.items() if key != "prepare_kwargs"})
+    resolved.update(
+        {key: value for key, value in raw.items() if key != "prepare_kwargs"}
+    )
     kwargs = dict(resolved.get("prepare_kwargs", {}))
     kwargs.update(raw.get("prepare_kwargs", {}))
     resolved["prepare_kwargs"] = kwargs
@@ -82,9 +84,7 @@ def _resolve_profile(
     return resolved
 
 
-def resolve_profile(
-    name: str, path: str | Path | None = None
-) -> dict[str, Any]:
+def resolve_profile(name: str, path: str | Path | None = None) -> dict[str, Any]:
     registry = load_registry(path)
     try:
         resolved = _resolve_profile(registry, name, stack=[])
@@ -93,9 +93,7 @@ def resolve_profile(
     return resolved
 
 
-def profile_metadata(
-    name: str, path: str | Path | None = None
-) -> dict[str, Any]:
+def profile_metadata(name: str, path: str | Path | None = None) -> dict[str, Any]:
     registry = load_registry(path)
     profile = resolve_profile(name, path)
     return {

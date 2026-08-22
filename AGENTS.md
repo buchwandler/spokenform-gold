@@ -1480,6 +1480,7 @@ The agent must not claim completion when only candidate import or annotation
 proposals exist.
 
 ---
+
 # When an agent encounters uncertainty
 
 If a source record appears wrong:

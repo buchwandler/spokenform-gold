@@ -20,7 +20,6 @@
 - add adjudication workflow UX on top of the deterministic queue
 - add pluggable semantic judge
 - add judge calibration report
-- add HTML dashboard
 - add private challenge split
 
 ## Ingestion hardening completed

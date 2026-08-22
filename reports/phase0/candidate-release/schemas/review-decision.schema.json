@@ -2,12 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Spokenform Gold reviewed promotion decision",
   "type": "object",
-  "required": [
-    "candidate_id",
-    "decision",
-    "reviewers",
-    "adjudicator"
-  ],
+  "required": ["candidate_id", "decision", "reviewers", "adjudicator"],
   "properties": {
     "candidate_id": {
       "type": "string",
@@ -44,12 +39,7 @@
       "minLength": 1
     },
     "status": {
-      "enum": [
-        "gold",
-        "multi_valid",
-        "policy_choice",
-        "no_change"
-      ]
+      "enum": ["gold", "multi_valid", "policy_choice", "no_change"]
     },
     "language": {
       "type": "string",
@@ -63,10 +53,7 @@
       "type": "string"
     },
     "expected_output": {
-      "type": [
-        "string",
-        "null"
-      ]
+      "type": ["string", "null"]
     },
     "units": {
       "type": "array",
@@ -91,10 +78,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "benchmark",
-          "source_id"
-        ],
+        "required": ["benchmark", "source_id"],
         "properties": {
           "benchmark": {
             "type": "string",

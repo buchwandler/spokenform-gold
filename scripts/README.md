@@ -52,12 +52,12 @@ must therefore be supplied through an override or a custom config file.
 
 ### Options
 
-| Flag | Default | Description |
-|---|---|---|
-| `--cache-root PATH` | `../spokenform-gold-source-cache` | Where to clone upstream repos |
-| `--work-root PATH` | `../spokenform-gold-work` | Disposable work directory |
-| `--verify-only` | — | Only verify existing checkouts; don't clone or fetch |
-| `--skip-work-dir` | — | Don't create the work directory |
+| Flag                | Default                           | Description                                          |
+| ------------------- | --------------------------------- | ---------------------------------------------------- |
+| `--cache-root PATH` | `../spokenform-gold-source-cache` | Where to clone upstream repos                        |
+| `--work-root PATH`  | `../spokenform-gold-work`         | Disposable work directory                            |
+| `--verify-only`     | —                                 | Only verify existing checkouts; don't clone or fetch |
+| `--skip-work-dir`   | —                                 | Don't create the work directory                      |
 
 ### Verify an existing cache
 

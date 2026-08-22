@@ -90,7 +90,9 @@ def cmd_validate(args):
 
 
 def cmd_blind_review(args):
-    batch = blind_review_batch(read_records(args.paths), reviewer_slot=args.reviewer_slot)
+    batch = blind_review_batch(
+        read_records(args.paths), reviewer_slot=args.reviewer_slot
+    )
     write_jsonl(args.out, batch)
     print(f"wrote {len(batch)} blind review records to {args.out}")
     return 0
@@ -132,13 +134,19 @@ def cmd_census_upstreams(args):
     exclusions = []
     for path in args.exclusions or []:
         payload = read_json(path)
-        exclusions.extend(payload if isinstance(payload, list) else payload.get("exclusions", []))
+        exclusions.extend(
+            payload if isinstance(payload, list) else payload.get("exclusions", [])
+        )
     reports = [read_json(path) for path in args.reports or []]
     census = build_upstream_census(candidates, exclusions, reports)
     if not census["summary"]["row_accounting_ok"]:
         raise ValueError("upstream census failed row accounting")
     artifacts = write_census_artifacts(args.out_root, census)
-    print(json.dumps({"summary": census["summary"], "artifacts": artifacts}, ensure_ascii=False))
+    print(
+        json.dumps(
+            {"summary": census["summary"], "artifacts": artifacts}, ensure_ascii=False
+        )
+    )
     return 0
 
 
@@ -262,6 +270,7 @@ def cmd_merge_candidates(args):
     print(f"merged {len(merged)} candidates to {args.out}")
     return 0
 
+
 def cmd_rank_candidates(args):
     candidates = read_records(args.paths)
     reviewed = read_records(args.against)
@@ -278,6 +287,7 @@ def cmd_rank_candidates(args):
     write_jsonl(args.out, ranked)
     print(f"ranked {len(ranked)} candidates to {args.out}")
     return 0
+
 
 def cmd_analyze_exclusions(args):
     result = build_exclusion_analysis(load_exclusions(args.paths))
@@ -318,6 +328,7 @@ def cmd_review_batch(args):
     print(f"exported {len(batch)} review candidates to {args.out}")
     return 0
 
+
 def cmd_ingest_upstreams(args):
     config_path = args.config if args.config is not None else default_config_path()
     config = load_config(config_path, explicit=args.config is not None)
@@ -343,6 +354,8 @@ def cmd_ingest_upstreams(args):
         f"into {summary['work_root']}"
     )
     return 0
+
+
 def cmd_source_lock(args):
     write_json(args.out, build_source_lock(args.manifest))
     print(f"wrote source lock to {args.out}")
@@ -418,9 +431,7 @@ def cmd_promote_reviewed(args):
     candidates = read_records(args.candidates)
     decisions = read_records(args.decisions)
     existing = read_records(args.against)
-    promoted, report = build_promoted_records(
-        candidates, decisions, existing
-    )
+    promoted, report = build_promoted_records(candidates, decisions, existing)
     write_jsonl(args.out, promoted)
     write_json(args.report, report)
     print(
@@ -447,7 +458,9 @@ def cmd_score_controls(args):
     errors = validate_control_records(records, registry_path=args.registry)
     if errors:
         raise ValueError("control validation failed: " + "; ".join(errors))
-    result = score_control_records(records, load_control_predictions(args.predictions), validate=False)
+    result = score_control_records(
+        records, load_control_predictions(args.predictions), validate=False
+    )
     if args.json:
         write_json(args.json, result)
     else:
@@ -634,8 +647,12 @@ def build_parser():
     ingest = sub.add_parser("ingest-upstreams")
     ingest.add_argument("--source-cache", type=Path, default=None)
     ingest.add_argument("--work-root", type=Path, default=None)
-    ingest.add_argument("--sources", nargs="+", default=["async_tn", "polynorm", "proteno"])
-    ingest.add_argument("--languages", nargs="+", default=["en", "de", "es", "fr", "it", "pt"])
+    ingest.add_argument(
+        "--sources", nargs="+", default=["async_tn", "polynorm", "proteno"]
+    )
+    ingest.add_argument(
+        "--languages", nargs="+", default=["en", "de", "es", "fr", "it", "pt"]
+    )
     ingest.add_argument("--reviewed", nargs="+", default=None)
     ingest.add_argument("--targets")
     ingest.add_argument("--batch-limit", type=int, default=100)
@@ -703,7 +720,6 @@ def build_parser():
     promote.add_argument("--out", required=True)
     promote.add_argument("--report", required=True)
     promote.set_defaults(func=cmd_promote_reviewed)
-
 
     validate_controls = sub.add_parser("validate-controls")
     validate_controls.add_argument("paths", nargs="+")

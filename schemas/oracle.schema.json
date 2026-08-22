@@ -10,10 +10,7 @@
   ],
   "properties": {
     "canonical_output": {
-      "type": [
-        "string",
-        "null"
-      ]
+      "type": ["string", "null"]
     },
     "accepted_outputs": {
       "type": "array",
@@ -25,10 +22,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "output",
-          "reason"
-        ],
+        "required": ["output", "reason"],
         "properties": {
           "output": {
             "type": "string"
@@ -40,9 +34,7 @@
       }
     },
     "variant_mode": {
-      "enum": [
-        "explicit"
-      ]
+      "enum": ["explicit"]
     },
     "comparison_profile": {
       "const": "sentence-exact-v1"
@@ -51,11 +43,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "label",
-          "semantic",
-          "accepted_outputs"
-        ],
+        "required": ["label", "semantic", "accepted_outputs"],
         "properties": {
           "label": {
             "type": "string"

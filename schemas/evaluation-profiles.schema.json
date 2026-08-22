@@ -4,7 +4,7 @@
   "type": "object",
   "required": ["version", "profiles"],
   "properties": {
-    "version": {"type": "string", "minLength": 1},
+    "version": { "type": "string", "minLength": 1 },
     "profiles": {
       "type": "object",
       "minProperties": 1,
@@ -12,10 +12,10 @@
         "type": "object",
         "required": ["kind", "policy_expansion", "prepare_kwargs"],
         "properties": {
-          "kind": {"enum": ["canonical", "control"]},
-          "policy_expansion": {"type": "boolean"},
-          "extends": {"type": "string", "minLength": 1},
-          "prepare_kwargs": {"type": "object"}
+          "kind": { "enum": ["canonical", "control"] },
+          "policy_expansion": { "type": "boolean" },
+          "extends": { "type": "string", "minLength": 1 },
+          "prepare_kwargs": { "type": "object" }
         }
       }
     }

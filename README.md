@@ -201,7 +201,6 @@ The canonical benchmark uses a family-safe 70/15/15 `train`/`dev`/`test` split. 
 
 Candidate-only regression proposals, including `data/candidates/01_todo_regressions.jsonl`, are not Gold. They require independent review, adjudication, a Spokenform-owned family ID, and an explicit source or license decision before promotion. Pinned upstream caches and raw review artifacts remain outside Git. Czech is a coverage target but requires independently reviewed data; it must not be filled by unreviewed translation.
 
-
 ## Growth loop
 
 ```text
@@ -249,16 +248,24 @@ benchmark completeness.
 
 ## Publishing
 
-Create an empty repository named `spokenform-gold` under `buchwandler`, then:
+The checked-in corpus currently passes the **candidate** release gate, not the
+stable gate. Publish it as a GitHub prerelease by pushing a version tag:
 
 ```bash
-git init
-git add .
-git commit -m "Initial Spokenform Gold MVP"
-git branch -M main
-git remote add origin git@github.com:buchwandler/spokenform-gold.git
-git push -u origin main
+git tag -a v0.1.0-candidate.1 -m "Spokenform Gold 0.1.0 candidate 1"
+git push origin v0.1.0-candidate.1
 ```
+
+`.github/workflows/release.yml` reruns all checks, builds the immutable release,
+and publishes `.tar.gz` and `.zip` downloads plus archive checksums. Every
+archive includes `records.html`, a self-contained, searchable browser for the
+release records, coverage, provenance, and review metadata. Open it directly in
+a browser after extracting the archive; it has no network dependencies.
+
+A release can also be started manually from the GitHub Actions **publish
+benchmark release** workflow by entering a version and maturity. Non-stable
+maturities are marked as GitHub prereleases. Stable publication remains blocked
+until the strict review, seven-language, controls, and zero-gap gates pass.
 
 Do not add full upstream datasets until redistribution terms and attribution
 requirements have been checked.
@@ -392,7 +399,6 @@ Review artifacts and upstream caches belong in the disposable external work root
 They are not release data and must not be copied into `data/train`, `data/dev`, or
 `data/test` merely because a ranker, model, or current Spokenform output suggests
 an answer.
-
 
 ## Strict re-review workflow
 

@@ -20,8 +20,8 @@ The canonical release pipeline also requires:
 - deterministic split assignment by `family_id`;
 - prediction files keyed by record `id`, not row order.
 
-
 ## Configuration controls
+
 Configuration-sensitive assertions use the separate control-record format in `schemas/control-record.schema.json`. A control record references fixed profile IDs from `taxonomy/evaluation_profiles.json`; it never embeds arbitrary runtime kwargs. Each profile expectation may declare an expected output plus required and forbidden benchmark-facing ownership rules. Control output, ownership, false-positive, language, and suite metrics are reported separately from canonical semantic Gold.
 
 ## Split and candidate boundaries

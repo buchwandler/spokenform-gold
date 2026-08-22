@@ -43,7 +43,9 @@ class ControlBenchmarkTests(unittest.TestCase):
         self.assertEqual(summary["output_accuracy"], 1.0)
         self.assertEqual(summary["full_accuracy"], 1.0)
         self.assertEqual(summary["forbidden_rule_violations"], 0)
-        self.assertEqual(summary["by_control"]["sequence_fallback_mode"]["expectations"], 2)
+        self.assertEqual(
+            summary["by_control"]["sequence_fallback_mode"]["expectations"], 2
+        )
 
     def test_forbidden_rule_violation_is_reported(self):
         record = control_record()
@@ -78,7 +80,10 @@ class ControlBenchmarkTests(unittest.TestCase):
             return {"output": "A A P L", "owners": ["fallback.sequence"]}
 
         predictions = build_control_predictions([record], prepare)
-        self.assertEqual(predictions[0]["profiles"]["fallback-spell-0.3"]["rules"], ["fallback.sequence"])
+        self.assertEqual(
+            predictions[0]["profiles"]["fallback-spell-0.3"]["rules"],
+            ["fallback.sequence"],
+        )
 
 
 if __name__ == "__main__":

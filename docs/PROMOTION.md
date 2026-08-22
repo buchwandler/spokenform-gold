@@ -58,7 +58,6 @@ into Git unless a separate policy explicitly requires a small audit artifact.
 Do not promote rows because an automated judge marked them acceptable. Preserve
 upstream provenance and source policy throughout the workflow.
 
-
 ## Current review boundary
 
 The external work area currently contains a 100-record ranked review batch and
@@ -68,7 +67,6 @@ fields, and `quarantine=30`, with zero promoted records. These proposals remain
 external evidence only. No row from this batch is copied into `data/dev` or
 `data/test` until independent human review, adjudication, stable Spokenform
 family assignment, and source-policy decisions are complete.
-
 
 ## Sentence-oracle promotion boundary
 

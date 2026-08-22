@@ -85,7 +85,11 @@ def explicit_accepted_outputs(record: dict[str, Any]) -> tuple[set[str], bool]:
     """Return normalized explicit outputs and whether the record is legacy."""
     oracle = record.get("oracle")
     if isinstance(oracle, dict) and isinstance(oracle.get("accepted_outputs"), list):
-        return {normalize_text(value) for value in oracle["accepted_outputs"] if isinstance(value, str)}, False
+        return {
+            normalize_text(value)
+            for value in oracle["accepted_outputs"]
+            if isinstance(value, str)
+        }, False
     return {normalize_text(value) for value in _legacy_unit_variants(record)}, True
 
 
@@ -106,7 +110,12 @@ def oracle_assertion(record: dict[str, Any]) -> dict[str, Any]:
 
 
 def oracle_hash(record: dict[str, Any]) -> str:
-    payload = json.dumps(oracle_assertion(record), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    payload = json.dumps(
+        oracle_assertion(record),
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
     return "sha256:" + hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 

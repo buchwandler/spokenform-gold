@@ -10,6 +10,7 @@ from .control_validation import validate_control_records
 from .coverage import build_control_coverage, build_coverage, load_targets
 from .evaluation_profiles import load_registry, registry_hash
 from .gold_audit import audit_records
+from .html_report import render_release_html
 from .io import expand_jsonl_paths, read_records, sha256_file
 from .source_manifest import (
     load_and_validate_source_manifest,
@@ -44,10 +45,9 @@ def _copy_file(root: Path, output_root: Path, file_path: Path) -> None:
     shutil.copy2(file_path, target)
 
 
-
 def _repository_local_jsonl_files(
     root: Path, paths: list[str] | None, *, label: str
- ) -> list[Path]:
+) -> list[Path]:
     files = expand_jsonl_paths(paths or [])
     root = root.resolve()
     for file_path in files:
@@ -55,8 +55,7 @@ def _repository_local_jsonl_files(
             file_path.resolve().relative_to(root)
         except ValueError as exc:
             raise ValueError(
-                f"{label} must be repository-local canonical data; "
-                f"got {file_path}"
+                f"{label} must be repository-local canonical data; got {file_path}"
             ) from exc
     return files
 
@@ -72,7 +71,9 @@ def validate_release_split_registry(records: list[dict], registry: dict) -> list
         family_id = record.get("family_id")
         assigned = assignments.get(family_id)
         if not family_id or assigned is None:
-            errors.append(f"record {record_id} family {family_id!r} is missing from split registry")
+            errors.append(
+                f"record {record_id} family {family_id!r} is missing from split registry"
+            )
             continue
         if assigned not in supported_splits:
             errors.append(
@@ -154,8 +155,7 @@ def _enforce_maturity(
     required_controls = set(profile.get("required_control_suites", []))
     if required_controls:
         observed_controls = {
-            item.get("control")
-            for item in (control_coverage or {}).get("coverage", [])
+            item.get("control") for item in (control_coverage or {}).get("coverage", [])
         }
         missing_controls = sorted(required_controls - observed_controls)
         if missing_controls:
@@ -313,16 +313,16 @@ def build_release(
         raise ValueError(f"missing split registry: {registry_source}")
     profile_registry_source = root / "taxonomy" / "evaluation_profiles.json"
     profile_registry = load_registry(profile_registry_source)
-    record_files = _repository_local_jsonl_files(
-        root, data_paths, label="release data"
-    )
+    record_files = _repository_local_jsonl_files(root, data_paths, label="release data")
     records = read_records(record_files)
     validation_errors = validate_records(records)
     if validation_errors:
         raise ValueError("release validation failed: " + "; ".join(validation_errors))
     oracle_audit = audit_records(records, strict=maturity == "stable")
     if oracle_audit["errors"]:
-        raise ValueError("release oracle audit failed: " + "; ".join(oracle_audit["errors"]))
+        raise ValueError(
+            "release oracle audit failed: " + "; ".join(oracle_audit["errors"])
+        )
     split_errors = validate_release_split_registry(
         records, load_split_registry(registry_source)
     )
@@ -334,7 +334,9 @@ def build_release(
         root, control_paths, label="release controls"
     )
     control_records = read_records(control_files)
-    control_errors = validate_control_records(control_records) if control_records else []
+    control_errors = (
+        validate_control_records(control_records) if control_records else []
+    )
     if control_errors:
         raise ValueError("control validation failed: " + "; ".join(control_errors))
     targets = load_targets(root / "taxonomy" / "coverage_targets.json")
@@ -414,6 +416,16 @@ def build_release(
         ),
     }
 
+    render_release_html(
+        output_root / "records.html",
+        version=version,
+        maturity=maturity,
+        records=records,
+        coverage=coverage,
+        control_coverage=control_coverage,
+        counts=counts,
+    )
+
     notes = _build_release_notes(
         version=version,
         maturity=maturity,
@@ -439,6 +451,7 @@ def build_release(
         "split_registry": f"splits/{registry_source.name}",
         "source_manifest": "sources/manifest.json",
         "evaluation_profiles": "taxonomy/evaluation_profiles.json",
+        "record_browser": "records.html",
         "source_integrity": {
             "release_ready": all(
                 source.get("release_ready", False)

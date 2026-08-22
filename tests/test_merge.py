@@ -32,8 +32,12 @@ class MergeTests(unittest.TestCase):
     def test_file_merge_accepts_glob_and_preserves_source_identity(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
-            write_jsonl(root / "one.jsonl", [self._record("one", "b", "en", "en-US", "1")])
-            write_jsonl(root / "two.jsonl", [self._record("two", "a", "en", "en-US", "1")])
+            write_jsonl(
+                root / "one.jsonl", [self._record("one", "b", "en", "en-US", "1")]
+            )
+            write_jsonl(
+                root / "two.jsonl", [self._record("two", "a", "en", "en-US", "1")]
+            )
             out = root / "merged.jsonl"
             merged = merge_candidate_files([str(root / "*.jsonl")], out)
             self.assertEqual([item["id"] for item in merged], ["two", "one"])
@@ -49,7 +53,6 @@ class MergeTests(unittest.TestCase):
             [record["source"]["source_id"] for record in merged],
             ["row-1", "proteno:en:1"],
         )
-
 
 
 if __name__ == "__main__":

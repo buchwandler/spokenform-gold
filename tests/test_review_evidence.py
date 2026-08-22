@@ -110,10 +110,18 @@ class ReviewEvidenceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             output = Path(tmpdir) / "reviewed"
             write_review_application(
-                output, updated, comparisons, report, input_paths=[ROOT / "data/test/sample.jsonl"]
+                output,
+                updated,
+                comparisons,
+                report,
+                input_paths=[ROOT / "data/test/sample.jsonl"],
             )
-            self.assertEqual(read_records([output / "records.jsonl"])[0]["id"], self.record["id"])
-            self.assertEqual(json.loads((output / "report.json").read_text())["records"], 1)
+            self.assertEqual(
+                read_records([output / "records.jsonl"])[0]["id"], self.record["id"]
+            )
+            self.assertEqual(
+                json.loads((output / "report.json").read_text())["records"], 1
+            )
 
     def test_output_under_canonical_input_is_rejected(self):
         updated, comparisons, report = apply_reviewed_oracles(

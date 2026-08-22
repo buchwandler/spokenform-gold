@@ -23,7 +23,9 @@ def load_predictions(path: str | Path) -> dict[str, str]:
             record_id = payload.get("id")
             output = payload.get("output")
             if not isinstance(record_id, str) or not isinstance(output, str):
-                raise TypeError(f"{path}:{line_number}: prediction requires string id and output")
+                raise TypeError(
+                    f"{path}:{line_number}: prediction requires string id and output"
+                )
             predictions[record_id] = output
     return predictions
 
@@ -61,7 +63,9 @@ def evaluate_records(
             predicted = ""
         normalized_prediction = normalize_text(predicted)
         oracle = record.get("oracle") or {}
-        canonical_target = normalize_text(oracle.get("canonical_output", record.get("expected_output")))
+        canonical_target = normalize_text(
+            oracle.get("canonical_output", record.get("expected_output"))
+        )
         accepted_targets, legacy_oracle = explicit_accepted_outputs(record)
         is_canonical = normalized_prediction == canonical_target
         is_accepted = is_canonical or normalized_prediction in accepted_targets

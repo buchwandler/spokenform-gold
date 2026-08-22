@@ -47,7 +47,9 @@ def load_control_predictions(paths: Iterable[str | Path]) -> dict[str, dict[str,
         for item in read_jsonl(path):
             record_id = item.get("id")
             if not isinstance(record_id, str) or record_id in result:
-                raise ValueError(f"duplicate or missing control prediction id: {record_id!r}")
+                raise ValueError(
+                    f"duplicate or missing control prediction id: {record_id!r}"
+                )
             profiles = item.get("profiles")
             if not isinstance(profiles, dict):
                 raise TypeError(f"control prediction {record_id!r} requires profiles")
@@ -91,7 +93,9 @@ def score_control_records(
                 "output_match": output_match,
                 "required_rules_match": required_match,
                 "forbidden_rule_violation": forbidden_violation,
-                "full_match": output_match and required_match and not forbidden_violation,
+                "full_match": output_match
+                and required_match
+                and not forbidden_violation,
             }
             results.append(result)
             by_control[record["control"]].append(result)
@@ -137,9 +141,13 @@ def score_control_records(
     }
 
 
-def write_control_predictions(path: str | Path, predictions: list[dict[str, Any]]) -> None:
+def write_control_predictions(
+    path: str | Path, predictions: list[dict[str, Any]]
+) -> None:
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     with target.open("w", encoding="utf-8") as handle:
         for prediction in predictions:
-            handle.write(json.dumps(prediction, ensure_ascii=False, sort_keys=True) + "\n")
+            handle.write(
+                json.dumps(prediction, ensure_ascii=False, sort_keys=True) + "\n"
+            )

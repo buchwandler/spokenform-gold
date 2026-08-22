@@ -157,12 +157,14 @@ def build_control_coverage(records, targets=None):
         }
         rows.append(row)
         if counts[control]["records"] < minimum_records:
-            gaps.append({
-                "control": control,
-                "kind": "low_volume",
-                "have": counts[control]["records"],
-                "need": minimum_records,
-            })
+            gaps.append(
+                {
+                    "control": control,
+                    "kind": "low_volume",
+                    "have": counts[control]["records"],
+                    "need": minimum_records,
+                }
+            )
         for language in missing_languages:
             gaps.append({"control": control, "kind": "language", "missing": language})
     return {

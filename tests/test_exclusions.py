@@ -9,8 +9,20 @@ class ExclusionTests(unittest.TestCase):
         self.assertEqual(infer_surface_shape("192.168.0.1"), "ipv4")
         result = build_exclusion_analysis(
             [
-                {"source": "async_tn", "reason": "bad", "source_category": "date", "language": "en", "detail": "03/04/2025"},
-                {"source": "async_tn", "reason": "bad", "source_category": "date", "language": "en", "detail": "03/04/2025"},
+                {
+                    "source": "async_tn",
+                    "reason": "bad",
+                    "source_category": "date",
+                    "language": "en",
+                    "detail": "03/04/2025",
+                },
+                {
+                    "source": "async_tn",
+                    "reason": "bad",
+                    "source_category": "date",
+                    "language": "en",
+                    "detail": "03/04/2025",
+                },
             ]
         )
         self.assertEqual(result["exclusions"], 2)
@@ -24,7 +36,13 @@ class ExclusionTests(unittest.TestCase):
                 "input": "A 1",
                 "language": "en",
                 "source": {"benchmark": "async_tn"},
-                "units": [{"category": "cardinal", "mapping_status": "exact", "features": {"surface_pattern": "digits"}}],
+                "units": [
+                    {
+                        "category": "cardinal",
+                        "mapping_status": "exact",
+                        "features": {"surface_pattern": "digits"},
+                    }
+                ],
             },
             {
                 "id": "two",
@@ -76,7 +94,6 @@ class ExclusionTests(unittest.TestCase):
         self.assertEqual(result["source_yields"]["async_tn"]["yield"], 0.75)
         self.assertEqual(result["exclusions_by_reason"], {"bad": 1})
         self.assertEqual(result["exclusions_by_source"], {"async_tn": 1})
-
 
 
 if __name__ == "__main__":

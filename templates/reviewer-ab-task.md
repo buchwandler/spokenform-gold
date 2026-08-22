@@ -14,6 +14,7 @@ Do not run Spokenform and do not optimize your answer to its current output.
 Do not inspect the other reviewer's work.
 
 For every row:
+
 1. verify language and locale;
 2. identify exact normalization spans;
 3. assign canonical taxonomy categories;

@@ -36,7 +36,7 @@ import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
+from collections.abc import Sequence
 
 # ── Pinned source definitions ────────────────────────────────────────────────
 # Each entry mirrors the relevant fields from sources/manifest.json and
@@ -98,6 +98,7 @@ SOURCES: list[UpstreamSource] = [
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
+
 def run(
     cmd: Sequence[str],
     *,
@@ -142,7 +143,8 @@ def clone_or_update(source: UpstreamSource, cache_root: Path) -> Path:
     try:
         git(
             "clone",
-            "--depth", "1",
+            "--depth",
+            "1",
             "--single-branch",
             f"--branch={source.revision}",
             source.clone_url,
@@ -194,13 +196,20 @@ def load_manifest_revisions(repo_root: Path) -> dict[str, str]:
 def create_work_dir(work_root: Path) -> None:
     """Create the disposable work directory with expected subdirectories."""
     ensure_dir(work_root)
-    for sub in ("reports", "reviews", "promotion_staging", "canonical-next",
-                "review_batches", "census"):
+    for sub in (
+        "reports",
+        "reviews",
+        "promotion_staging",
+        "canonical-next",
+        "review_batches",
+        "census",
+    ):
         ensure_dir(work_root / sub)
     print(f"  ✓ Work directory ready at {work_root}")
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
+
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
@@ -274,9 +283,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         # Verify revision
         actual_rev = git("rev-parse", "HEAD", cwd=checkout).stdout.strip()
         if actual_rev != src.revision:
-            print(
-                f"  ⚠ HEAD is {actual_rev[:12]}, expected {src.revision[:12]}"
-            )
+            print(f"  ⚠ HEAD is {actual_rev[:12]}, expected {src.revision[:12]}")
             if not args.verify_only:
                 print("  Attempting checkout…")
                 git("checkout", src.revision, cwd=checkout)

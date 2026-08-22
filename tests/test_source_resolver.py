@@ -31,7 +31,6 @@ class SourceResolverTests(unittest.TestCase):
         self.assertEqual(hydrated["expected_output"], record["expected_output"])
         self.assertEqual(hydrated["units"], record["units"])
 
-
     def test_external_overlay_validates_and_requires_source_artifact(self):
         record = read_records([ROOT / "data/test/sample.jsonl"])[0]
         overlay = build_external_overlay(record, source_artifact="bundle://sample-1")
@@ -47,7 +46,9 @@ class SourceResolverTests(unittest.TestCase):
         record = read_records([ROOT / "data/test/sample.jsonl"])[0]
         overlay = build_external_overlay(record, source_artifact="bundle://sample-1")
         bad_input = "The time is 28:00."
-        with self.assertRaisesRegex(ValueError, "hydrated external_ref record is invalid"):
+        with self.assertRaisesRegex(
+            ValueError, "hydrated external_ref record is invalid"
+        ):
             resolve_release_record(overlay, source_loader=lambda _: bad_input)
 
     def test_resolve_release_record_requires_loader_for_external_ref(self):

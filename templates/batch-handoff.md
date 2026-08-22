@@ -10,6 +10,7 @@ Each batch should leave a Markdown or JSON handoff with:
 **Date:**
 
 ## Source cache
+
 - async_tn revision:
 - polynorm revision:
 - proteno revision:
@@ -17,6 +18,7 @@ Each batch should leave a Markdown or JSON handoff with:
 - missing paths:
 
 ## Ingestion
+
 - source rows:
 - candidates:
 - exclusions:
@@ -25,6 +27,7 @@ Each batch should leave a Markdown or JSON handoff with:
 - conflicting-output groups:
 
 ## Coverage before
+
 - records:
 - categories observed:
 - units:
@@ -32,6 +35,7 @@ Each batch should leave a Markdown or JSON handoff with:
 - gaps by kind:
 
 ## Review
+
 - selected IDs:
 - reviewer A complete:
 - reviewer B complete:
@@ -42,6 +46,7 @@ Each batch should leave a Markdown or JSON handoff with:
 - quarantined:
 
 ## Promotion
+
 - promote_curated:
 - promote_upstream:
 - keep_external:
@@ -50,6 +55,7 @@ Each batch should leave a Markdown or JSON handoff with:
 - promoted records:
 
 ## Splits
+
 - new families:
 - train:
 - dev:
@@ -57,6 +63,7 @@ Each batch should leave a Markdown or JSON handoff with:
 - frozen assignment changes: **MUST BE NONE for existing families**
 
 ## Coverage after
+
 - records:
 - categories observed:
 - units:
@@ -64,11 +71,13 @@ Each batch should leave a Markdown or JSON handoff with:
 - gaps by kind:
 
 ## Release
+
 - candidate release:
 - stable release:
 - manifest hash:
 
 ## Spokenform
+
 - local Gold benchmark available:
 - test split record count:
 - canonical score:

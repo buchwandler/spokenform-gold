@@ -59,7 +59,9 @@ def load_exclusions(paths: Iterable[str | Path]) -> list[dict]:
 def build_exclusion_analysis(exclusions: Iterable[dict]) -> dict:
     rows = []
     for item in exclusions:
-        source_category = item.get("source_category") or item.get("category") or "unknown"
+        source_category = (
+            item.get("source_category") or item.get("category") or "unknown"
+        )
         language = item.get("language") or "unknown"
         surface = item.get("surface") or item.get("detail", "")
         rows.append(
@@ -68,7 +70,8 @@ def build_exclusion_analysis(exclusions: Iterable[dict]) -> dict:
                 "reason": item.get("reason", "unknown"),
                 "source_category": str(source_category),
                 "language": str(language),
-                "surface_shape": item.get("surface_shape") or infer_surface_shape(surface),
+                "surface_shape": item.get("surface_shape")
+                or infer_surface_shape(surface),
             }
         )
 

@@ -5,12 +5,12 @@ from .benchmark import (
     load_release_records,
     run_benchmark,
     verify_release,
- )
+)
 from .control_benchmark import (
     build_control_predictions,
     load_control_predictions,
     score_control_records,
- )
+)
 from .control_validation import validate_control_records
 from .coverage import build_control_coverage
 from .evaluation_profiles import (
@@ -18,7 +18,7 @@ from .evaluation_profiles import (
     profile_hash,
     registry_hash,
     resolve_profile,
- )
+)
 from .judge_calibration import build_judge_calibration, load_judge_predictions
 from .scoring import load_predictions, score_records
 

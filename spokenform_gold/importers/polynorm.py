@@ -351,9 +351,17 @@ def import_polynorm(path: str | Path, *, format: str = "auto") -> ImportResult:
                     "reason": reason,
                     "detail": detail,
                     "source_category": str(row.get("category", "unknown")),
-                    "language": str(row.get("language") or locale.split("-", 1)[0].lower()),
-                    "surface": row.get("surface") or row.get("input") or row.get("original_text", ""),
-                    "surface_shape": infer_surface_shape(row.get("surface") or row.get("input") or row.get("original_text", "")),
+                    "language": str(
+                        row.get("language") or locale.split("-", 1)[0].lower()
+                    ),
+                    "surface": row.get("surface")
+                    or row.get("input")
+                    or row.get("original_text", ""),
+                    "surface_shape": infer_surface_shape(
+                        row.get("surface")
+                        or row.get("input")
+                        or row.get("original_text", "")
+                    ),
                 }
             )
             continue

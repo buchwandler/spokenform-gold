@@ -119,7 +119,9 @@ def _write_shard(
     write_json(report_path, report)
     errors = validate_records(result.records)
     if errors:
-        raise ValueError(f"generated {name} candidates are invalid: {'; '.join(errors)}")
+        raise ValueError(
+            f"generated {name} candidates are invalid: {'; '.join(errors)}"
+        )
     if not report.get("row_accounting_ok"):
         raise ValueError(f"{name} import failed row accounting")
     return candidate_path, exclusions_path, report, exclusions
@@ -218,7 +220,9 @@ def run_upstream_ingestion(
                 continue
             language_root = source_paths["proteno"] / "data" / language_name
             if not language_root.is_dir():
-                raise ValueError(f"missing Proteno {language_name} directory: {language_root}")
+                raise ValueError(
+                    f"missing Proteno {language_name} directory: {language_root}"
+                )
             add_shard(
                 f"proteno_{language_code}",
                 import_proteno(language_root, format="official"),
@@ -235,12 +239,17 @@ def run_upstream_ingestion(
     write_json(report_root / "conflicts.json", conflicts)
     write_json(report_root / "families.json", families)
 
-    reviewed_paths = list(reviewed_paths or [
-        repo_root() / "data" / "dev",
-        repo_root() / "data" / "test",
-    ])
+    reviewed_paths = list(
+        reviewed_paths
+        or [
+            repo_root() / "data" / "dev",
+            repo_root() / "data" / "test",
+        ]
+    )
     reviewed = read_records(reviewed_paths)
-    targets = load_targets(targets_path or repo_root() / "taxonomy" / "coverage_targets.json")
+    targets = load_targets(
+        targets_path or repo_root() / "taxonomy" / "coverage_targets.json"
+    )
     coverage = build_coverage(reviewed, targets)
     write_json(report_root / "coverage-reviewed.json", coverage)
 

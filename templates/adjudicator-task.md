@@ -7,6 +7,7 @@
 You are adjudicating two independent Spokenform Gold sentence-oracle reviews.
 
 Inputs:
+
 - completed blind reviewer A artifact;
 - completed blind reviewer B artifact;
 - A/B comparison;
@@ -14,6 +15,7 @@ Inputs:
 - upstream expected text may be revealed only now.
 
 For every sentence:
+
 1. verify that A and B reviewed the same input/language/locale independently;
 2. inspect disagreements by span, category, semantic meaning, ambiguity,
    policy, unit realization, accepted variants, sentence canonical, and

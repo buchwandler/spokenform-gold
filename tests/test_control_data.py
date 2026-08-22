@@ -12,7 +12,12 @@ class ControlDataTests(unittest.TestCase):
         paths = sorted((ROOT / "data" / "controls").glob("*.jsonl"))
         self.assertEqual(
             {path.stem for path in paths},
-            {"domain_policy", "interpretation_mode", "literal_promotion", "sequence_fallback"},
+            {
+                "domain_policy",
+                "interpretation_mode",
+                "literal_promotion",
+                "sequence_fallback",
+            },
         )
         all_records = []
         for path in paths:
@@ -23,7 +28,13 @@ class ControlDataTests(unittest.TestCase):
         self.assertTrue({"cs", "de", "en", "es", "fr", "it", "pt"} <= languages)
         self.assertEqual(
             {record["control"] for record in all_records},
-            {"allowed_domains", "disabled_domains", "interpretation_mode", "normalize_literals", "sequence_fallback_mode"},
+            {
+                "allowed_domains",
+                "disabled_domains",
+                "interpretation_mode",
+                "normalize_literals",
+                "sequence_fallback_mode",
+            },
         )
 
 

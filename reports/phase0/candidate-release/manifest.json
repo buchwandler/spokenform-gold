@@ -107,24 +107,10 @@
     "required_control_languages": [],
     "required_control_suites": [],
     "required_patterns": {
-      "acronym": [
-        "initialism",
-        "plural_acronym",
-        "word_like_acronym"
-      ],
-      "math_expression": [
-        "division",
-        "subtraction"
-      ],
-      "score_or_range": [
-        "countdown",
-        "numeric_range",
-        "score"
-      ],
-      "url_or_email": [
-        "email",
-        "url"
-      ]
+      "acronym": ["initialism", "plural_acronym", "word_like_acronym"],
+      "math_expression": ["division", "subtraction"],
+      "score_or_range": ["countdown", "numeric_range", "score"],
+      "url_or_email": ["email", "url"]
     }
   },
   "oracle_audit": "oracle_audit.json",
@@ -140,14 +126,9 @@
   ],
   "review_complete_records": 0,
   "schema_version": "1.0.0",
-  "scoring_modes": [
-    "canonical",
-    "accepted"
-  ],
+  "scoring_modes": ["canonical", "accepted"],
   "source_integrity": {
-    "referenced_sources": [
-      "spokenform_curated"
-    ],
+    "referenced_sources": ["spokenform_curated"],
     "release_ready": true,
     "source_count": 1
   },

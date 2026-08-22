@@ -28,10 +28,7 @@
       }
     },
     "adjudicator": {
-      "type": [
-        "string",
-        "null"
-      ]
+      "type": ["string", "null"]
     },
     "decision": {
       "type": "string"

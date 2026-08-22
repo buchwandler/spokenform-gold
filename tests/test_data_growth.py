@@ -17,24 +17,36 @@ class DataGrowthTests(unittest.TestCase):
 
         self.assertEqual(len(candidates), 25)
         self.assertEqual(validate_records(candidates), [])
-        self.assertTrue(all(candidate["status"] == "quarantine" for candidate in candidates))
-        self.assertTrue(all(candidate["split"] == "candidate" for candidate in candidates))
-        self.assertTrue(all(candidate["expected_output"] is None for candidate in candidates))
         self.assertTrue(
-            all(candidate["source"]["benchmark"] == "spokenform_discovered" for candidate in candidates)
+            all(candidate["status"] == "quarantine" for candidate in candidates)
         )
         self.assertTrue(
-            all(candidate["source"].get("source_hash", "").startswith("sha256:") for candidate in candidates)
+            all(candidate["split"] == "candidate" for candidate in candidates)
+        )
+        self.assertTrue(
+            all(candidate["expected_output"] is None for candidate in candidates)
+        )
+        self.assertTrue(
+            all(
+                candidate["source"]["benchmark"] == "spokenform_discovered"
+                for candidate in candidates
+            )
+        )
+        self.assertTrue(
+            all(
+                candidate["source"].get("source_hash", "").startswith("sha256:")
+                for candidate in candidates
+            )
         )
         categories = {
-            unit["category"]
-            for candidate in candidates
-            for unit in candidate["units"]
+            unit["category"] for candidate in candidates for unit in candidate["units"]
         }
         self.assertIn("identifier", categories)
         self.assertIn("version", categories)
         self.assertGreaterEqual(
-            sum(1 for candidate in candidates if "version" in candidate["negative_for"]),
+            sum(
+                1 for candidate in candidates if "version" in candidate["negative_for"]
+            ),
             3,
         )
 
@@ -65,7 +77,9 @@ class DataGrowthTests(unittest.TestCase):
         self.assertEqual(release["counts"]["records"], 62)
         self.assertEqual(
             build_coverage(
-                read_records([ROOT / "data/train", ROOT / "data/dev", ROOT / "data/test"]),
+                read_records(
+                    [ROOT / "data/train", ROOT / "data/dev", ROOT / "data/test"]
+                ),
                 load_targets(ROOT / "taxonomy/coverage_targets.json"),
             )["records"],
             62,

@@ -4,7 +4,9 @@ from spokenform_gold.ranking import build_candidate_ranking
 
 
 class RankingTests(unittest.TestCase):
-    def _record(self, record_id, category, language="en", pattern="plain_decimal", units=1):
+    def _record(
+        self, record_id, category, language="en", pattern="plain_decimal", units=1
+    ):
         return {
             "id": record_id,
             "language": language,
@@ -30,7 +32,10 @@ class RankingTests(unittest.TestCase):
         ranked = build_candidate_ranking(
             [existing, missing],
             reviewed,
-            targets={"languages": ["en", "de"], "categories": {"decimal": {"min_units": 20}}},
+            targets={
+                "languages": ["en", "de"],
+                "categories": {"decimal": {"min_units": 20}},
+            },
         )
         self.assertEqual(ranked[0]["record_id"], "missing")
         self.assertIn("category_missing", ranked[0]["reasons"])
@@ -56,17 +61,12 @@ class RankingTests(unittest.TestCase):
         candidate = self._record("dedupe-conflict", "date")
         dedupe = {
             "conflicting_output_groups": [
-                {
-                    "outputs": [
-                        {"members": [{"record_id": "dedupe-conflict"}]}
-                    ]
-                }
+                {"outputs": [{"members": [{"record_id": "dedupe-conflict"}]}]}
             ]
         }
         ranked = build_candidate_ranking([candidate], [], dedupe=dedupe)
         self.assertIn("source_disagreement", ranked[0]["reasons"])
         self.assertEqual(ranked[0]["record"]["status"], "quarantine")
-
 
 
 if __name__ == "__main__":

@@ -32,7 +32,13 @@
     },
     "source": {
       "type": "object",
-      "required": ["benchmark", "source_id", "source_version", "license", "source_artifact"]
+      "required": [
+        "benchmark",
+        "source_id",
+        "source_version",
+        "license",
+        "source_artifact"
+      ]
     }
   }
 }

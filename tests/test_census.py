@@ -9,8 +9,32 @@ from spokenform_gold.io import read_jsonl
 class CensusTests(unittest.TestCase):
     def test_row_accounting_and_duplicate_lineage(self):
         candidates = [
-            {"id": "a", "language": "en", "locale": "en-US", "input": "The date is 03/04/2025.", "source": {"benchmark": "async_tn", "source_id": "1", "source_version": "rev", "source_hash": "sha256:a", "upstream_expected": "March fourth"}},
-            {"id": "p", "language": "en", "locale": "en-US", "input": "The date is 03/04/2025.", "source": {"benchmark": "polynorm", "source_id": "2", "source_version": "rev", "source_hash": "sha256:b", "upstream_expected": "April third"}},
+            {
+                "id": "a",
+                "language": "en",
+                "locale": "en-US",
+                "input": "The date is 03/04/2025.",
+                "source": {
+                    "benchmark": "async_tn",
+                    "source_id": "1",
+                    "source_version": "rev",
+                    "source_hash": "sha256:a",
+                    "upstream_expected": "March fourth",
+                },
+            },
+            {
+                "id": "p",
+                "language": "en",
+                "locale": "en-US",
+                "input": "The date is 03/04/2025.",
+                "source": {
+                    "benchmark": "polynorm",
+                    "source_id": "2",
+                    "source_version": "rev",
+                    "source_hash": "sha256:b",
+                    "upstream_expected": "April third",
+                },
+            },
         ]
         exclusions = [{"source": "proteno", "source_id": "3", "reason": "unsupported"}]
         census = build_upstream_census(candidates, exclusions, [{"source_rows": 3}])

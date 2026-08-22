@@ -102,7 +102,7 @@ def _validate_unit(
     ambiguities: dict,
     errors: list[str],
     check_surface: bool = True,
- ) -> None:
+) -> None:
     prefix = f"line {record.get('_source_line', '?')} ({record.get('id', '?')}): unit[{index}]"
     required = (
         "surface",
@@ -304,10 +304,14 @@ def validate_records(
             if "input" not in record or record.get("input") is not None:
                 errors.append(f"{prefix}: external_ref input must be null")
             source = record.get("source")
-            if not isinstance(source, dict) or not isinstance(
-                source.get("source_artifact"), str
-            ) or not source.get("source_artifact"):
-                errors.append(f"{prefix}: external_ref source.source_artifact is required")
+            if (
+                not isinstance(source, dict)
+                or not isinstance(source.get("source_artifact"), str)
+                or not source.get("source_artifact")
+            ):
+                errors.append(
+                    f"{prefix}: external_ref source.source_artifact is required"
+                )
             check_surface = False
         for key in required:
             if key not in record:
@@ -357,68 +361,133 @@ def validate_records(
                 accepted_outputs = oracle.get("accepted_outputs")
                 rejected_outputs = oracle.get("rejected_outputs")
                 variant_mode = oracle.get("variant_mode")
-                if not isinstance(accepted_outputs, list) or not all(isinstance(item, str) for item in accepted_outputs):
-                    errors.append(f"{prefix}: oracle.accepted_outputs must be list[str]")
+                if not isinstance(accepted_outputs, list) or not all(
+                    isinstance(item, str) for item in accepted_outputs
+                ):
+                    errors.append(
+                        f"{prefix}: oracle.accepted_outputs must be list[str]"
+                    )
                     accepted_outputs = []
                 if not isinstance(rejected_outputs, list) or not all(
-                    isinstance(item, dict) and isinstance(item.get("output"), str) and isinstance(item.get("reason"), str)
+                    isinstance(item, dict)
+                    and isinstance(item.get("output"), str)
+                    and isinstance(item.get("reason"), str)
                     for item in rejected_outputs
                 ):
-                    errors.append(f"{prefix}: oracle.rejected_outputs must contain output/reason objects")
+                    errors.append(
+                        f"{prefix}: oracle.rejected_outputs must contain output/reason objects"
+                    )
                     rejected_outputs = []
                 if variant_mode != "explicit":
-                    errors.append(f"{prefix}: oracle.variant_mode must be explicit for release-eligible records")
+                    errors.append(
+                        f"{prefix}: oracle.variant_mode must be explicit for release-eligible records"
+                    )
                 normalized_accepted = [_norm_text(item) for item in accepted_outputs]
                 if len(normalized_accepted) != len(set(normalized_accepted)):
-                    errors.append(f"{prefix}: oracle.accepted_outputs contains duplicates")
-                overlap = set(normalized_accepted) & {_norm_text(item["output"]) for item in rejected_outputs}
+                    errors.append(
+                        f"{prefix}: oracle.accepted_outputs contains duplicates"
+                    )
+                overlap = set(normalized_accepted) & {
+                    _norm_text(item["output"]) for item in rejected_outputs
+                }
                 if overlap:
-                    errors.append(f"{prefix}: oracle accepted/rejected overlap: {sorted(overlap)}")
+                    errors.append(
+                        f"{prefix}: oracle accepted/rejected overlap: {sorted(overlap)}"
+                    )
                 if status in REVIEWED_STATUSES:
                     if not isinstance(canonical_output, str):
-                        errors.append(f"{prefix}: reviewed oracle canonical_output must be a string")
+                        errors.append(
+                            f"{prefix}: reviewed oracle canonical_output must be a string"
+                        )
                     elif expected_output != canonical_output:
-                        errors.append(f"{prefix}: expected_output must equal oracle.canonical_output")
-                    if isinstance(canonical_output, str) and _norm_text(canonical_output) not in set(normalized_accepted):
-                        errors.append(f"{prefix}: oracle canonical_output must appear in accepted_outputs")
+                        errors.append(
+                            f"{prefix}: expected_output must equal oracle.canonical_output"
+                        )
+                    if isinstance(canonical_output, str) and _norm_text(
+                        canonical_output
+                    ) not in set(normalized_accepted):
+                        errors.append(
+                            f"{prefix}: oracle canonical_output must appear in accepted_outputs"
+                        )
                     reconstructed = canonical_unit_reconstruction(effective)
-                    if check_surface and isinstance(canonical_output, str) and reconstructed != canonical_output:
-                        errors.append(f"{prefix}: canonical unit reconstruction does not equal oracle.canonical_output")
+                    if (
+                        check_surface
+                        and isinstance(canonical_output, str)
+                        and reconstructed != canonical_output
+                    ):
+                        errors.append(
+                            f"{prefix}: canonical unit reconstruction does not equal oracle.canonical_output"
+                        )
                 elif status == "no_change":
                     if canonical_output != effective.get("input"):
-                        errors.append(f"{prefix}: no_change oracle.canonical_output must equal input")
+                        errors.append(
+                            f"{prefix}: no_change oracle.canonical_output must equal input"
+                        )
                     if accepted_outputs != [effective.get("input")]:
-                        errors.append(f"{prefix}: no_change oracle.accepted_outputs must equal [input]")
+                        errors.append(
+                            f"{prefix}: no_change oracle.accepted_outputs must equal [input]"
+                        )
                 elif status == "ambiguous":
                     interpretations = oracle.get("interpretations")
                     if canonical_output is not None:
-                        errors.append(f"{prefix}: ambiguous oracle canonical_output must be null")
+                        errors.append(
+                            f"{prefix}: ambiguous oracle canonical_output must be null"
+                        )
                     if accepted_outputs:
-                        errors.append(f"{prefix}: ambiguous oracle accepted_outputs must be empty")
-                    if not isinstance(interpretations, list) or len(interpretations) < 2:
-                        errors.append(f"{prefix}: ambiguous oracle requires at least two interpretations")
+                        errors.append(
+                            f"{prefix}: ambiguous oracle accepted_outputs must be empty"
+                        )
+                    if (
+                        not isinstance(interpretations, list)
+                        or len(interpretations) < 2
+                    ):
+                        errors.append(
+                            f"{prefix}: ambiguous oracle requires at least two interpretations"
+                        )
                     else:
                         semantic_keys = set()
                         for interpretation in interpretations:
                             if not isinstance(interpretation, dict):
-                                errors.append(f"{prefix}: oracle interpretation must be an object")
+                                errors.append(
+                                    f"{prefix}: oracle interpretation must be an object"
+                                )
                                 continue
                             semantic = interpretation.get("semantic")
                             outputs = interpretation.get("accepted_outputs")
                             if not isinstance(semantic, dict):
-                                errors.append(f"{prefix}: interpretation semantic must be an object")
+                                errors.append(
+                                    f"{prefix}: interpretation semantic must be an object"
+                                )
                             else:
                                 semantic_keys.add(interpretation_semantic_key(semantic))
-                            if not isinstance(outputs, list) or not outputs or not all(isinstance(item, str) for item in outputs):
-                                errors.append(f"{prefix}: interpretation requires accepted_outputs")
+                            if (
+                                not isinstance(outputs, list)
+                                or not outputs
+                                or not all(isinstance(item, str) for item in outputs)
+                            ):
+                                errors.append(
+                                    f"{prefix}: interpretation requires accepted_outputs"
+                                )
                         if len(semantic_keys) < 2:
-                            errors.append(f"{prefix}: ambiguous interpretation semantics must differ")
+                            errors.append(
+                                f"{prefix}: ambiguous interpretation semantics must differ"
+                            )
                 stored_hash = effective.get("oracle_hash")
-                if check_surface and stored_hash is not None and stored_hash != oracle_hash(effective):
-                    errors.append(f"{prefix}: oracle_hash does not match semantic oracle assertion")
-                comparison_profile = oracle.get("comparison_profile", COMPARISON_PROFILE)
+                if (
+                    check_surface
+                    and stored_hash is not None
+                    and stored_hash != oracle_hash(effective)
+                ):
+                    errors.append(
+                        f"{prefix}: oracle_hash does not match semantic oracle assertion"
+                    )
+                comparison_profile = oracle.get(
+                    "comparison_profile", COMPARISON_PROFILE
+                )
                 if comparison_profile != COMPARISON_PROFILE:
-                    errors.append(f"{prefix}: unsupported oracle comparison_profile {comparison_profile!r}")
+                    errors.append(
+                        f"{prefix}: unsupported oracle comparison_profile {comparison_profile!r}"
+                    )
         for index, unit in enumerate(effective.get("units", [])):
             if not isinstance(unit, dict):
                 errors.append(f"{prefix}: unit[{index}] must be an object")

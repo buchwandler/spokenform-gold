@@ -28,7 +28,9 @@ def _target_for_category(targets: dict, category: str) -> int:
     return int(override.get("min_units", defaults.get("min_units", 0)))
 
 
-def _coverage_indexes(coverage: dict) -> tuple[dict, dict[str, set[str]], dict[str, set[str]]]:
+def _coverage_indexes(
+    coverage: dict,
+) -> tuple[dict, dict[str, set[str]], dict[str, set[str]]]:
     rows = {row.get("category"): row for row in coverage.get("coverage", [])}
     languages = {
         category: set(row.get("languages", [])) for category, row in rows.items()
@@ -62,7 +64,7 @@ def _conflict_ids(conflicts: Iterable[dict]) -> set[str]:
 
 def _duplicate_indexes(
     dedupe: dict,
-    ) -> tuple[set[str], set[str], set[str], set[str]]:
+) -> tuple[set[str], set[str], set[str], set[str]]:
     exact_pair_ids: set[str] = set()
     cross_source_ids: set[str] = set()
     duplicate_input_ids: set[str] = set()
@@ -132,11 +134,21 @@ def build_candidate_ranking(
             row = coverage_rows.get(category, {})
             have_units = int(row.get("units", 0))
             if have_units == 0:
-                priority += _add_reason(reasons, "category_missing", REASON_SCORES["category_missing"])
+                priority += _add_reason(
+                    reasons, "category_missing", REASON_SCORES["category_missing"]
+                )
             elif have_units < _target_for_category(target_config, category):
-                priority += _add_reason(reasons, "category_below_minimum", REASON_SCORES["category_below_minimum"])
+                priority += _add_reason(
+                    reasons,
+                    "category_below_minimum",
+                    REASON_SCORES["category_below_minimum"],
+                )
             if record.get("language") not in category_languages.get(category, set()):
-                priority += _add_reason(reasons, "new_language_for_category", REASON_SCORES["new_language_for_category"])
+                priority += _add_reason(
+                    reasons,
+                    "new_language_for_category",
+                    REASON_SCORES["new_language_for_category"],
+                )
 
             missing_patterns = set(
                 target_config.get("required_patterns", {}).get(category, [])
@@ -147,36 +159,62 @@ def build_candidate_ranking(
                 if unit.get("category") == category
             }
             if missing_patterns & candidate_patterns:
-                priority += _add_reason(reasons, "required_pattern_missing", REASON_SCORES["required_pattern_missing"])
+                priority += _add_reason(
+                    reasons,
+                    "required_pattern_missing",
+                    REASON_SCORES["required_pattern_missing"],
+                )
             if any(
                 surface_counts.get(pattern, 0) <= 1
                 for pattern in candidate_patterns
                 if pattern
             ):
-                priority += _add_reason(reasons, "rare_surface_pattern", REASON_SCORES["rare_surface_pattern"])
+                priority += _add_reason(
+                    reasons,
+                    "rare_surface_pattern",
+                    REASON_SCORES["rare_surface_pattern"],
+                )
 
         if record_id in conflict_ids:
-            priority += _add_reason(reasons, "source_disagreement", REASON_SCORES["source_disagreement"])
+            priority += _add_reason(
+                reasons, "source_disagreement", REASON_SCORES["source_disagreement"]
+            )
         if len(record.get("units", [])) > 1:
             priority += _add_reason(reasons, "multi_unit", REASON_SCORES["multi_unit"])
         if record.get("ambiguity_family") or any(
             unit.get("features", {}).get("ambiguity_family")
             for unit in record.get("units", [])
         ):
-            priority += _add_reason(reasons, "ambiguity_family", REASON_SCORES["ambiguity_family"])
+            priority += _add_reason(
+                reasons, "ambiguity_family", REASON_SCORES["ambiguity_family"]
+            )
         if record_id in cross_source_ids:
-            priority += _add_reason(reasons, "cross_source_duplicate", REASON_SCORES["cross_source_duplicate"])
+            priority += _add_reason(
+                reasons,
+                "cross_source_duplicate",
+                REASON_SCORES["cross_source_duplicate"],
+            )
         if record_id in exact_pair_ids or (
             record_id in duplicate_input_ids and record_id not in cross_source_ids
         ):
-            priority += _add_reason(reasons, "duplicate_exact_input_output", REASON_SCORES["duplicate_exact_input_output"])
+            priority += _add_reason(
+                reasons,
+                "duplicate_exact_input_output",
+                REASON_SCORES["duplicate_exact_input_output"],
+            )
         if not record.get("units"):
-            priority += _add_reason(reasons, "metadata_only", REASON_SCORES["metadata_only"])
+            priority += _add_reason(
+                reasons, "metadata_only", REASON_SCORES["metadata_only"]
+            )
         if any(
             unit.get("mapping_status") in {"broader", "ambiguous"}
             for unit in record.get("units", [])
         ):
-            priority += _add_reason(reasons, "broad_or_ambiguous_mapping", REASON_SCORES["broad_or_ambiguous_mapping"])
+            priority += _add_reason(
+                reasons,
+                "broad_or_ambiguous_mapping",
+                REASON_SCORES["broad_or_ambiguous_mapping"],
+            )
 
         source = record.get("source") or {}
         ranked.append(
@@ -190,7 +228,13 @@ def build_candidate_ranking(
                 "locale": record.get("locale"),
                 "categories": categories,
                 "family_id": record.get("family_id"),
-                "record": deepcopy({key: value for key, value in record.items() if not key.startswith("_")}),
+                "record": deepcopy(
+                    {
+                        key: value
+                        for key, value in record.items()
+                        if not key.startswith("_")
+                    }
+                ),
             }
         )
 
@@ -212,7 +256,10 @@ def export_review_batch(
     language_counts = Counter()
     category_counts = Counter()
     family_counts = Counter()
-    for item in sorted(ranked_items, key=lambda value: (-value.get("priority", 0), value.get("record_id", ""))):
+    for item in sorted(
+        ranked_items,
+        key=lambda value: (-value.get("priority", 0), value.get("record_id", "")),
+    ):
         if len(selected) >= limit:
             break
         language = item.get("language")
@@ -224,7 +271,10 @@ def export_review_batch(
         ):
             continue
         family_id = item.get("family_id") or ""
-        if max_per_family_suggestion is not None and family_counts[family_id] >= max_per_family_suggestion:
+        if (
+            max_per_family_suggestion is not None
+            and family_counts[family_id] >= max_per_family_suggestion
+        ):
             continue
         record = deepcopy(item.get("record"))
         if not isinstance(record, dict):

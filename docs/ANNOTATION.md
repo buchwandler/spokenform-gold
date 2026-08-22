@@ -15,7 +15,6 @@ canonical realization, and accepted variants.
 
 High semantic disagreement should normally become `ambiguous`.
 
-
 ## Sentence-oracle review v2
 
 Reviewers work independently on the sentence context and locale. The first pass must not expose `source.upstream_expected`, upstream expected strings, or another reviewer’s annotation. Use `spokenform-gold blind-review --reviewer-slot A|B` to create a review artifact that contains input, locale, source references, and an empty annotation.

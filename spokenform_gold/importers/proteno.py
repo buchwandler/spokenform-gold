@@ -486,7 +486,9 @@ def import_proteno(path: str | Path, *, format: str = "auto") -> ImportResult:
                     "source_category": str(case.get("category", "unknown")),
                     "language": language or str(case.get("language", "unknown")),
                     "surface": case.get("surface") or case.get("input") or detail,
-                    "surface_shape": infer_surface_shape(case.get("surface") or case.get("input") or detail),
+                    "surface_shape": infer_surface_shape(
+                        case.get("surface") or case.get("input") or detail
+                    ),
                 }
             )
             continue

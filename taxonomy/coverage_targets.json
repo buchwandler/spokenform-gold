@@ -79,9 +79,9 @@
       "min_records": 5,
       "required_languages": ["cs", "de", "en", "es", "fr", "it", "pt"]
     },
-    "allowed_domains": {"min_records": 2},
-    "disabled_domains": {"min_records": 1},
-    "interpretation_mode": {"min_records": 3},
-    "normalize_literals": {"min_records": 2}
+    "allowed_domains": { "min_records": 2 },
+    "disabled_domains": { "min_records": 1 },
+    "interpretation_mode": { "min_records": 3 },
+    "normalize_literals": { "min_records": 2 }
   }
 }
