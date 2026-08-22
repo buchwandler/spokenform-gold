@@ -1,8 +1,9 @@
 # Reviewed promotion workflow
 
 `promote-reviewed` is the boundary between external candidate work and the
-Git-tracked canonical benchmark. It writes staging JSONL and an audit report.
-It never modifies `data/dev`, `data/test`, or the split registry.
+Git-tracked canonical benchmark across `data/train`, `data/dev`, and
+`data/test`. It writes staging JSONL and an audit report. It never modifies any
+canonical shard or the split registry.
 
 ## Required review evidence
 
@@ -32,7 +33,7 @@ and before merging them into canonical data.
 spokenform-gold promote-reviewed \
   --candidates "$SPOKENFORM_GOLD_WORK/candidates/review-batch.jsonl" \
   --decisions "$SPOKENFORM_GOLD_WORK/reviews/decisions.jsonl" \
-  --against data/dev data/test \
+  --against data/train data/dev data/test \
   --out "$SPOKENFORM_GOLD_WORK/promotion_staging/reviewed.jsonl" \
   --report "$SPOKENFORM_GOLD_WORK/promotion_staging/promotion-report.json"
 ```
@@ -64,9 +65,9 @@ The external work area currently contains a 100-record ranked review batch and
 30 proposals from each of two annotator passes. The adjudication report records
 `proposal_only_no_independent_human_reviewer`, unresolved semantic and canonical
 fields, and `quarantine=30`, with zero promoted records. These proposals remain
-external evidence only. No row from this batch is copied into `data/dev` or
-`data/test` until independent human review, adjudication, stable Spokenform
-family assignment, and source-policy decisions are complete.
+`data/train`, `data/dev`, or `data/test` until independent human review,
+adjudication, stable Spokenform family assignment, and source-policy decisions
+are complete.
 
 ## Sentence-oracle promotion boundary
 

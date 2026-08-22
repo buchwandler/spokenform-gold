@@ -46,7 +46,11 @@ Use `spokenform-gold gold-audit ... --strict` for stable-oracle checks, `spokenf
 - `quarantine`
 - `no_change`
 
-## Quick start
+## Quick start (MVP smoke examples; dev/test-only)
+
+These small commands exercise the seed corpus. They are not the production
+release contract; production validation and release construction always use
+`data/train`, `data/dev`, and `data/test`.
 
 Requires Python 3.10+; Python 3.10 installs the small TOML compatibility
 dependency automatically. Install the optional dev
@@ -69,8 +73,19 @@ spokenform-gold release-check   --version 0.2.0-exp   --data data/dev data/test 
 spokenform-gold judge-calibrate   data/judge_gold/*.jsonl   --predictions tests/fixtures/predictions/judge_predictions.jsonl   --json reports/judge_calibration.json
 
 spokenform-gold conflicts data/dev/sample.jsonl --mode unit
-
 spokenform-gold discover   examples/discovery_corpus.txt   --against data/dev/sample.jsonl   --out reports/discovery-candidates.jsonl
+```
+
+## Production validation and release path
+
+Use all canonical shards for production validation, coverage, promotion, and
+release construction:
+
+```bash
+spokenform-gold validate data/train data/dev data/test
+spokenform-gold gold-audit data/train data/dev data/test
+spokenform-gold coverage data/train data/dev data/test --targets taxonomy/coverage_targets.json --json reports/coverage-production.json
+spokenform-gold release-check --version 0.2.0-candidate.1 --data data/train data/dev data/test --controls data/controls --registry splits/family_assignments.json --maturity candidate --coverage-profile candidate --out ../spokenform-gold-work/releases/0.2.0-candidate.1
 ```
 
 Import the pinned upstream source-bundle fixtures:
@@ -87,11 +102,11 @@ They must be adjudicated before being promoted into gold.
 ## Release-pipeline commands
 
 ```bash
-spokenform-gold split data/dev/*.jsonl data/test/*.jsonl --registry splits/family_assignments.json --seed 20260818 --out-root /tmp/spokenform-gold-split-check
+spokenform-gold split data/train/*.jsonl data/dev/*.jsonl data/test/*.jsonl --registry splits/family_assignments.json --seed 20260818 --out-root /tmp/spokenform-gold-split-check
 spokenform-gold score data/test/*.jsonl --predictions tests/fixtures/predictions/sample_predictions.jsonl --mode canonical --json reports/score.json
 spokenform-gold adjudicate-queue data/candidates/*.jsonl --conflicts reports/conflicts.json --coverage reports/coverage.json --out reports/adjudication.jsonl
 spokenform-gold judge-calibrate data/judge_gold/*.jsonl --predictions tests/fixtures/predictions/judge_predictions.jsonl --json reports/judge_calibration.json
-spokenform-gold release-check --version 0.2.0-exp --data data/dev data/test --registry splits/family_assignments.json --maturity experimental --out dist/spokenform-gold-v0.2.0-exp
+spokenform-gold release-check --version 0.2.0-exp --data data/train data/dev data/test --controls data/controls --registry splits/family_assignments.json --maturity experimental --coverage-profile experimental --out dist/spokenform-gold-v0.2.0-exp
 ```
 
 Release maturity rules are machine-readable in
@@ -354,7 +369,7 @@ The individual analysis commands are also available:
 ```bash
 spokenform-gold merge-candidates "$SPOKENFORM_GOLD_WORK/candidates/async_*.jsonl" --out "$SPOKENFORM_GOLD_WORK/candidates/all.jsonl"
 spokenform-gold analyze-exclusions "$SPOKENFORM_GOLD_WORK"/exclusions/*.json --out "$SPOKENFORM_GOLD_WORK/reports/exclusions.json"
-spokenform-gold rank-candidates "$SPOKENFORM_GOLD_WORK/candidates/async_*.jsonl" --against data/dev data/test --targets taxonomy/coverage_targets.json --out "$SPOKENFORM_GOLD_WORK/reports/ranked_candidates.jsonl"
+spokenform-gold rank-candidates "$SPOKENFORM_GOLD_WORK/candidates/async_*.jsonl" --against data/train data/dev data/test --targets taxonomy/coverage_targets.json --out "$SPOKENFORM_GOLD_WORK/reports/ranked_candidates.jsonl"
 spokenform-gold review-batch "$SPOKENFORM_GOLD_WORK/reports/ranked_candidates.jsonl" --limit 100 --max-per-category 20 --max-per-family-suggestion 5 --out "$SPOKENFORM_GOLD_WORK/review_batches/batch-0001.jsonl"
 ```
 

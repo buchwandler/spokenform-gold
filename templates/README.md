@@ -1,139 +1,128 @@
 # Templates
 
-Reusable prompt templates for the spokenform-gold production workflow. Copy
-them into agent prompts, reviewer instructions, or batch handoff documents.
+Reusable prompt templates for the Spokenform Gold production workflow. Copy them
+into agent prompts, reviewer instructions, release-publication checklists, or
+batch handoff documents. The benchmark policy in `AGENTS.md`, the schemas, the
+taxonomy, and source policy remain authoritative.
 
 ## Production workflow overview
 
-The spokenform-gold benchmark is built through a structured review pipeline:
+The workflow has separate tracks and role boundaries:
 
-1. **Ingestion** — upstream benchmark sources (Async TN, PolyNorm, Proteno) are
-   imported as quarantine candidates. Upstream expected outputs are preserved as
-   evidence, never treated as ground truth.
-2. **Coverage-driven selection** — candidates are ranked by which coverage gaps
-   they fill (missing categories, missing languages, ambiguity, negative
-   controls).
-3. **Blind review** — two independent reviewers each annotate the same
-   candidates without seeing upstream expected text, Spokenform output, or each
-   other's work.
-4. **Adjudication** — an adjudicator compares the two reviews, inspects
-   disagreements, and produces a final decision.
-5. **Promotion** — adjudicated records are promoted to the canonical corpus
-   (`data/train`, `data/dev`, `data/test`) with frozen family-aware splits.
-6. **Validation** — after every batch: validate, audit, check coverage, check
-   conflicts, check controls, build a release.
+```text
+real checkout and baseline
+        |
+        +--> legacy canonical re-review: blank A/B -> independent A/B
+        |       -> canonical adjudicator -> isolated apply -> frozen split restore
+        |
+        +--> new data: quarantine ingestion -> coverage/ranking -> bounded batch
+                -> independent A/B -> candidate adjudicator
+                -> promotion/split/integration -> candidate release
+                                                        |
+                                                        v
+                                      Spokenform integration -> stable gates
+                                                        |
+                                                        v
+                                      explicit release publication -> verification
+```
 
-The five role templates below cover preparation, independent review, adjudication,
-mechanical promotion/integration, and batch handoff.
+Upstream expected outputs are evidence, never Gold authority. A and B must run
+in genuinely isolated contexts without seeing each other's work, current
+Spokenform output, or hidden upstream expectations. Human review and
+adjudication cannot be replaced by a proposal or an automated judge.
 
----
+## Role templates
 
-## Available templates
+### `coding-agent-first-task.md` — T0 preparation/orchestration
 
-### coding-agent-first-task.md
+**Use when:** starting from a fresh checkout.
 
-**Use when:** giving a coding/annotation agent its first bounded task in this
-repository.
+The preparation agent establishes the real baseline, verifies the external
+source cache, ingests and ranks quarantine candidates, creates blank review
+artifacts, and prepares handoffs. It must stop before semantic review and must
+not impersonate reviewers or adjudicators.
 
-Covers:
+### `reviewer-ab-task.md` — T1/T2 independent review
 
-- establishing the real baseline (tests, validation, coverage, candidate release);
-- verifying source-cache readiness;
-- running the first full-source ingestion;
-- upgrading the existing canonical records to strict review evidence;
-- producing blind review inputs;
-- hard rules and definition of done.
+**Use when:** completing reviewer A or reviewer B in a separate isolated
+context.
 
-This is **not** a "build the whole dataset" prompt. It produces a reproducible
-production baseline and a batch-0001 review package.
+The reviewer annotates spans, categories, semantics, ambiguity, policies,
+canonical and accepted/rejected unit variants, and the explicit full-sentence
+oracle. It must not inspect upstream expected output, current Spokenform output,
+the other review, comparison, or decisions.
 
----
+### `canonical-rereview-adjudicator-task.md` — T3a canonical re-review
 
-### reviewer-ab-task.md
+**Use when:** existing canonical records with `legacy_review` or other
+incomplete review evidence have two completed independent reviews.
 
-**Use when:** sending a blind review artifact to an independent reviewer
-(reviewer A or reviewer B).
+Decisions are keyed by `sentence_oracle_id` and preserve existing record ID,
+family ID, source identity, input, language, and locale. This role produces
+adjudicated/release-ready oracle decisions for `apply-reviewed-oracles`; it is
+not a candidate promotion or source-materialization decision.
 
-Run this in **separate isolated contexts** for each reviewer. Neither reviewer
-should see:
+### `adjudicator-task.md` — T3b candidate adjudication
 
-- `source.upstream_expected`;
-- current Spokenform output;
-- the other reviewer's annotation;
-- adjudication results.
+**Use when:** a new candidate batch has two completed independent reviews.
 
-The template covers the 12 annotation steps each reviewer must complete
-independently (span identification, category, semantics, ambiguity, policy,
-canonical realization, accepted/rejected variants, sentence oracle, etc.).
+This role compares reviews, resolves semantics, assigns a Spokenform-owned
+family, decides source/license disposition, and emits one promotion decision per
+candidate. It must not apply, split, copy, commit, or publish.
 
----
+### `promote-split-commit-task.md` — T4 mechanical integration
 
-### adjudicator-task.md
+**Use when:** candidate adjudication is complete.
 
-**Use when:** both blind reviews are complete and an adjudicator needs to
-compare them and produce a final decision.
+The integration operator promotes only approved decisions into isolated staging,
+runs the frozen family splitter, validates canonical-next, inspects oracle and
+coverage diffs, copies only approved generated canonical shards, builds a
+candidate release, and commits explicit paths. It never reinterprets semantics
+or hand-picks splits.
 
-Inputs to provide:
+### `release-publish-task.md` — T5 publication
 
-- completed blind reviewer A artifact;
-- completed blind reviewer B artifact;
-- A/B comparison;
-- source provenance;
-- upstream expected text (revealed only now).
+**Use when:** an approved commit has passed the local release gates and an
+explicit publication decision is available.
 
-The template covers the 12 adjudication steps including disagreement
-inspection, final semantic interpretation, disposition decision
-(`promote_curated`, `promote_upstream`, `keep_external`, `reject`, `quarantine`,
-`needs_review`), family assignment, and emitting a review-decision record.
+The publication operator classifies candidate/experimental/stable tags using
+the GitHub workflow, verifies the exact local release, obtains authorization,
+checks public archives and checksums, and records downstream Spokenform pin
+state. It does not mutate a published release.
 
----
+### `batch-handoff.md` — T6 durable handoff
 
-### promote-split-commit-task.md
+**Use when:** any batch, re-review milestone, integration, or release boundary
+needs a structured machine-readable/human-readable report.
 
-**Use when:** adjudication is complete and a fresh-context integration operator
-must promote, split, validate, build a candidate release, and commit the approved
-canonical data.
+Fill every field, including hashes and separate local/public/pin states. Do not
+claim completion from candidate work-root artifacts alone.
 
-The template requires isolated promotion staging, an isolated copy of the frozen
-family registry, additions-only family assignments, canonical-next validation,
-coverage/oracle diff inspection, explicit-path staging, and a batch handoff. It
-forbids semantic reinterpretation, hand-picked splits, unrelated commits, and
-copying work-root artifacts into Gold.
+## Artifact isolation rules
 
----
-
-### batch-handoff.md
-
-**Use when:** a production batch is complete and you need to leave a structured
-handoff report.
-
-Fill in every section:
-
-- source cache revisions and checks;
-- ingestion row accounting;
-- coverage before/after;
-- review status (agreements, disagreements, adjudicated, needs_review);
-- promotion dispositions;
-- split assignments (frozen assignment changes must be NONE for existing
-  families);
-- release result;
-- Spokenform benchmark result;
-- unresolved blockers.
-
-This report is the primary artifact for auditing what happened in a batch and
-for handing off to the next agent or reviewer.
-
----
+| Artifact/operation                            | Allowed context                                    |
+| --------------------------------------------- | -------------------------------------------------- |
+| blank A/B review artifacts                    | T0 preparation                                     |
+| semantic annotation                           | T1/T2 only, one reviewer per isolated context      |
+| `compare-reviews`                             | T3a/T3b after both reviews complete                |
+| canonical sentence-oracle decision            | T3a only                                           |
+| candidate/source disposition decision         | T3b only                                           |
+| `apply-reviewed-oracles`                      | following mechanical canonical integration context |
+| promotion, split, copy, commit                | T4 only                                            |
+| tag, GitHub publication, archive verification | T5 only, after explicit authorization              |
+| downstream Spokenform pin                     | companion repository after public verification     |
 
 ## How to use
 
-1. **Read the relevant template** before starting the corresponding task.
-2. **Copy the template content** into your agent prompt, reviewer instructions,
-   or handoff document.
-3. **Fill in every placeholder and structured field** before use; then follow the
-   role boundary for preparation, review, adjudication, integration, or handoff.
-4. **Do not weaken the hard rules** — they exist to protect benchmark
-   integrity.
+1. Read the relevant template and all policy files it names.
+2. Replace every placeholder with truthful paths, IDs, versions, and identities.
+3. Preserve the role boundary and stop conditions.
+4. Keep work-root artifacts outside Git unless a separate policy explicitly
+   requires a small audit artifact.
+5. Record hashes for review, decision, promotion, split, and release artifacts
+   in `batch-handoff.md`.
+6. Run validation after every data change; never weaken coverage or maturity
+   gates to obtain a green result.
 
 For the full production rules, data model, and source policy, see
 [AGENTS.md](../AGENTS.md).
