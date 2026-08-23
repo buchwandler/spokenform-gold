@@ -10,6 +10,8 @@ from spokenform_gold.review import (
     apply_reviewed_oracles,
     blind_review_batch,
     compare_review_batches,
+    review_preflight,
+    sentence_oracle_id,
     write_review_application,
 )
 from spokenform_gold.validation import validate_records
@@ -48,6 +50,7 @@ class ReviewEvidenceTests(unittest.TestCase):
             "reviewers": ["reviewer-a", "reviewer-b"],
             "adjudicator": "maintainer-1",
             "decision": "adjudicated",
+            "review_status": "adjudicated",
             "status": self.record["status"],
             "input": self.record["input"],
             "language": self.record["language"],
@@ -135,6 +138,59 @@ class ReviewEvidenceTests(unittest.TestCase):
                 report,
                 input_paths=[ROOT / "data/test/sample.jsonl"],
             )
+
+
+    def test_preflight_reports_blank_reviews_and_canonical_identity_parity(self):
+        blank_a = blind_review_batch([self.record], reviewer_slot="A")
+        blank_b = blind_review_batch([self.record], reviewer_slot="B")
+        report = review_preflight([self.record], blank_a, blank_b)
+        self.assertFalse(report["ready"])
+        self.assertEqual(report["review_a"]["completed"], 0)
+        self.assertEqual(report["review_b"]["completed"], 0)
+        self.assertTrue(report["canonical_identity_match"])
+        codes = {issue["code"] for issue in report["issues"]}
+        self.assertIn("missing_reviewer_id", codes)
+        self.assertIn("incomplete_annotations", codes)
+        self.assertIn("unreviewed_rows", codes)
+
+    def test_preflight_ready_state_uses_derived_canonical_identity(self):
+        report = review_preflight([self.record], [self.review_a], [self.review_b])
+        self.assertTrue(report["ready"])
+        self.assertTrue(report["canonical_identity_match"])
+        self.assertTrue(report["id_sets_match"])
+        self.assertTrue(report["context_match"])
+        self.assertNotIn("sentence_oracle_id", self.record)
+        self.assertEqual(self.review_a["sentence_oracle_id"], sentence_oracle_id(self.record))
+
+    def test_preflight_reports_shared_reviewer(self):
+        same = copy.deepcopy(self.review_b)
+        same["reviewer_id"] = "reviewer-a"
+        report = review_preflight([self.record], [self.review_a], [same])
+        self.assertFalse(report["ready"])
+        self.assertIn("shared_reviewer_id", {issue["code"] for issue in report["issues"]})
+
+    def test_preflight_reports_slot_duplicate_id_and_context_mismatches(self):
+        wrong_slot = copy.deepcopy(self.review_b)
+        wrong_slot["reviewer_slot"] = "A"
+        report = review_preflight([self.record], [self.review_a], [wrong_slot])
+        self.assertIn("slot_mismatch", {issue["code"] for issue in report["issues"]})
+
+        duplicate = [copy.deepcopy(self.review_b), copy.deepcopy(self.review_b)]
+        report = review_preflight([self.record], [self.review_a], duplicate)
+        self.assertIn("duplicate_oracle_id", {issue["code"] for issue in report["issues"]})
+
+        context = copy.deepcopy(self.review_b)
+        context["locale"] = "de-DE"
+        report = review_preflight([self.record], [self.review_a], [context])
+        self.assertIn("context_mismatch", {issue["code"] for issue in report["issues"]})
+
+    def test_preflight_reports_id_set_and_canonical_identity_mismatch(self):
+        unknown = copy.deepcopy(self.review_b)
+        unknown["sentence_oracle_id"] = "oracle-unknown"
+        report = review_preflight([self.record], [self.review_a], [unknown])
+        codes = {issue["code"] for issue in report["issues"]}
+        self.assertIn("missing_in_a", codes)
+        self.assertIn("unknown_review_identity", codes)
 
 
 if __name__ == "__main__":

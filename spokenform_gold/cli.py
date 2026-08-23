@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
 from .adjudication import build_adjudication_queue
+from .census import build_upstream_census, write_census_artifacts
 from .config import (
     ConfigError,
     default_config_path,
@@ -14,13 +16,13 @@ from .config import (
     resolve_runtime_paths,
 )
 from .conflicts import find_conflicts
-from .census import build_upstream_census, write_census_artifacts
 from .control_benchmark import load_control_predictions, score_control_records
 from .control_validation import validate_control_records
 from .coverage import build_control_coverage, build_coverage, load_targets
 from .deduplication import deduplicate_candidates
 from .exclusions import build_exclusion_analysis, load_exclusions
 from .families import suggest_families
+from .gold_audit import audit_records
 from .importers import import_async, import_polynorm, import_proteno
 from .ingestion import run_upstream_ingestion
 from .io import (
@@ -33,9 +35,8 @@ from .io import (
 )
 from .judge_calibration import build_judge_calibration, load_judge_predictions
 from .merge import merge_candidate_files
-from .gold_audit import audit_records
-from .oracle_diff import diff_records
 from .migration import migrate_jsonl
+from .oracle_diff import diff_records
 from .pool import build_candidate_pool_summary
 from .promotion import build_promoted_records
 from .ranking import build_candidate_ranking, export_review_batch
@@ -44,6 +45,8 @@ from .review import (
     apply_reviewed_oracles,
     blind_review_batch,
     compare_review_batches,
+    review_preflight,
+    validate_review_rows,
     write_review_application,
 )
 from .scoring import load_predictions, score_records
@@ -105,6 +108,94 @@ def cmd_compare_reviews(args):
     write_jsonl(args.out, comparisons)
     print(f"compared {len(comparisons)} review records to {args.out}")
     return 0
+
+
+def _review_preflight_human(report: dict) -> str:
+    lines = [
+        f"canonical_review_state={report['canonical_review_state']}",
+        f"canonical_records={report['canonical_records']}",
+        f"sentence_oracles={report['sentence_oracles']}",
+    ]
+    for name in ("review_a", "review_b"):
+        review = report[name]
+        reviewer_id = review.get("reviewer_id") or "missing"
+        lines.extend(
+            [
+                f"{name}.rows={review['rows']}",
+                f"{name}.slot={review['slot']}",
+                f"{name}.reviewer_id={reviewer_id}",
+                f"{name}.completed={review['completed']}",
+                f"{name}.unreviewed={review['unreviewed']}",
+            ]
+        )
+    lines.extend(
+        [
+            f"id_sets_match={'yes' if report['id_sets_match'] else 'no'}",
+            f"context_match={'yes' if report['context_match'] else 'no'}",
+            f"canonical_identity_match={'yes' if report['canonical_identity_match'] else 'no'}",
+            f"ready={'yes' if report['ready'] else 'no'}",
+        ]
+    )
+    if report["issues"]:
+        lines.append("issues:")
+        lines.extend(f"- {issue['message']}" for issue in report["issues"])
+    return "\n".join(lines)
+
+
+def _add_path_issue(report: dict, scope: str, path: str) -> None:
+    report["issues"].append({
+        "scope": scope,
+        "code": "file_not_readable",
+        "message": f"{scope} artifact is not a readable file: {path}",
+    })
+    report["issues"].sort(key=lambda item: (item.get("scope", ""), item.get("code", ""), item.get("message", "")))
+    report["ready"] = False
+    report["canonical_review_state"] = "blocked"
+
+
+def cmd_review_preflight(args):
+    records = read_records(args.records)
+    review_a_path = Path(args.review_a)
+    review_b_path = Path(args.review_b)
+    review_a = read_records([review_a_path])
+    review_b = read_records([review_b_path])
+    report = review_preflight(records, review_a, review_b)
+    if not review_a_path.is_file():
+        _add_path_issue(report, "review_a", str(review_a_path))
+    if not review_b_path.is_file():
+        _add_path_issue(report, "review_b", str(review_b_path))
+    if args.json:
+        write_json(args.json, report)
+    print(_review_preflight_human(report))
+    return 0 if report["ready"] else 2
+
+
+def cmd_validate_review(args):
+    path = Path(args.review)
+    rows = read_records([path])
+    report = validate_review_rows(rows, slot=args.slot)
+    if not path.is_file():
+        report["issues"].append({
+            "scope": f"review {args.slot}",
+            "code": "file_not_readable",
+            "message": f"review artifact is not a readable file: {path}",
+        })
+        report["ready"] = False
+    if args.json:
+        write_json(args.json, {key: value for key, value in report.items() if key != "_indexed"})
+    print(_review_preflight_human({
+        "canonical_review_state": "ready" if report["ready"] else "blocked",
+        "canonical_records": 0,
+        "sentence_oracles": report["rows"],
+        "review_a": report if args.slot == "A" else {"slot": "A", "rows": 0, "reviewer_id": None, "completed": 0, "unreviewed": 0},
+        "review_b": report if args.slot == "B" else {"slot": "B", "rows": 0, "reviewer_id": None, "completed": 0, "unreviewed": 0},
+        "id_sets_match": True,
+        "context_match": True,
+        "canonical_identity_match": True,
+        "ready": report["ready"],
+        "issues": report["issues"],
+    }))
+    return 0 if report["ready"] else 2
 
 
 def cmd_apply_reviewed_oracles(args):
@@ -482,6 +573,47 @@ def cmd_judge_calibrate(args):
     return 0
 
 
+def _path_info(path: Path | None) -> dict:
+    if path is None:
+        return {"path": None, "exists": False, "writable": False}
+    exists = path.exists()
+    probe = path if exists else path.parent
+    return {"path": str(path), "exists": exists, "writable": bool(probe.exists() and os.access(probe, os.W_OK))}
+
+
+def cmd_doctor(args):
+    config_path = args.config if args.config is not None else default_config_path()
+    config = load_config(config_path, explicit=args.config is not None)
+    repo_root = (config.path.parent if config.path else Path.cwd()).resolve()
+    paths = resolve_runtime_paths(config=config, source_cache=None, work_root=None)
+    source_lock = repo_root / "sources" / "source-lock.json"
+    canonical = [repo_root / "data" / name for name in ("train", "dev", "test")]
+    review_root = paths.work_root / "reviews" / "canonical" if paths.work_root else None
+    report = {
+        "config": _path_info(config.path or config_path.resolve()),
+        "repo_root": str(repo_root),
+        "source_cache": _path_info(paths.source_cache),
+        "work_root": _path_info(paths.work_root),
+        "source_lock": _path_info(source_lock),
+        "canonical_records": [str(path) for path in canonical],
+        "canonical_record_roots": [_path_info(path) for path in canonical],
+        "canonical_review_root": _path_info(review_root),
+    }
+    if args.json:
+        write_json(args.json, report)
+    print(f"config: {report['config']['path']}")
+    print(f"repo_root: {report['repo_root']}")
+    for key in ("source_cache", "work_root", "source_lock"):
+        item = report[key]
+        print(f"{key}: {item['path']}")
+        print(f"{key}_exists: {'yes' if item['exists'] else 'no'}")
+        print(f"{key}_writable: {'yes' if item['writable'] else 'no'}")
+    print("canonical_records:")
+    for path in report["canonical_records"]:
+        print(f"  {path}")
+    return 0
+
+
 def build_parser():
     parser = argparse.ArgumentParser(prog="spokenform-gold")
     parser.add_argument(
@@ -489,6 +621,11 @@ def build_parser():
         type=Path,
         default=None,
         help="Project-local TOML configuration file for runtime paths.",
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Show tracebacks for expected workflow errors.",
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
 
@@ -513,6 +650,19 @@ def build_parser():
     blind.add_argument("--reviewer-slot", choices=["A", "B"], required=True)
     blind.add_argument("--out", required=True)
     blind.set_defaults(func=cmd_blind_review)
+
+    preflight = sub.add_parser("review-preflight")
+    preflight.add_argument("--records", nargs="+", required=True)
+    preflight.add_argument("--review-a", required=True)
+    preflight.add_argument("--review-b", required=True)
+    preflight.add_argument("--json")
+    preflight.set_defaults(func=cmd_review_preflight)
+
+    validate_review = sub.add_parser("validate-review")
+    validate_review.add_argument("review")
+    validate_review.add_argument("--slot", choices=["A", "B"], required=True)
+    validate_review.add_argument("--json")
+    validate_review.set_defaults(func=cmd_validate_review)
 
     compare_reviews = sub.add_parser("compare-reviews")
     compare_reviews.add_argument("review_a")
@@ -737,6 +887,9 @@ def build_parser():
     judge_calibrate.add_argument("--predictions", required=True)
     judge_calibrate.add_argument("--json")
     judge_calibrate.set_defaults(func=cmd_judge_calibrate)
+    doctor = sub.add_parser("doctor", aliases=["paths"])
+    doctor.add_argument("--json")
+    doctor.set_defaults(func=cmd_doctor)
     return parser
 
 
@@ -746,6 +899,15 @@ def main(argv=None):
     try:
         return args.func(args)
     except ConfigError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    except (ValueError, TypeError, OSError) as exc:
+        workflow_commands = {
+            "review-preflight", "validate-review", "compare-reviews",
+            "apply-reviewed-oracles",
+        }
+        if args.cmd not in workflow_commands or args.debug:
+            raise
         print(f"error: {exc}", file=sys.stderr)
         return 2
 

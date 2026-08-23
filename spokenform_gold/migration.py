@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from copy import deepcopy
 from pathlib import Path
-from collections.abc import Iterable
 
 from .oracle import _legacy_unit_variants, oracle_hash
 
@@ -109,6 +109,5 @@ def migrate_jsonl(input_path: str | Path, output_path: str | Path) -> int:
             if line.strip():
                 output.append(migrate_record(json.loads(line)))
     with Path(output_path).open("w", encoding="utf-8") as handle:
-        for record in output:
-            handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+        handle.writelines(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n" for record in output)
     return len(output)

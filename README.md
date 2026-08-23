@@ -415,33 +415,46 @@ They are not release data and must not be copied into `data/train`, `data/dev`, 
 `data/test` merely because a ranker, model, or current Spokenform output suggests
 an answer.
 
-## Strict re-review workflow
+## Strict canonical re-review workflow
 
-Existing canonical records can be re-reviewed without mutating Git-tracked Gold.
-Generate independent blind artifacts into the external work root:
+Existing canonical records can be re-reviewed without mutating Git-tracked Gold. Canonical records do not store `sentence_oracle_id`; the review identity is deterministically derived from language, locale, and normalized input by the supported review API.
 
-```bash
-python -m spokenform_gold.cli blind-review   data/train data/dev data/test   --reviewer-slot A   --out ../spokenform-gold-work/reviews/existing-a.jsonl
-
-python -m spokenform_gold.cli blind-review   data/train data/dev data/test   --reviewer-slot B   --out ../spokenform-gold-work/reviews/existing-b.jsonl
-```
-
-After both genuine reviewers complete their annotations, compare them:
+Resolve configured external paths first:
 
 ```bash
-python -m spokenform_gold.cli compare-reviews   ../spokenform-gold-work/reviews/existing-a-completed.jsonl   ../spokenform-gold-work/reviews/existing-b-completed.jsonl   --out ../spokenform-gold-work/reviews/existing-comparison.jsonl
+spokenform-gold doctor
 ```
 
-Apply adjudicated decisions only to a new output root:
+Prepare visibly distinct artifacts under `$SPOKENFORM_GOLD_WORK/reviews/canonical/`:
 
 ```bash
-python -m spokenform_gold.cli apply-reviewed-oracles   --records data/train data/dev data/test   --review-a ../spokenform-gold-work/reviews/existing-a-completed.jsonl   --review-b ../spokenform-gold-work/reviews/existing-b-completed.jsonl   --decisions ../spokenform-gold-work/reviews/existing-decisions.jsonl   --out-root ../spokenform-gold-work/canonical-reviewed
+spokenform-gold blind-review data/train data/dev data/test \
+  --reviewer-slot A \
+  --out "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-a.blind.jsonl"
+spokenform-gold blind-review data/train data/dev data/test \
+  --reviewer-slot B \
+  --out "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-b.blind.jsonl"
 ```
 
-The workflow requires a deterministic sentence-oracle identity, matching
-input/language/locale, two distinct reviewer IDs, an adjudicator, and decisions
-that preserve the canonical record ID, family ID, source provenance, and review
-disagreement. It recomputes oracle_hash, validates every resulting record, and
-writes records.jsonl, comparisons.jsonl, and report.json only beneath a new
-isolated output root. It never invents reviewer evidence or promotes a row
-because current Spokenform output happens to match.
+Each reviewer writes a new `.complete.jsonl` artifact and checks it independently:
+
+```bash
+spokenform-gold validate-review \
+  "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-a.complete.jsonl" --slot A
+spokenform-gold validate-review \
+  "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-b.complete.jsonl" --slot B
+```
+
+Run the aggregate first gate before source inspection or comparison:
+
+```bash
+spokenform-gold review-preflight \
+  --records data/train data/dev data/test \
+  --review-a "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-a.complete.jsonl" \
+  --review-b "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-b.complete.jsonl" \
+  --json "$SPOKENFORM_GOLD_WORK/reviews/canonical/preflight.json"
+```
+
+If `ready=no`, stop: do not inspect source evidence, Git history, release/audit artifacts, current Spokenform output, or alternative review files. Do not fabricate reviewer IDs or write comparison/decision artifacts. Only when ready run `compare-reviews`, adjudicate under policy, and hand off to `templates/canonical-rereview-integration-task.md` for mechanical application.
+
+Canonical decisions use `schemas/canonical-review-decision.schema.json`, not the candidate promotion schema. The integration context alone may run `apply-reviewed-oracles` into an isolated work-root output; it must preserve record/family/source identity and frozen splits before explicit approval to copy any canonical shard.

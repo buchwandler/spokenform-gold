@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from pathlib import Path
 from collections.abc import Iterable
+from pathlib import Path
 
-from .io import sha256_text, write_json, write_jsonl
 from .deduplication import normalize_for_fingerprint
+from .io import sha256_text, write_json, write_jsonl
 
 
 def _source_ref(record: dict) -> dict:

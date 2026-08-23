@@ -54,14 +54,11 @@ the other review, comparison, or decisions.
 
 ### `canonical-rereview-adjudicator-task.md` — T3a canonical re-review
 
-**Use when:** existing canonical records with `legacy_review` or other
-incomplete review evidence have two completed independent reviews.
+**Use when:** existing canonical records have two completed independent reviews. Run `spokenform-gold review-preflight` first; if it reports `ready=no`, stop without source inspection or adjudication.
 
-Decisions are keyed by `sentence_oracle_id` and preserve existing record ID,
-family ID, source identity, input, language, and locale. This role produces
-adjudicated/release-ready oracle decisions for `apply-reviewed-oracles`; it is
-not a candidate promotion or source-materialization decision.
+Canonical records do not store `sentence_oracle_id`; the identity is derived from language, locale, and normalized input. Decisions preserve existing record ID, family ID, source identity, input, language, and locale. New artifacts use `canonical-a.blind.jsonl`, `canonical-a.complete.jsonl`, `canonical-b.blind.jsonl`, `canonical-b.complete.jsonl`, `preflight.json`, `comparison.jsonl`, `decisions.jsonl`, and `manifest.json`.
 
+This role produces adjudicated/release-ready oracle decisions for `apply-reviewed-oracles`; it is not a candidate promotion or source-materialization decision.
 ### `adjudicator-task.md` — T3b candidate adjudication
 
 **Use when:** a new candidate batch has two completed independent reviews.
@@ -79,6 +76,10 @@ runs the frozen family splitter, validates canonical-next, inspects oracle and
 coverage diffs, copies only approved generated canonical shards, builds a
 candidate release, and commits explicit paths. It never reinterprets semantics
 or hand-picks splits.
+
+### `canonical-rereview-integration-task.md` — T3b mechanical canonical integration
+
+**Use when:** canonical adjudication is complete and preflight/comparison checks pass. This role applies decisions in isolated output, verifies oracle/provenance/family/split invariants, runs strict checks, and obtains explicit approval before any Git copy. It never reinterprets semantics.
 
 ### `release-publish-task.md` — T5 publication
 
@@ -103,6 +104,7 @@ claim completion from candidate work-root artifacts alone.
 | Artifact/operation                            | Allowed context                                    |
 | --------------------------------------------- | -------------------------------------------------- |
 | blank A/B review artifacts                    | T0 preparation                                     |
+| `validate-review`                              | T1/T2 before reviewer handoff                      |
 | semantic annotation                           | T1/T2 only, one reviewer per isolated context      |
 | `compare-reviews`                             | T3a/T3b after both reviews complete                |
 | canonical sentence-oracle decision            | T3a only                                           |

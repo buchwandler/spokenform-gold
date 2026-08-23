@@ -34,9 +34,9 @@ import argparse
 import json
 import shutil
 import subprocess
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from collections.abc import Sequence
 
 # ── Pinned source definitions ────────────────────────────────────────────────
 # Each entry mirrors the relevant fields from sources/manifest.json and

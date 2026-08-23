@@ -16,61 +16,49 @@ Use this stable, truthful adjudicator identity:
 
 ## Goal and boundary
 
-Compare two genuinely independent blind reviews of the existing canonical
-corpus, resolve semantic disagreements under Spokenform Gold policy, and emit
-one complete canonical-oracle decision for every `sentence_oracle_id`.
+Compare two genuinely independent completed reviewer artifacts for the existing canonical corpus, resolve semantic disagreements under Spokenform Gold policy, and emit one complete canonical-oracle decision for every derived `sentence_oracle_id`.
 
-This workflow corrects or confirms reviewed semantics. It does **not** make a
-source-materialization decision, promote a candidate, assign a new family, or
-change provenance. The existing canonical record ID, family ID, language,
-locale, input, and source identity must remain unchanged.
+Canonical records do **not** store a `sentence_oracle_id` field. The repository derives the review identity from language, locale, and normalized input. Never inspect `record["sentence_oracle_id"]` or recreate the hash in an ad-hoc script; use the supported CLI/API.
+Plain contract: canonical records do not store sentence_oracle_id; it is derived for review artifacts only.
 
-Do not choose an answer because it matches current Spokenform output. The
-benchmark policy and semantic evidence define the result.
 
-## Inputs and output
+This workflow does not make a source-materialization decision, promote a candidate, assign a new family, change provenance, apply decisions, or change Gold because current Spokenform output differs. Existing canonical record ID, family ID, language, locale, input, and source identity remain unchanged.
 
-Provide only the files needed for this role:
+## First gate: preflight before inspection
+
+Replace placeholders with a task instance manifest before starting. New canonical artifacts use these names:
 
 ```text
-canonical records:       <ABSOLUTE_PATHS_TO_DATA_TRAIN_DEV_TEST>
-completed review A:      <ABSOLUTE_PATH_TO_CANONICAL_REVIEW_A_JSONL>
-completed review B:      <ABSOLUTE_PATH_TO_CANONICAL_REVIEW_B_JSONL>
-comparison output:       <ABSOLUTE_PATH_TO_COMPARISON_JSONL>
-allowed policy/schema:   <REPOSITORY_FILES_NAMED_BY_REVIEWER_TEMPLATE>
+reviews/canonical/canonical-a.blind.jsonl
+reviews/canonical/canonical-a.complete.jsonl
+reviews/canonical/canonical-b.blind.jsonl
+reviews/canonical/canonical-b.complete.jsonl
+reviews/canonical/preflight.json
+reviews/canonical/comparison.jsonl
+reviews/canonical/decisions.jsonl
+reviews/canonical/manifest.json
 ```
 
-Write a new decision artifact; never overwrite the reviews or canonical data:
+Allowed policy/schema inputs are exactly: `AGENTS.md`, `README.md`, `DATA_MODEL.md`, `docs/ANNOTATION.md`, `docs/ORACLE_REVIEW.md`, `docs/SOURCE_POLICY.md`, `taxonomy/categories.json`, `taxonomy/coverage_targets.json`, `schemas/oracle.schema.json`, `schemas/completed-review-row.schema.json`, and `schemas/canonical-review-decision.schema.json`.
 
-```text
-<ABSOLUTE_PATH_TO_CANONICAL_DECISIONS_JSONL>
-```
-
-The decision artifact must contain exactly one decision for each canonical
-`sentence_oracle_id`, with no duplicate IDs and no decisions for unknown
-records.
-
-## Required preflight
-
-Run the comparison command before inspecting source evidence or making a final
-decision:
+Run exactly this readiness command first, before reading source evidence, Git history, candidate decisions, release artifacts, current canonical oracle values, or Spokenform output:
 
 ```bash
-spokenform-gold compare-reviews \
-  <ABSOLUTE_PATH_TO_CANONICAL_REVIEW_A_JSONL> \
-  <ABSOLUTE_PATH_TO_CANONICAL_REVIEW_B_JSONL> \
-  --out <ABSOLUTE_PATH_TO_COMPARISON_JSONL>
+spokenform-gold review-preflight \
+  --records <ABSOLUTE_PATHS_TO_DATA_TRAIN_DEV_TEST> \
+  --review-a <ABSOLUTE_PATH_TO_CANONICAL_REVIEW_A_COMPLETE_JSONL> \
+  --review-b <ABSOLUTE_PATH_TO_CANONICAL_REVIEW_B_COMPLETE_JSONL> \
+  --json <ABSOLUTE_PATH_TO_PREFLIGHT_JSON>
 ```
 
-Stop and hand off a blocker if this fails. Confirm that:
+If `ready=no`, report the aggregate summary and artifact hashes, then stop immediately. stop if ready=no; do not inspect source evidence before preflight:
 
-- reviewer A and B identities are non-empty and distinct;
-- every row is complete and has the correct reviewer slot lifecycle state;
-- the `sentence_oracle_id` sets match exactly;
-- input, language, and locale match between reviewers and canonical records;
-- neither review exposes upstream expectations or current Spokenform output;
-- each canonical record maps to exactly one sentence-oracle identity;
-- the comparison artifact is saved and its SHA256 is recorded.
+1. do not inspect semantic source evidence;
+2. do not run `compare-reviews`, adjudication, release, or audit commands;
+3. do not search for alternative review files unless the task manifest names them;
+4. do not invent reviewer IDs, repair reviews, or inspect current implementation output.
+
+A blocked run means no comparison or decision artifact was produced. A ready run must show both distinct stable reviewer IDs, complete annotations and lifecycle states, exact A/B ID parity, context parity, and canonical derived-identity parity before continuing.
 
 Do not invent missing review evidence or silently repair a mismatched identity.
 

@@ -1260,8 +1260,27 @@ census/summary.json
 review_batches/batch-0001.jsonl
 ```
 
-Reject the run if row accounting fails, pinned source revisions are wrong,
-candidate validation fails, or source/output conflicts are silently collapsed.
+Reject the run if row accounting fails, pinned source revisions are wrong, candidate validation fails, or source/output conflicts are silently collapsed.
+## Canonical re-review workflow
+
+Canonical records do not store `sentence_oracle_id`; the review identity is derived from language, locale, and normalized input by the supported `spokenform_gold.review.sentence_oracle_id()` API. Never require or invent that field in `data/train`, `data/dev`, or `data/test`.
+
+Before reading source evidence, Git history, release reports, or current Spokenform output, resolve paths and run the aggregate gate:
+
+```bash
+spokenform-gold doctor
+spokenform-gold review-preflight \
+  --records data/train data/dev data/test \
+  --review-a "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-a.complete.jsonl" \
+  --review-b "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-b.complete.jsonl" \
+  --json "$SPOKENFORM_GOLD_WORK/reviews/canonical/preflight.json"
+```
+
+If `ready=no`, stop immediately. Report the aggregate issues and hashes; do not search for alternative review files, adjudicate, audit, release, compare, or write decisions. Blank artifacts, missing reviewer IDs, incomplete annotations, lifecycle/slot errors, shared reviewers, A/B identity/context mismatch, and canonical identity mismatch remain blockers.
+
+Use these new artifact names: `canonical-a.blind.jsonl`, `canonical-a.complete.jsonl`, `canonical-b.blind.jsonl`, `canonical-b.complete.jsonl`, `preflight.json`, `comparison.jsonl`, `decisions.jsonl`, and `manifest.json`. The canonical adjudication artifact uses `schemas/canonical-review-decision.schema.json`, not `schemas/review-decision.schema.json`. Mechanical application belongs only to `templates/canonical-rereview-integration-task.md`; it must preserve source identity, family assignments, and frozen splits.
+
+Do not adapt Gold to current Spokenform output or fabricate independent review evidence.
 
 ## Review batches
 

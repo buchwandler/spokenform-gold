@@ -230,11 +230,11 @@ mkdir -p "$SPOKENFORM_GOLD_WORK/reviews/batch-0001"
 spokenform-gold blind-review \
   data/train data/dev data/test \
   --reviewer-slot A \
-  --out "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-a-blank.jsonl"
+  --out "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-a.blind.jsonl"
 spokenform-gold blind-review \
   data/train data/dev data/test \
   --reviewer-slot B \
-  --out "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-b-blank.jsonl"
+  --out "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-b.blind.jsonl"
 
 spokenform-gold blind-review \
   "$SPOKENFORM_GOLD_WORK/review_batches/batch-0001.jsonl" \
@@ -246,6 +246,7 @@ spokenform-gold blind-review \
   --out "$SPOKENFORM_GOLD_WORK/reviews/batch-0001/b-blank.jsonl"
 ```
 
+Resolve configured paths with `spokenform-gold doctor`. Before canonical adjudication, the adjudicator must run `spokenform-gold review-preflight` against the two `.complete.jsonl` artifacts. If it reports `ready=no`, stop; do not search for alternatives or inspect source/release evidence.
 Before handoff, verify each blank artifact has null annotations, correct slot,
 matching row/identity sets, and no `upstream_expected`, current Spokenform
 output, or completed annotation fields. Record SHA256 hashes of each blank
@@ -256,8 +257,8 @@ artifact.
 Stop semantic work in this context. Launch or hand off the artifacts as follows:
 
 ```text
-canonical-a-blank.jsonl -> reviewer A in an isolated context
-canonical-b-blank.jsonl -> reviewer B in a different isolated context
+canonical-a.blind.jsonl -> reviewer A in an isolated context
+canonical-b.blind.jsonl -> reviewer B in a different isolated context
 batch a-blank.jsonl     -> reviewer A in an isolated context
 batch b-blank.jsonl     -> reviewer B in a different isolated context
 ```

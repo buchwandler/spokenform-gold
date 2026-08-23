@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from collections.abc import Iterable
 
-from .oracle import oracle_hash, normalize_text
+from .oracle import normalize_text, oracle_hash
 from .validation import REVIEWED_STATUSES, validate_records
 
 

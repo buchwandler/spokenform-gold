@@ -10,18 +10,18 @@ You are independent reviewer **<A_OR_B>** for Spokenform Gold batch
 
 ## Goal
 
-Complete every row in this blind review artifact without consulting upstream
+Complete every row in the explicit blind preparation artifact without consulting upstream
 expected outputs, current Spokenform behavior, the other reviewer, or an
 adjudication result:
 
 ```text
-<ABSOLUTE_PATH_TO_BLIND_REVIEW_JSONL>
+<ABSOLUTE_PATH_TO_CANONICAL_REVIEW_A_OR_B_BLIND_JSONL>
 ```
 
-Write the completed artifact to a new file; never overwrite the blank input:
+Write the completed reviewer artifact to a new `.complete.jsonl` file; never overwrite the `.blind.jsonl` input:
 
 ```text
-<ABSOLUTE_PATH_TO_COMPLETED_REVIEW_JSONL>
+<ABSOLUTE_PATH_TO_CANONICAL_REVIEW_A_OR_B_COMPLETE_JSONL>
 ```
 
 Use this stable, truthful reviewer identity in every row:
@@ -58,7 +58,7 @@ Do **not** inspect candidate files, source caches, source expected outputs,
 Spokenform code/output, another review file, comparison files, or decisions.
 Do not search the web for the source sentence.
 
-The benchmark policy defines Gold; the current implementation does not.
+The benchmark policy defines Gold; the current implementation does not. Canonical records do not store `sentence_oracle_id`; the review identity is derived from language, locale, and normalized input and must be preserved exactly from the blind artifact.
 
 ## Input contract
 
@@ -198,6 +198,12 @@ Confirm locally that:
 - lifecycle status matches your slot;
 - preserved context fields are byte-for-byte unchanged;
 - forbidden blind fields are absent.
+
+Run the independent artifact check before handoff:
+
+```bash
+spokenform-gold validate-review <ABSOLUTE_PATH_TO_COMPLETE_JSONL> --slot <A_OR_B>
+```
 
 Do not run `compare-reviews`; that step requires both independent artifacts and
 belongs to the adjudication context.

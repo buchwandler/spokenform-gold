@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import json
 from collections import Counter
-
-from .oracle import explicit_accepted_outputs, normalize_text
 from collections.abc import Iterable
 from pathlib import Path
+
+from .oracle import explicit_accepted_outputs, normalize_text
 
 EXCLUDED_STATUSES = {"ambiguous", "quarantine"}
 SCORABLE_STATUSES = {"gold", "multi_valid", "policy_choice", "no_change"}

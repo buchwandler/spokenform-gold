@@ -10,9 +10,9 @@ from .conflicts import find_conflicts
 from .coverage import build_coverage, load_targets
 from .deduplication import deduplicate_candidates
 from .exclusions import build_exclusion_analysis, infer_surface_shape
-from .importers.common import ImportResult, build_import_diagnostics
 from .families import suggest_families
 from .importers import import_async, import_polynorm, import_proteno
+from .importers.common import ImportResult, build_import_diagnostics
 from .io import read_records, write_json, write_jsonl
 from .merge import merge_candidates
 from .pool import build_candidate_pool_summary

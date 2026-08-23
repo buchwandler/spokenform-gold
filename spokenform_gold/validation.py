@@ -6,8 +6,8 @@ from .oracle import (
     COMPARISON_PROFILE,
     canonical_unit_reconstruction,
     interpretation_semantic_key,
-    oracle_hash,
     normalize_text,
+    oracle_hash,
 )
 from .semantics import validate_semantic
 from .taxonomy import ambiguity_map, categories_set, policies_map, source_manifest_map
