@@ -1590,3 +1590,23 @@ a benchmark that exposes a real weakness
 ```
 
 choose the benchmark that exposes the real weakness.
+
+---
+
+# Human review interface
+
+JSONL is the machine interchange format, not the human review UI. Never instruct a human to manually inspect, edit, or enumerate JSONL rows when the repository can render or resolve the same information.
+
+For batch review:
+- independent A/B review may be performed by distinct fresh-context LLM agents; preserve truthful reviewer identities and isolation;
+- an LLM adjudicator resolves ordinary A/B disagreements using policy and evidence; A/B disagreement alone is never a `needs_review` blocker;
+- a critic and deterministic validation pass challenge suspicious adjudications;
+- the human receives summary counts and `review-report.html`, not a list of JSONL rows.
+
+For canonical corrections:
+- the human identifies the permanent canonical `record.id`;
+- `trace-record` and `prepare-correction` resolve A/B, comparison, decision, source, hash, and correction history automatically;
+- do not ask the human for artifact paths, JSONL line numbers, or manually maintained disagreement lists;
+- normal corrections preserve `record.id`, family identity, and source identity; identity migrations require an explicit supersession operation.
+
+`needs_review` and applicable `quarantine` decisions require a named hard blocker, blocker reason, and attempted resolution. A healthy batch reports resolved disagreements, disposition counts, blocker counts, critic challenges, and validation state.

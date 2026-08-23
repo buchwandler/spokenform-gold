@@ -16,6 +16,11 @@ class DocumentationContractTests(unittest.TestCase):
             "prepare-canonical-rereview",
             "compare-reviews",
             "apply-reviewed-oracles",
+            "adjudication-check",
+            "review-report",
+            "trace-record",
+            "prepare-correction",
+            "apply-correction",
         ):
             self.assertIn(command, help_text)
 
@@ -58,6 +63,13 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertTrue(
             (ROOT / "templates/canonical-rereview-integration-task.md").exists()
         )
+
+    def test_human_review_contract_is_documented(self):
+        paths = [ROOT / "AGENTS.md", ROOT / "README.md", ROOT / "templates/batch-handoff.md", ROOT / "spokenform-gold-template-review-and-release-runbook.md"]
+        combined = "\n".join(path.read_text() for path in paths)
+        for text in ("review-report.html", "record.id", "A/B disagreement", "needs_review", "do not ask the human", "JSONL"):
+            self.assertIn(text, combined)
+
 
     def test_canonical_records_do_not_require_persisted_identity(self):
         records = list((ROOT / "data/test").glob("*.jsonl"))

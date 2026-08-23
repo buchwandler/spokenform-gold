@@ -224,3 +224,21 @@ Keep these states separate:
 - stable coverage/control blockers:
 - publication blockers:
 - next action and intended role:
+
+## Human review surface
+
+Every candidate-review batch handoff must point the human to the generated HTML report:
+- batch ID:
+- review-report.html path:
+- candidate count:
+- sentence-cluster count:
+- A/B agreement count:
+- A/B disagreement count:
+- adjudicated count:
+- disposition counts:
+- hard blocker counts:
+- critic challenge count:
+- validation state:
+- promotion staging path:
+
+Tell the human: **Open `review-report.html`.** Do not ask the human to open `comparison.jsonl`, edit JSONL, find line numbers, or maintain a disagreement list. JSONL paths may remain in a machine/debug section for agents.

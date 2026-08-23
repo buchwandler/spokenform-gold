@@ -4,107 +4,57 @@
   "type": "object",
   "required": ["candidate_id", "decision", "reviewers", "adjudicator"],
   "properties": {
-    "candidate_id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "record_id": {
-      "type": "string",
-      "minLength": 1
-    },
+    "candidate_id": { "type": "string", "minLength": 1 },
+    "record_id": { "type": "string", "minLength": 1 },
     "decision": {
-      "enum": [
-        "promote_curated",
-        "promote_upstream",
-        "keep_external",
-        "reject",
-        "quarantine",
-        "needs_review"
-      ]
+      "enum": ["promote_curated", "promote_upstream", "keep_external", "reject", "quarantine", "needs_review"]
     },
     "reviewers": {
       "type": "array",
       "minItems": 2,
-      "items": {
-        "type": "string",
-        "minLength": 1
-      }
+      "items": { "type": "string", "minLength": 1 }
     },
-    "adjudicator": {
-      "type": "string",
-      "minLength": 1
-    },
-    "family_id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "status": {
-      "enum": ["gold", "multi_valid", "policy_choice", "no_change"]
-    },
-    "language": {
-      "type": "string",
-      "minLength": 2
-    },
-    "locale": {
-      "type": "string",
-      "minLength": 2
-    },
-    "input": {
-      "type": "string"
-    },
-    "expected_output": {
-      "type": ["string", "null"]
-    },
-    "units": {
-      "type": "array",
-      "items": {
-        "type": "object"
-      }
-    },
-    "negative_for": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
-    "notes": {
-      "type": "string"
-    },
-    "license_disposition": {
-      "type": "string",
-      "minLength": 1
-    },
+    "adjudicator": { "type": "string", "minLength": 1 },
+    "family_id": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["gold", "multi_valid", "policy_choice", "no_change", "ambiguous", "quarantine"] },
+    "language": { "type": "string", "minLength": 2 },
+    "locale": { "type": "string", "minLength": 2 },
+    "input": { "type": "string" },
+    "expected_output": { "type": ["string", "null"] },
+    "units": { "type": "array", "items": { "type": "object" } },
+    "negative_for": { "type": "array", "items": { "type": "string" } },
+    "notes": { "type": "string" },
+    "license_disposition": { "type": "string", "minLength": 1 },
     "upstream_refs": {
       "type": "array",
       "items": {
         "type": "object",
         "required": ["benchmark", "source_id"],
         "properties": {
-          "benchmark": {
-            "type": "string",
-            "minLength": 1
-          },
-          "source_id": {
-            "type": "string",
-            "minLength": 1
-          }
+          "benchmark": { "type": "string", "minLength": 1 },
+          "source_id": { "type": "string", "minLength": 1 }
         }
       }
     },
-    "oracle": {
-      "$ref": "oracle.schema.json"
-    },
-    "review_protocol_version": {
-      "type": "string"
-    },
-    "disagreement": {
-      "type": "object"
-    },
-    "source_error_codes": {
-      "type": "array",
-      "items": {
-        "type": "string"
+    "oracle": { "$ref": "oracle.schema.json" },
+    "review_protocol_version": { "type": "string" },
+    "sentence_oracle_id": { "type": "string", "minLength": 1 },
+    "review_status": { "enum": ["adjudicated", "release_ready"] },
+    "disagreement": { "type": "object" },
+    "source_error_codes": { "type": "array", "items": { "type": "string" } },
+    "blocker_code": { "type": "string", "minLength": 1 },
+    "blocker_reason": { "type": "string", "minLength": 1 },
+    "attempted_resolution": { "type": "string", "minLength": 1 },
+    "represented_by_record_id": { "type": "string", "minLength": 1 },
+    "critic": { "type": ["string", "object"] },
+    "critic_status": { "type": "string" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "decision": { "enum": ["needs_review", "quarantine"] } } },
+      "then": {
+        "required": ["blocker_code", "blocker_reason", "attempted_resolution"]
       }
     }
-  }
+  ]
 }

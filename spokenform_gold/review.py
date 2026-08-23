@@ -71,6 +71,29 @@ def sentence_oracle_id(record: dict) -> str:
     )
 
 
+def assert_record_identity_preserved(
+    original: dict, corrected: dict, *, allow_migration: bool = False
+) -> None:
+    """Enforce the permanent canonical identity contract for corrections."""
+    original_id = original.get("id")
+    corrected_id = corrected.get("id")
+    if not isinstance(original_id, str) or not original_id:
+        raise ValueError("canonical record is missing its permanent record.id")
+    if not isinstance(corrected_id, str) or not corrected_id:
+        raise ValueError("corrected record is missing its permanent record.id")
+    if not allow_migration and corrected_id != original_id:
+        raise ValueError(
+            f"record.id is immutable under normal correction: {original_id!r} -> {corrected_id!r}"
+        )
+    if not allow_migration and corrected.get("family_id") != original.get("family_id"):
+        raise ValueError(
+            "family_id changes require an explicit migration/supersession operation"
+        )
+    if not allow_migration and corrected.get("source") != original.get("source"):
+        raise ValueError(
+            "source identity changes require an explicit migration/supersession operation"
+        )
+
 def _sentence_oracle_id(record: dict) -> str:
     """Backward-compatible private alias for the public identity helper."""
     return sentence_oracle_id(record)

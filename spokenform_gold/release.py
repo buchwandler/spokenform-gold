@@ -12,6 +12,7 @@ from .evaluation_profiles import load_registry, registry_hash
 from .gold_audit import audit_records
 from .html_report import render_release_html
 from .io import expand_jsonl_paths, read_records, sha256_file
+from .review_lineage import backfill_legacy_evidence, write_review_evidence
 from .source_manifest import (
     load_and_validate_source_manifest,
     normalize_materialization_policy,
@@ -415,6 +416,16 @@ def build_release(
             )
         ),
     }
+    review_evidence: list[dict] = []
+    for evidence_path in sorted((root / "data").rglob("review-evidence.jsonl")):
+        review_evidence.extend(read_records([evidence_path]))
+    known_evidence_ids = {row.get("record_id") for row in review_evidence}
+    review_evidence.extend(
+        row for row in backfill_legacy_evidence(records)
+        if row.get("record_id") not in known_evidence_ids
+    )
+    write_review_evidence(output_root / "review-evidence.jsonl", review_evidence)
+
 
     render_release_html(
         output_root / "records.html",
@@ -424,8 +435,8 @@ def build_release(
         coverage=coverage,
         control_coverage=control_coverage,
         counts=counts,
-    )
-
+        review_evidence=review_evidence,
+)
     notes = _build_release_notes(
         version=version,
         maturity=maturity,
@@ -452,6 +463,7 @@ def build_release(
         "source_manifest": "sources/manifest.json",
         "evaluation_profiles": "taxonomy/evaluation_profiles.json",
         "record_browser": "records.html",
+        "review_evidence": "review-evidence.jsonl",
         "source_integrity": {
             "release_ready": all(
                 source.get("release_ready", False)

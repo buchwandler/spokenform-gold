@@ -281,3 +281,25 @@ Stop and report a blocker when:
 - source materialization is not permitted;
 - a frozen family would move across splits;
 - validation, strict audit, controls, conflicts, coverage, or release checks fail.
+
+## Human review interface and correction flow
+
+JSONL remains the machine interchange format. It is not the human review interface.
+After A/B review, compare and adjudicate automatically, run the deterministic quality gate, and generate:
+
+```bash
+spokenform-gold adjudication-check --candidates ... --review-a ... --review-b ... --comparison ... --decisions ...
+spokenform-gold review-report --candidates ... --review-a ... --review-b ... --comparison ... --decisions ... --out review-report.html
+```
+
+The human handoff must say **Open `review-report.html`**, and must report candidate/cluster counts, A/B agreement/disagreement, resolved dispositions, hard blockers, critic challenges, and validation state. Do not ask the human to inspect `comparison.jsonl`, edit JSONL, find line numbers, or maintain a disagreement list.
+
+Canonical release records use immutable `record.id` as the correction handle:
+
+```bash
+spokenform-gold trace-record <record-id>
+spokenform-gold prepare-correction <record-id>
+spokenform-gold apply-correction <record-id> --correction decision.json
+```
+
+These commands resolve review lineage, source references, hashes, correction history, and previews from the record ID. Normal corrections preserve record ID, family, and source identity; an input correction may change the derived `sentence_oracle_id` while historical evidence remains archived.

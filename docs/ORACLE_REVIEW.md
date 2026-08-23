@@ -94,3 +94,17 @@ spokenform-gold compare-reviews \
 `templates/canonical-rereview-integration-task.md`. It requires one decision per
 derived canonical identity, preserves record/family/source identity, recomputes
 `oracle_hash`, validates output, and writes only to an isolated output root.
+
+## Human review and correction surface
+
+JSONL is the machine interchange format. Humans should open the generated `review-report.html` for batch review and `records.html` for release inspection. A/B disagreement is input to an LLM adjudicator, not an instruction for the human to manually edit comparison rows. Adjudication must use named hard blockers for `needs_review` or `quarantine`.
+
+Canonical corrections use immutable `record.id`:
+
+```bash
+spokenform-gold trace-record <record-id>
+spokenform-gold prepare-correction <record-id>
+spokenform-gold apply-correction <record-id> --correction decision.json
+```
+
+Correction preparation resolves all review evidence, source references, hashes, and history automatically. It preserves old evidence, recomputes the oracle hash, and permits a changed derived `sentence_oracle_id` only when the input changes; it never silently changes the public record ID.

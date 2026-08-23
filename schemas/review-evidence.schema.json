@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Spokenform Gold durable review evidence",
+  "type": "object",
+  "required": [
+    "record_id",
+    "review_revision",
+    "sentence_oracle_id",
+    "candidate_ids",
+    "source_refs",
+    "review_a",
+    "review_b",
+    "comparison",
+    "decision",
+    "final_oracle_hash",
+    "correction"
+  ],
+  "properties": {
+    "record_id": { "type": "string", "minLength": 1 },
+    "review_revision": { "type": "integer", "minimum": 0 },
+    "sentence_oracle_id": { "type": "string", "minLength": 1 },
+    "candidate_ids": { "type": "array", "items": { "type": "string" } },
+    "source_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["benchmark", "source_id"],
+        "properties": {
+          "benchmark": { "type": "string", "minLength": 1 },
+          "source_id": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "review_a": { "type": ["object", "null"] },
+    "review_b": { "type": ["object", "null"] },
+    "comparison": { "type": ["object", "null"] },
+    "decision": { "type": "object" },
+    "final_oracle_hash": { "type": "string", "minLength": 1 },
+    "correction": { "type": ["object", "null"] },
+    "correction_history": { "type": "array" },
+    "legacy": { "type": "boolean" },
+    "evidence_status": { "type": "string" }
+  },
+  "additionalProperties": true
+}

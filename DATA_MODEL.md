@@ -41,3 +41,11 @@ contents but does not change the default benchmark target.
 Batch review artifacts use explicit names such as `batch-0001.jsonl` and live
 outside canonical data. Their rows remain `split=candidate` and
 `status=quarantine` until the promotion evidence and source policy gates pass.
+
+## Stable review identity and lineage
+
+`record.id` is the immutable public canonical identity and correction handle. `sentence_oracle_id` is derived from language, locale, and normalized input for review-cycle joins; it is not stored in canonical records. `candidate.id` identifies source candidate provenance. A correction may change the derived sentence identity when input changes, but must preserve the public record ID under normal correction.
+
+Durable sanitized review provenance is stored as `review-evidence.jsonl` where policy permits. Each entry is keyed by `record_id` and `review_revision` and links candidate/source references, A/B reviewer evidence, comparison, adjudication, hashes, and correction history without publishing blind-review forbidden fields.
+
+The human interface is generated HTML: `review-report.html` for batch review and `records.html` for release inspection. Humans identify corrections by record ID; they do not edit or enumerate JSONL rows.

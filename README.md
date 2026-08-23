@@ -456,3 +456,17 @@ spokenform-gold review-preflight \
 If `ready=no`, stop: do not inspect source evidence, Git history, release/audit artifacts, current Spokenform output, or alternative review files. Do not fabricate reviewer IDs or write comparison/decision artifacts. Only when ready run `compare-reviews`, adjudicate under policy, and hand off to `templates/canonical-rereview-integration-task.md` for mechanical application.
 
 Canonical decisions use `schemas/canonical-review-decision.schema.json`, not the candidate promotion schema. The integration context alone may run `apply-reviewed-oracles` into an isolated work-root output; it must preserve record/family/source identity and frozen splits before explicit approval to copy any canonical shard.
+
+## Human review interface
+
+JSONL remains the machine interchange format. Batch review produces a human-facing `review-report.html`; release inspection uses `records.html`. Do not ask humans to inspect comparison JSONL, edit rows, find line numbers, or maintain disagreement lists.
+
+A/B disagreement is resolved by the adjudicator and deterministic quality gate. `needs_review` and `quarantine` require a named hard blocker, reason, and attempted resolution. Canonical correction requests use the permanent `record.id`:
+
+```bash
+spokenform-gold trace-record <record-id>
+spokenform-gold prepare-correction <record-id>
+spokenform-gold apply-correction <record-id> --correction decision.json
+```
+
+Normal corrections preserve `record.id`, family, and source identity. Review lineage and correction history are retained in sanitized `review-evidence.jsonl`.

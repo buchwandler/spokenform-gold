@@ -31,6 +31,12 @@ in genuinely isolated contexts without seeing each other's work, current
 Spokenform output, or hidden upstream expectations. Human review and
 adjudication cannot be replaced by a proposal or an automated judge.
 
+The human interface is generated HTML, not JSONL: candidate batches use
+`review-report.html`, release inspection uses `records.html`, and corrections use
+the permanent `record.id` with `trace-record` and `prepare-correction`. A/B
+disagreement is resolved by the adjudicator; `needs_review` requires a named hard
+blocker, blocker reason, and attempted resolution.
+
 ## Role templates
 
 ### `coding-agent-first-task.md` — T0 preparation/orchestration

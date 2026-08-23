@@ -4,6 +4,7 @@ from collections import Counter
 from copy import deepcopy
 from typing import Any
 
+from .adjudication_quality import HARD_BLOCKER_CODES
 from .oracle import oracle_hash
 from .source_manifest import normalize_materialization_policy
 from .taxonomy import source_manifest_map
@@ -147,6 +148,25 @@ def _validate_decision_shape(decision: dict) -> None:
         raise _decision_error(
             f"decision for {decision['candidate_id']} requires an adjudicator"
         )
+    if decision["decision"] in {"needs_review", "quarantine"}:
+        blocker_code = decision.get("blocker_code")
+        if blocker_code not in HARD_BLOCKER_CODES:
+            raise _decision_error(
+                f"decision for {decision['candidate_id']} requires a hard blocker code"
+            )
+        for field in ("blocker_reason", "attempted_resolution"):
+            if not isinstance(decision.get(field), str) or not decision[field].strip():
+                raise _decision_error(
+                    f"decision for {decision['candidate_id']} requires {field}"
+                )
+        if decision["blocker_reason"].strip().casefold() in {
+            "a/b disagreement",
+            "a/b disagreement alone",
+            "reviewers disagree",
+        }:
+            raise _decision_error(
+                f"decision for {decision['candidate_id']} cannot defer only because A/B disagree"
+            )
     if decision["decision"] in PROMOTABLE_DECISIONS:
         if not isinstance(decision["family_id"], str) or not decision["family_id"]:
             raise _decision_error(

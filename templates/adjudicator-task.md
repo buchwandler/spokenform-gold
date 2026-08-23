@@ -119,6 +119,14 @@ candidate an explicit non-promoting decision such as `reject`, `keep_external`,
 - `quarantine`: suspicious or unresolved source material.
 - `needs_review`: evidence is insufficient or semantic disagreement remains.
 
+Your primary responsibility is to resolve A/B disagreement. A/B disagreement alone is never a reason for `needs_review`. Use it only when a named hard blocker prevents a defensible Gold decision after evaluating both reviews and allowed source/policy evidence.
+
+For every `needs_review` or applicable `quarantine` decision, include all of:
+- `blocker_code` from the registered hard-blocker set;
+- `blocker_reason` explaining the concrete blocker;
+- `attempted_resolution` explaining what policy/evidence was evaluated.
+
+Run `spokenform-gold adjudication-check` before handoff. Count resolved disagreements, group unresolved rows by blocker code, flag suspicious mass deferral, and report critic challenges and validation state.
 If context is genuinely ambiguous and the promotion schema cannot represent the
 required canonical status safely, use `needs_review` or `quarantine`; do not
 force a gold interpretation.

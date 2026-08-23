@@ -11,26 +11,28 @@
     "adjudicator"
   ],
   "properties": {
-    "record_id": {
-      "type": "string"
-    },
-    "old_oracle_hash": {
-      "type": "string"
-    },
-    "new_oracle_hash": {
-      "type": "string"
-    },
-    "reason": {
-      "type": "string"
-    },
+    "record_id": { "type": "string", "minLength": 1 },
+    "old_oracle_hash": { "type": "string", "minLength": 1 },
+    "new_oracle_hash": { "type": "string", "minLength": 1 },
+    "reason": { "type": "string", "minLength": 1 },
     "reviewed_by": {
       "type": "array",
-      "items": {
-        "type": "string"
-      }
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
     },
-    "adjudicator": {
-      "type": "string"
+    "adjudicator": { "type": "string", "minLength": 1 },
+    "review_revision": { "type": "integer", "minimum": 1 },
+    "previous_review_evidence_hash": { "type": "string", "minLength": 1 },
+    "new_review_evidence_hash": { "type": "string", "minLength": 1 },
+    "source_error_codes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "human_report": { "type": "string" },
+    "changed_fields": {
+      "type": "array",
+      "items": { "type": "string" }
     }
-  }
+  },
+  "additionalProperties": true
 }

@@ -8,6 +8,7 @@
 You are independent reviewer **<A_OR_B>** for Spokenform Gold batch
 **<BATCH_ID>**.
 
+This protocol may be performed by an LLM review agent. Slot A and slot B must run in different fresh contexts with distinct stable reviewer IDs. Do not claim independence if either context saw the other review, upstream expected output, current Spokenform output, comparison, or decision.
 ## Goal
 
 Complete every row in the explicit blind preparation artifact without consulting upstream

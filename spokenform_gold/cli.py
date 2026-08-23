@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from .adjudication import build_adjudication_queue
+from .adjudication_quality import validate_adjudication_batch
 from .census import build_upstream_census, write_census_artifacts
 from .config import (
     ConfigError,
@@ -18,6 +19,11 @@ from .config import (
 from .conflicts import find_conflicts
 from .control_benchmark import load_control_predictions, score_control_records
 from .control_validation import validate_control_records
+from .corrections import (
+    apply_correction,
+    prepare_correction_context,
+    write_correction_application,
+)
 from .coverage import build_control_coverage, build_coverage, load_targets
 from .deduplication import deduplicate_candidates
 from .exclusions import build_exclusion_analysis, load_exclusions
@@ -49,6 +55,13 @@ from .review import (
     review_preflight,
     validate_review_rows,
     write_review_application,
+)
+from .review_html import render_review_html
+from .review_lineage import (
+    backfill_legacy_evidence,
+    build_review_evidence,
+    resolve_record_evidence,
+    write_review_evidence,
 )
 from .scoring import load_predictions, score_records
 from .source_lock import build_source_lock
@@ -309,6 +322,15 @@ def cmd_apply_reviewed_oracles(args):
         report,
         input_paths=[*args.records, args.review_a, args.review_b, *args.decisions],
     )
+    evidence = build_review_evidence(
+        records,
+        review_a,
+        review_b,
+        comparisons,
+        decisions,
+        records=updated,
+    )
+    write_review_evidence(Path(args.out_root) / "review-evidence.jsonl", evidence)
     print(
         f"applied {len(updated)} reviewed oracles to {args.out_root}; "
         f"agreement={report['agreement']} disagreement={report['disagreement']}"
@@ -593,6 +615,44 @@ def cmd_adjudicate_queue(args):
     return 0
 
 
+def cmd_adjudication_check(args):
+    result = validate_adjudication_batch(
+        read_records([args.candidates]),
+        read_records([args.review_a]),
+        read_records([args.review_b]),
+        read_records([args.comparison]),
+        read_records([args.decisions]),
+        max_unresolved_percent=args.max_unresolved_percent,
+    )
+    if args.json:
+        write_json(args.json, result)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0 if result["ready"] else 1
+
+
+def cmd_review_report(args):
+    candidates = read_records([args.candidates])
+    review_a = read_records([args.review_a])
+    review_b = read_records([args.review_b])
+    comparison = read_records([args.comparison])
+    decisions = read_records([args.decisions])
+    validation = validate_adjudication_batch(
+        candidates, review_a, review_b, comparison, decisions,
+    )
+    output = render_review_html(
+        args.out,
+        candidates=candidates,
+        review_a=review_a,
+        review_b=review_b,
+        comparisons=comparison,
+        decisions=decisions,
+        validation=validation,
+        batch_id=args.batch_id,
+    )
+    print(f"wrote review report for {len(candidates)} candidates to {output}")
+    return 0
+
+
 def cmd_release_check(args):
     manifest = build_release(
         version=args.version,
@@ -713,6 +773,120 @@ def cmd_doctor(args):
         print(f"  {path}")
     return 0
 
+
+def _default_review_evidence_paths(repo_root: Path, work_root: Path | None) -> list[Path]:
+    roots = [repo_root]
+    if work_root is not None:
+        roots.append(work_root)
+    paths: set[Path] = set()
+    for root in roots:
+        if root.exists():
+            paths.update(root.rglob("review-evidence.jsonl"))
+    return sorted(path for path in paths if path.is_file())
+
+
+def cmd_trace_record(args):
+    config_path = args.config if args.config is not None else default_config_path()
+    config = load_config(config_path, explicit=args.config is not None)
+    runtime = resolve_runtime_paths(
+        config=config, source_cache=None, work_root=args.work_root
+    )
+    repo_root = (config.path.parent if config.path else Path.cwd()).resolve()
+    record_paths = args.records or [
+        repo_root / "data" / "train",
+        repo_root / "data" / "dev",
+        repo_root / "data" / "test",
+    ]
+    records = read_records(record_paths)
+    evidence_paths = [Path(path) for path in args.evidence] if args.evidence else _default_review_evidence_paths(repo_root, runtime.work_root)
+    evidence = read_records(evidence_paths) if evidence_paths else []
+    if not evidence:
+        evidence = backfill_legacy_evidence(records)
+    result = resolve_record_evidence(args.record_id, records, evidence)
+    latest = max(result["evidence"], key=lambda row: row.get("review_revision", -1), default={})
+    result["evidence_paths"] = [str(path) for path in evidence_paths]
+    if args.json:
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    record = result["record"]
+    decision = latest.get("decision", {}) if isinstance(latest, dict) else {}
+    comparison = latest.get("comparison", {}) if isinstance(latest, dict) else {}
+    print(f"record_id: {args.record_id}")
+    print(f"split: {record.get('split', '')}")
+    print(f"family_id: {record.get('family_id', '')}")
+    print(f"input: {record.get('input', '')}")
+    print(f"canonical: {(record.get('oracle') or {}).get('canonical_output', record.get('expected_output'))}")
+    print(f"oracle_hash: {record.get('oracle_hash') or latest.get('final_oracle_hash', '')}")
+    print(f"review revisions: {result['review_revisions']}")
+    if latest:
+        print("latest review:")
+        print(f"  sentence_oracle_id: {latest.get('sentence_oracle_id', '')}")
+        print(f"  reviewer A: {(latest.get('review_a') or {}).get('reviewer_id', 'missing')}")
+        print(f"  reviewer B: {(latest.get('review_b') or {}).get('reviewer_id', 'missing')}")
+        print(f"  adjudicator: {decision.get('adjudicator', 'missing')}")
+        print(f"  A/B: {'disagreement' if comparison.get('disagreement') else 'agreement'}")
+        print(f"  decision: {decision.get('disposition', 'legacy')}")
+    print("candidate lineage:")
+    for candidate_id in latest.get("candidate_ids", []):
+        print(f"  {candidate_id}")
+    print("source refs:")
+    for source in latest.get("source_refs", []):
+        print(f"  {source.get('benchmark')}:{source.get('source_id')}")
+    print(f"evidence: {', '.join(result['evidence_paths']) or 'legacy backfill'}")
+    return 0
+
+
+def _correction_inputs(args):
+    config_path = args.config if args.config is not None else default_config_path()
+    config = load_config(config_path, explicit=args.config is not None)
+    runtime = resolve_runtime_paths(config=config, source_cache=None, work_root=getattr(args, "work_root", None))
+    repo_root = (config.path.parent if config.path else Path.cwd()).resolve()
+    record_paths = args.records or [repo_root / "data" / name for name in ("train", "dev", "test")]
+    records = read_records(record_paths)
+    evidence_paths = [Path(path) for path in args.evidence] if args.evidence else _default_review_evidence_paths(repo_root, runtime.work_root)
+    evidence = read_records(evidence_paths) if evidence_paths else []
+    if not evidence:
+        evidence = backfill_legacy_evidence(records)
+    return config, runtime, repo_root, records, evidence
+
+
+def cmd_prepare_correction(args):
+    _config, runtime, repo_root, records, evidence = _correction_inputs(args)
+    record = next((row for row in records if row.get("id") == args.record_id), None)
+    if record is None:
+        raise ValueError(f"unknown canonical record id: {args.record_id}")
+    if args.out_root:
+        out_root = Path(args.out_root)
+    elif runtime.work_root is not None:
+        out_root = runtime.work_root / "corrections" / args.record_id
+    else:
+        raise ConfigError("prepare-correction requires --out-root or a configured work root")
+    template = (repo_root / "templates" / "correction-task.md").read_text(encoding="utf-8")
+    paths = prepare_correction_context(record, evidence, out_root, template=template)
+    for label, path in paths.items():
+        print(f"{label}: {path}")
+    return 0
+
+
+def cmd_apply_correction(args):
+    _config, runtime, _repo_root, records, evidence = _correction_inputs(args)
+    correction = read_json(args.correction)
+    original = next((row for row in records if row.get("id") == args.record_id), None)
+    if original is None:
+        raise ValueError(f"unknown canonical record id: {args.record_id}")
+    updated, history_item = apply_correction(original, correction)
+    if args.out_root:
+        out_root = Path(args.out_root)
+    elif runtime.work_root is not None:
+        out_root = runtime.work_root / "corrections" / args.record_id / "applied"
+    else:
+        raise ConfigError("apply-correction requires --out-root or a configured work root")
+    paths = write_correction_application(out_root, records, updated, history_item, evidence)
+    print(f"Corrected {args.record_id}.")
+    print(f"Old oracle hash: {history_item['old_oracle_hash']}")
+    print(f"New oracle hash: {history_item['new_oracle_hash']}")
+    print(f"Preview: {paths['report']}#record={args.record_id}")
+    return 0
 
 def build_parser():
     parser = argparse.ArgumentParser(prog="spokenform-gold")
@@ -952,6 +1126,24 @@ def build_parser():
     adjudication.add_argument("--coverage")
     adjudication.add_argument("--out", required=True)
     adjudication.set_defaults(func=cmd_adjudicate_queue)
+    adjudication_check = sub.add_parser("adjudication-check")
+    adjudication_check.add_argument("--candidates", required=True)
+    adjudication_check.add_argument("--review-a", required=True)
+    adjudication_check.add_argument("--review-b", required=True)
+    adjudication_check.add_argument("--comparison", required=True)
+    adjudication_check.add_argument("--decisions", required=True)
+    adjudication_check.add_argument("--max-unresolved-percent", type=float)
+    adjudication_check.add_argument("--json")
+    adjudication_check.set_defaults(func=cmd_adjudication_check)
+    review_report = sub.add_parser("review-report")
+    review_report.add_argument("--candidates", required=True)
+    review_report.add_argument("--review-a", required=True)
+    review_report.add_argument("--review-b", required=True)
+    review_report.add_argument("--comparison", required=True)
+    review_report.add_argument("--decisions", required=True)
+    review_report.add_argument("--out", required=True)
+    review_report.add_argument("--batch-id")
+    review_report.set_defaults(func=cmd_review_report)
 
     release = sub.add_parser("release-check")
     release.add_argument("--version", required=True)
@@ -995,6 +1187,28 @@ def build_parser():
     doctor = sub.add_parser("doctor", aliases=["paths"])
     doctor.add_argument("--json")
     doctor.set_defaults(func=cmd_doctor)
+    trace = sub.add_parser("trace-record")
+    trace.add_argument("record_id")
+    trace.add_argument("--records", nargs="+")
+    trace.add_argument("--evidence", nargs="+")
+    trace.add_argument("--work-root", type=Path)
+    trace.add_argument("--json", action="store_true")
+    trace.set_defaults(func=cmd_trace_record)
+    prepare_correction = sub.add_parser("prepare-correction")
+    prepare_correction.add_argument("record_id")
+    prepare_correction.add_argument("--records", nargs="+")
+    prepare_correction.add_argument("--evidence", nargs="+")
+    prepare_correction.add_argument("--work-root", type=Path)
+    prepare_correction.add_argument("--out-root", type=Path)
+    prepare_correction.set_defaults(func=cmd_prepare_correction)
+    apply_correction = sub.add_parser("apply-correction")
+    apply_correction.add_argument("record_id")
+    apply_correction.add_argument("--correction", required=True)
+    apply_correction.add_argument("--records", nargs="+")
+    apply_correction.add_argument("--evidence", nargs="+")
+    apply_correction.add_argument("--work-root", type=Path)
+    apply_correction.add_argument("--out-root", type=Path)
+    apply_correction.set_defaults(func=cmd_apply_correction)
     return parser
 
 
@@ -1012,6 +1226,8 @@ def main(argv=None):
             "validate-review",
             "compare-reviews",
             "apply-reviewed-oracles",
+            "prepare-correction",
+            "apply-correction",
         }
         if args.cmd not in workflow_commands or args.debug:
             raise
