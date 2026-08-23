@@ -3,19 +3,32 @@
   "$id": "https://spokenform.gold/schemas/canonical-review-manifest.schema.json",
   "title": "Spokenform Gold canonical review manifest",
   "type": "object",
-  "required": ["schema_version", "review_id", "canonical_inputs", "review_a", "review_b"],
+  "required": [
+    "schema_version",
+    "review_id",
+    "canonical_inputs",
+    "review_a",
+    "review_b"
+  ],
   "properties": {
-    "schema_version": {"type": "string", "minLength": 1},
-    "review_id": {"type": "string", "minLength": 1},
-    "canonical_inputs": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
-    "review_a": {"$ref": "#/$defs/artifact"},
-    "review_b": {"$ref": "#/$defs/artifact"},
-    "preflight": {"$ref": "#/$defs/artifact"},
-    "comparison": {"$ref": "#/$defs/artifact"},
+    "schema_version": { "type": "string", "minLength": 1 },
+    "review_id": { "type": "string", "minLength": 1 },
+    "canonical_inputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "review_a": { "$ref": "#/$defs/artifact" },
+    "review_b": { "$ref": "#/$defs/artifact" },
+    "preflight": { "$ref": "#/$defs/artifact" },
+    "comparison": { "$ref": "#/$defs/artifact" },
     "decisions": {
       "allOf": [
-        {"$ref": "#/$defs/artifact"},
-        {"type": "object", "properties": {"adjudicator": {"type": "string", "minLength": 1}}}
+        { "$ref": "#/$defs/artifact" },
+        {
+          "type": "object",
+          "properties": { "adjudicator": { "type": "string", "minLength": 1 } }
+        }
       ]
     }
   },
@@ -24,16 +37,16 @@
       "type": "object",
       "required": ["sha256"],
       "anyOf": [
-        {"required": ["path"]},
-        {"required": ["blind_path", "complete_path"]}
+        { "required": ["path"] },
+        { "required": ["blind_path", "complete_path"] }
       ],
       "properties": {
-        "blind_path": {"type": "string", "minLength": 1},
-        "complete_path": {"type": "string", "minLength": 1},
-        "path": {"type": "string", "minLength": 1},
-        "reviewer_id": {"type": "string", "minLength": 1},
-        "adjudicator": {"type": "string", "minLength": 1},
-        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        "blind_path": { "type": "string", "minLength": 1 },
+        "complete_path": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "reviewer_id": { "type": "string", "minLength": 1 },
+        "adjudicator": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
       }
     }
   }

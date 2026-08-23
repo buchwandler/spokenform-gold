@@ -16,36 +16,34 @@
     "review"
   ],
   "properties": {
-    "review_schema_version": {"type": "string", "minLength": 1},
-    "sentence_oracle_id": {"type": "string", "minLength": 1},
-    "reviewer_slot": {"enum": ["A", "B"]},
-    "reviewer_id": {"type": "string", "minLength": 1},
-    "language": {"type": "string", "minLength": 2},
-    "locale": {"type": "string", "minLength": 2},
-    "input": {"type": "string"},
-    "materialization": {"type": "string", "minLength": 1},
+    "review_schema_version": { "type": "string", "minLength": 1 },
+    "sentence_oracle_id": { "type": "string", "minLength": 1 },
+    "reviewer_slot": { "enum": ["A", "B"] },
+    "reviewer_id": { "type": "string", "minLength": 1 },
+    "language": { "type": "string", "minLength": 2 },
+    "locale": { "type": "string", "minLength": 2 },
+    "input": { "type": "string" },
+    "materialization": { "type": "string", "minLength": 1 },
     "source_refs": {
       "type": "array",
       "items": {
         "type": "object",
         "required": ["benchmark", "source_id"],
         "properties": {
-          "benchmark": {"type": "string", "minLength": 1},
-          "source_id": {"type": "string", "minLength": 1}
+          "benchmark": { "type": "string", "minLength": 1 },
+          "source_id": { "type": "string", "minLength": 1 }
         }
       }
     },
-    "annotation": {"const": null},
+    "annotation": { "const": null },
     "review": {
       "type": "object",
       "required": ["status", "protocol_version"],
       "properties": {
-        "status": {"const": "unreviewed"},
-        "protocol_version": {"type": "string", "minLength": 1}
+        "status": { "const": "unreviewed" },
+        "protocol_version": { "type": "string", "minLength": 1 }
       }
     }
   },
-  "allOf": [
-    {"not": {"required": ["reviewer_id"]}}
-  ]
+  "allOf": [{ "not": { "required": ["reviewer_id"] } }]
 }

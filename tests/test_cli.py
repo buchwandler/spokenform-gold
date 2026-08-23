@@ -59,19 +59,27 @@ class CliReviewWorkflowTests(unittest.TestCase):
         write_jsonl(review_b, blind_review_batch(self.records, reviewer_slot="B"))
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
-            code = main([
-                "review-preflight",
-                "--records", str(self.records_path),
-                "--review-a", str(review_a),
-                "--review-b", str(review_b),
-                "--json", str(self.work / "preflight.json"),
-            ])
+            code = main(
+                [
+                    "review-preflight",
+                    "--records",
+                    str(self.records_path),
+                    "--review-a",
+                    str(review_a),
+                    "--review-b",
+                    str(review_b),
+                    "--json",
+                    str(self.work / "preflight.json"),
+                ]
+            )
         self.assertEqual(code, 2)
         text = output.getvalue()
         self.assertIn("canonical_review_state=blocked", text)
         self.assertIn("review A has no reviewer_id", text)
         self.assertIn("review B has no reviewer_id", text)
-        self.assertEqual(json.loads((self.work / "preflight.json").read_text())["ready"], False)
+        self.assertEqual(
+            json.loads((self.work / "preflight.json").read_text())["ready"], False
+        )
         self.assertFalse((self.work / "comparison.jsonl").exists())
 
     def test_ready_preflight_returns_zero_and_json_is_deterministic(self):
@@ -83,8 +91,13 @@ class CliReviewWorkflowTests(unittest.TestCase):
         json_a = self.work / "preflight-a.json"
         json_b = self.work / "preflight-b.json"
         args = [
-            "review-preflight", "--records", str(self.records_path),
-            "--review-a", str(path_a), "--review-b", str(path_b),
+            "review-preflight",
+            "--records",
+            str(self.records_path),
+            "--review-a",
+            str(path_a),
+            "--review-b",
+            str(path_b),
         ]
         self.assertEqual(main([*args, "--json", str(json_a)]), 0)
         self.assertEqual(main([*args, "--json", str(json_b)]), 0)
@@ -97,10 +110,15 @@ class CliReviewWorkflowTests(unittest.TestCase):
         output = io.StringIO()
         errors = io.StringIO()
         with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
-            code = main([
-                "compare-reviews", str(self.records_path), str(self.records_path),
-                "--out", str(self.work / "comparison.jsonl"),
-            ])
+            code = main(
+                [
+                    "compare-reviews",
+                    str(self.records_path),
+                    str(self.records_path),
+                    "--out",
+                    str(self.work / "comparison.jsonl"),
+                ]
+            )
         self.assertEqual(code, 2)
         self.assertIn("error:", errors.getvalue())
         self.assertNotIn("Traceback", errors.getvalue())
@@ -112,13 +130,19 @@ class CliReviewWorkflowTests(unittest.TestCase):
         report_path = self.work / "preflight-errors.json"
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
-            code = main([
-                "review-preflight",
-                "--records", str(self.records_path),
-                "--review-a", str(missing),
-                "--review-b", str(malformed),
-                "--json", str(report_path),
-            ])
+            code = main(
+                [
+                    "review-preflight",
+                    "--records",
+                    str(self.records_path),
+                    "--review-a",
+                    str(missing),
+                    "--review-b",
+                    str(malformed),
+                    "--json",
+                    str(report_path),
+                ]
+            )
         self.assertEqual(code, 2)
         self.assertIn("file_not_readable", report_path.read_text())
         self.assertIn("invalid_jsonl", report_path.read_text())
@@ -126,15 +150,17 @@ class CliReviewWorkflowTests(unittest.TestCase):
         self.assertNotIn("Traceback", output.getvalue())
         self.assertFalse((self.work / "comparison.jsonl").exists())
 
-
     def test_validate_review_missing_artifact_is_cleanly_blocked(self):
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
-            code = main([
-                "validate-review",
-                str(self.work / "missing.complete.jsonl"),
-                "--slot", "A",
-            ])
+            code = main(
+                [
+                    "validate-review",
+                    str(self.work / "missing.complete.jsonl"),
+                    "--slot",
+                    "A",
+                ]
+            )
         self.assertEqual(code, 2)
         self.assertIn("file is missing", output.getvalue())
         self.assertIn("ready=no", output.getvalue())
@@ -143,20 +169,29 @@ class CliReviewWorkflowTests(unittest.TestCase):
         output_root = self.work / "canonical"
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
-            code = main([
-                "prepare-canonical-rereview",
-                "--records", str(self.records_path),
-                "--out-root", str(output_root),
-                "--review-id", "test-review",
-            ])
+            code = main(
+                [
+                    "prepare-canonical-rereview",
+                    "--records",
+                    str(self.records_path),
+                    "--out-root",
+                    str(output_root),
+                    "--review-id",
+                    "test-review",
+                ]
+            )
         self.assertEqual(code, 0)
         self.assertTrue((output_root / "canonical-a.blind.jsonl").is_file())
         self.assertTrue((output_root / "canonical-b.blind.jsonl").is_file())
         manifest = json.loads((output_root / "manifest.json").read_text())
         self.assertEqual(manifest["review_id"], "test-review")
-        self.assertEqual(manifest["review_a"]["sha256"], hashlib.sha256((output_root / "canonical-a.blind.jsonl").read_bytes()).hexdigest())
+        self.assertEqual(
+            manifest["review_a"]["sha256"],
+            hashlib.sha256(
+                (output_root / "canonical-a.blind.jsonl").read_bytes()
+            ).hexdigest(),
+        )
         self.assertIn("canonical-a.blind.jsonl", output.getvalue())
-
 
     def test_doctor_reports_configured_paths(self):
         output = io.StringIO()
@@ -167,6 +202,7 @@ class CliReviewWorkflowTests(unittest.TestCase):
         report = json.loads((self.work / "doctor.json").read_text())
         self.assertIn("work_root", report)
         self.assertEqual(len(report["canonical_records"]), 3)
+
 
 if __name__ == "__main__":
     unittest.main()

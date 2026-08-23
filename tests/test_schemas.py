@@ -24,12 +24,29 @@ class ReviewSchemaTests(unittest.TestCase):
 
     def test_canonical_decision_requires_independent_review_metadata(self):
         schema = self._load("canonical-review-decision.schema.json")
-        self.assertTrue({
-            "sentence_oracle_id", "record_id", "family_id", "reviewers",
-            "adjudicator", "review_status", "status", "input", "language",
-            "locale", "expected_output", "units", "negative_for", "notes", "oracle",
-        }.issubset(schema["required"]))
-        self.assertEqual(schema["properties"]["review_status"]["enum"], ["adjudicated", "release_ready"])
+        self.assertTrue(
+            {
+                "sentence_oracle_id",
+                "record_id",
+                "family_id",
+                "reviewers",
+                "adjudicator",
+                "review_status",
+                "status",
+                "input",
+                "language",
+                "locale",
+                "expected_output",
+                "units",
+                "negative_for",
+                "notes",
+                "oracle",
+            }.issubset(schema["required"])
+        )
+        self.assertEqual(
+            schema["properties"]["review_status"]["enum"],
+            ["adjudicated", "release_ready"],
+        )
         self.assertNotIn("candidate_id", schema["required"])
 
     def test_completed_row_requires_reviewer_and_annotation(self):

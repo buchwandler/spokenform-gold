@@ -109,5 +109,8 @@ def migrate_jsonl(input_path: str | Path, output_path: str | Path) -> int:
             if line.strip():
                 output.append(migrate_record(json.loads(line)))
     with Path(output_path).open("w", encoding="utf-8") as handle:
-        handle.writelines(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n" for record in output)
+        handle.writelines(
+            json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n"
+            for record in output
+        )
     return len(output)

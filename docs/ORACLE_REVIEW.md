@@ -6,8 +6,7 @@ Canonical re-review artifacts live in the external configured work root, not in
 ## Three contracts
 
 1. **Blind row** — `canonical-a.blind.jsonl` or `canonical-b.blind.jsonl`; it has
-   context and source references but `annotation: null`, `review.status:
-   unreviewed`, and no reviewer identity.
+   context and source references but `annotation: null`, `review.status: unreviewed`, and no reviewer identity.
 2. **Completed reviewer row** — the corresponding `.complete.jsonl`; one isolated
    reviewer adds one stable `reviewer_id`, a complete annotation, and the slot
    lifecycle state. Validate it independently with `validate-review`.

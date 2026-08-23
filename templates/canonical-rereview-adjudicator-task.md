@@ -21,7 +21,6 @@ Compare two genuinely independent completed reviewer artifacts for the existing 
 Canonical records do **not** store a `sentence_oracle_id` field. The repository derives the review identity from language, locale, and normalized input. Never inspect `record["sentence_oracle_id"]` or recreate the hash in an ad-hoc script; use the supported CLI/API.
 Plain contract: canonical records do not store sentence_oracle_id; it is derived for review artifacts only.
 
-
 This workflow does not make a source-materialization decision, promote a candidate, assign a new family, change provenance, apply decisions, or change Gold because current Spokenform output differs. Existing canonical record ID, family ID, language, locale, input, and source identity remain unchanged.
 
 ## First gate: preflight before inspection

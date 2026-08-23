@@ -59,6 +59,7 @@ the other review, comparison, or decisions.
 Canonical records do not store `sentence_oracle_id`; the identity is derived from language, locale, and normalized input. Decisions preserve existing record ID, family ID, source identity, input, language, and locale. New artifacts use `canonical-a.blind.jsonl`, `canonical-a.complete.jsonl`, `canonical-b.blind.jsonl`, `canonical-b.complete.jsonl`, `preflight.json`, `comparison.jsonl`, `decisions.jsonl`, and `manifest.json`.
 
 This role produces adjudicated/release-ready oracle decisions for `apply-reviewed-oracles`; it is not a candidate promotion or source-materialization decision.
+
 ### `adjudicator-task.md` — T3b candidate adjudication
 
 **Use when:** a new candidate batch has two completed independent reviews.
@@ -104,7 +105,7 @@ claim completion from candidate work-root artifacts alone.
 | Artifact/operation                            | Allowed context                                    |
 | --------------------------------------------- | -------------------------------------------------- |
 | blank A/B review artifacts                    | T0 preparation                                     |
-| `validate-review`                              | T1/T2 before reviewer handoff                      |
+| `validate-review`                             | T1/T2 before reviewer handoff                      |
 | semantic annotation                           | T1/T2 only, one reviewer per isolated context      |
 | `compare-reviews`                             | T3a/T3b after both reviews complete                |
 | canonical sentence-oracle decision            | T3a only                                           |

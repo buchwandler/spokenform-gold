@@ -9,11 +9,20 @@ ROOT = Path(__file__).resolve().parents[1]
 class DocumentationContractTests(unittest.TestCase):
     def test_documented_workflow_commands_exist(self):
         help_text = build_parser().format_help()
-        for command in ("review-preflight", "validate-review", "doctor", "prepare-canonical-rereview", "compare-reviews", "apply-reviewed-oracles"):
+        for command in (
+            "review-preflight",
+            "validate-review",
+            "doctor",
+            "prepare-canonical-rereview",
+            "compare-reviews",
+            "apply-reviewed-oracles",
+        ):
             self.assertIn(command, help_text)
 
     def test_canonical_templates_contain_safety_invariants(self):
-        canonical = (ROOT / "templates/canonical-rereview-adjudicator-task.md").read_text()
+        canonical = (
+            ROOT / "templates/canonical-rereview-adjudicator-task.md"
+        ).read_text()
         for text in (
             "review-preflight",
             "canonical records do not store sentence_oracle_id",
@@ -46,7 +55,9 @@ class DocumentationContractTests(unittest.TestCase):
             "schemas/canonical-review-decision.schema.json",
         ):
             self.assertIn(name, combined)
-        self.assertTrue((ROOT / "templates/canonical-rereview-integration-task.md").exists())
+        self.assertTrue(
+            (ROOT / "templates/canonical-rereview-integration-task.md").exists()
+        )
 
     def test_canonical_records_do_not_require_persisted_identity(self):
         records = list((ROOT / "data/test").glob("*.jsonl"))

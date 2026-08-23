@@ -1261,6 +1261,7 @@ review_batches/batch-0001.jsonl
 ```
 
 Reject the run if row accounting fails, pinned source revisions are wrong, candidate validation fails, or source/output conflicts are silently collapsed.
+
 ## Canonical re-review workflow
 
 Canonical records do not store `sentence_oracle_id`; the review identity is derived from language, locale, and normalized input by the supported `spokenform_gold.review.sentence_oracle_id()` API. Never require or invent that field in `data/train`, `data/dev`, or `data/test`.

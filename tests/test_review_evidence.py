@@ -122,11 +122,13 @@ class ReviewEvidenceTests(unittest.TestCase):
             malformed_unit["units"] = [{"surface": "x"}]
         cases.append((malformed_unit, "canonical must be in accepted"))
         for decision, message in cases:
-            with self.subTest(message=message), self.assertRaisesRegex(ValueError, "invalid canonical review decision"):
+            with (
+                self.subTest(message=message),
+                self.assertRaisesRegex(ValueError, "invalid canonical review decision"),
+            ):
                 apply_reviewed_oracles(
                     [self.record], [self.review_a], [self.review_b], [decision]
                 )
-
 
     def test_apply_requires_all_decisions_and_rejects_family_migration(self):
         with self.assertRaisesRegex(ValueError, "missing adjudication"):
@@ -171,7 +173,6 @@ class ReviewEvidenceTests(unittest.TestCase):
                 input_paths=[ROOT / "data/test/sample.jsonl"],
             )
 
-
     def test_preflight_reports_blank_reviews_and_canonical_identity_parity(self):
         blank_a = blind_review_batch([self.record], reviewer_slot="A")
         blank_b = blind_review_batch([self.record], reviewer_slot="B")
@@ -192,14 +193,18 @@ class ReviewEvidenceTests(unittest.TestCase):
         self.assertTrue(report["id_sets_match"])
         self.assertTrue(report["context_match"])
         self.assertNotIn("sentence_oracle_id", self.record)
-        self.assertEqual(self.review_a["sentence_oracle_id"], sentence_oracle_id(self.record))
+        self.assertEqual(
+            self.review_a["sentence_oracle_id"], sentence_oracle_id(self.record)
+        )
 
     def test_preflight_reports_shared_reviewer(self):
         same = copy.deepcopy(self.review_b)
         same["reviewer_id"] = "reviewer-a"
         report = review_preflight([self.record], [self.review_a], [same])
         self.assertFalse(report["ready"])
-        self.assertIn("shared_reviewer_id", {issue["code"] for issue in report["issues"]})
+        self.assertIn(
+            "shared_reviewer_id", {issue["code"] for issue in report["issues"]}
+        )
 
     def test_preflight_reports_slot_duplicate_id_and_context_mismatches(self):
         wrong_slot = copy.deepcopy(self.review_b)
@@ -209,7 +214,9 @@ class ReviewEvidenceTests(unittest.TestCase):
 
         duplicate = [copy.deepcopy(self.review_b), copy.deepcopy(self.review_b)]
         report = review_preflight([self.record], [self.review_a], duplicate)
-        self.assertIn("duplicate_oracle_id", {issue["code"] for issue in report["issues"]})
+        self.assertIn(
+            "duplicate_oracle_id", {issue["code"] for issue in report["issues"]}
+        )
 
         context = copy.deepcopy(self.review_b)
         context["locale"] = "de-DE"
@@ -242,8 +249,16 @@ class ReviewEvidenceTests(unittest.TestCase):
             "variant_mode": "explicit",
             "comparison_profile": "sentence-exact-v1",
             "interpretations": [
-                {"label": "first", "semantic": {"value": "one"}, "accepted_outputs": ["one"]},
-                {"label": "second", "semantic": {"value": "two"}, "accepted_outputs": ["two"]},
+                {
+                    "label": "first",
+                    "semantic": {"value": "one"},
+                    "accepted_outputs": ["one"],
+                },
+                {
+                    "label": "second",
+                    "semantic": {"value": "two"},
+                    "accepted_outputs": ["two"],
+                },
             ],
         }
         report = validate_review_rows([row], slot="A")
@@ -261,9 +276,12 @@ class ReviewEvidenceTests(unittest.TestCase):
 
     def test_rejected_output_strings_handles_mixed_forms(self):
         self.assertEqual(
-            _rejected_output_strings(["plain", {"output": "dict", "reason": "why"}, {"no": "output"}]),
+            _rejected_output_strings(
+                ["plain", {"output": "dict", "reason": "why"}, {"no": "output"}]
+            ),
             {"plain", "dict"},
         )
+
 
 if __name__ == "__main__":
     unittest.main()

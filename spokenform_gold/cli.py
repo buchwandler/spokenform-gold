@@ -182,7 +182,11 @@ def _artifact_issue(scope: str, path: Path, code: str, detail: str) -> dict:
 def _read_review_artifact(path: Path, *, scope: str) -> tuple[list[dict], list[dict]]:
     """Read one review artifact while preserving aggregate preflight diagnostics."""
     if not path.is_file():
-        return [], [_artifact_issue(scope, path, "file_not_readable", "file is missing or not readable")]
+        return [], [
+            _artifact_issue(
+                scope, path, "file_not_readable", "file is missing or not readable"
+            )
+        ]
     try:
         return read_jsonl(path), []
     except (OSError, TypeError, ValueError) as exc:
@@ -190,12 +194,20 @@ def _read_review_artifact(path: Path, *, scope: str) -> tuple[list[dict], list[d
 
 
 def _add_path_issue(report: dict, scope: str, path: str) -> None:
-    report["issues"].append({
-        "scope": scope,
-        "code": "file_not_readable",
-        "message": f"{scope} artifact is not a readable file: {path}",
-    })
-    report["issues"].sort(key=lambda item: (item.get("scope", ""), item.get("code", ""), item.get("message", "")))
+    report["issues"].append(
+        {
+            "scope": scope,
+            "code": "file_not_readable",
+            "message": f"{scope} artifact is not a readable file: {path}",
+        }
+    )
+    report["issues"].sort(
+        key=lambda item: (
+            item.get("scope", ""),
+            item.get("code", ""),
+            item.get("message", ""),
+        )
+    )
     report["ready"] = False
     report["canonical_review_state"] = "blocked"
 
@@ -208,7 +220,14 @@ def cmd_review_preflight(args):
     review_b, issues_b = _read_review_artifact(review_b_path, scope="review_b")
     report = review_preflight(records, review_a, review_b)
     report["issues"].extend(issues_a + issues_b)
-    report["issues"].sort(key=lambda item: (item.get("scope", ""), item.get("code", ""), item.get("sentence_oracle_id", ""), item.get("message", "")))
+    report["issues"].sort(
+        key=lambda item: (
+            item.get("scope", ""),
+            item.get("code", ""),
+            item.get("sentence_oracle_id", ""),
+            item.get("message", ""),
+        )
+    )
     if report["issues"]:
         report["ready"] = False
         report["canonical_review_state"] = "blocked"
@@ -220,26 +239,58 @@ def cmd_review_preflight(args):
 
 def cmd_validate_review(args):
     path = Path(args.review)
-    rows, artifact_issues = _read_review_artifact(path, scope=f"review_{args.slot.lower()}")
+    rows, artifact_issues = _read_review_artifact(
+        path, scope=f"review_{args.slot.lower()}"
+    )
     report = validate_review_rows(rows, slot=args.slot)
     report["issues"].extend(artifact_issues)
-    report["issues"].sort(key=lambda item: (item.get("scope", ""), item.get("code", ""), item.get("sentence_oracle_id", ""), item.get("message", "")))
+    report["issues"].sort(
+        key=lambda item: (
+            item.get("scope", ""),
+            item.get("code", ""),
+            item.get("sentence_oracle_id", ""),
+            item.get("message", ""),
+        )
+    )
     if report["issues"]:
         report["ready"] = False
     if args.json:
-        write_json(args.json, {key: value for key, value in report.items() if key != "_indexed"})
-    print(_review_preflight_human({
-        "canonical_review_state": "ready" if report["ready"] else "blocked",
-        "canonical_records": 0,
-        "sentence_oracles": report["rows"],
-        "review_a": report if args.slot == "A" else {"slot": "A", "rows": 0, "reviewer_id": None, "completed": 0, "unreviewed": 0},
-        "review_b": report if args.slot == "B" else {"slot": "B", "rows": 0, "reviewer_id": None, "completed": 0, "unreviewed": 0},
-        "id_sets_match": True,
-        "context_match": True,
-        "canonical_identity_match": True,
-        "ready": report["ready"],
-        "issues": report["issues"],
-    }))
+        write_json(
+            args.json,
+            {key: value for key, value in report.items() if key != "_indexed"},
+        )
+    print(
+        _review_preflight_human(
+            {
+                "canonical_review_state": "ready" if report["ready"] else "blocked",
+                "canonical_records": 0,
+                "sentence_oracles": report["rows"],
+                "review_a": report
+                if args.slot == "A"
+                else {
+                    "slot": "A",
+                    "rows": 0,
+                    "reviewer_id": None,
+                    "completed": 0,
+                    "unreviewed": 0,
+                },
+                "review_b": report
+                if args.slot == "B"
+                else {
+                    "slot": "B",
+                    "rows": 0,
+                    "reviewer_id": None,
+                    "completed": 0,
+                    "unreviewed": 0,
+                },
+                "id_sets_match": True,
+                "context_match": True,
+                "canonical_identity_match": True,
+                "ready": report["ready"],
+                "issues": report["issues"],
+            }
+        )
+    )
     return 0 if report["ready"] else 2
 
 
@@ -623,7 +674,11 @@ def _path_info(path: Path | None) -> dict:
         return {"path": None, "exists": False, "writable": False}
     exists = path.exists()
     probe = path if exists else path.parent
-    return {"path": str(path), "exists": exists, "writable": bool(probe.exists() and os.access(probe, os.W_OK))}
+    return {
+        "path": str(path),
+        "exists": exists,
+        "writable": bool(probe.exists() and os.access(probe, os.W_OK)),
+    }
 
 
 def cmd_doctor(args):
@@ -953,7 +1008,9 @@ def main(argv=None):
         return 2
     except (ValueError, TypeError, OSError) as exc:
         workflow_commands = {
-            "review-preflight", "validate-review", "compare-reviews",
+            "review-preflight",
+            "validate-review",
+            "compare-reviews",
             "apply-reviewed-oracles",
         }
         if args.cmd not in workflow_commands or args.debug:
