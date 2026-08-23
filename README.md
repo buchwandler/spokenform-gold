@@ -425,18 +425,16 @@ Resolve configured external paths first:
 spokenform-gold doctor
 ```
 
-Prepare visibly distinct artifacts under `$SPOKENFORM_GOLD_WORK/reviews/canonical/`:
+Prepare visibly distinct blank artifacts and a manifest under `$SPOKENFORM_GOLD_WORK/reviews/canonical/`:
 
 ```bash
-spokenform-gold blind-review data/train data/dev data/test \
-  --reviewer-slot A \
-  --out "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-a.blind.jsonl"
-spokenform-gold blind-review data/train data/dev data/test \
-  --reviewer-slot B \
-  --out "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-b.blind.jsonl"
+spokenform-gold prepare-canonical-rereview \
+  --records data/train data/dev data/test \
+  --review-id canonical-rereview-<DATE> \
+  --out-root "$SPOKENFORM_GOLD_WORK/reviews/canonical"
 ```
 
-Each reviewer writes a new `.complete.jsonl` artifact and checks it independently:
+This creates only `canonical-a.blind.jsonl`, `canonical-b.blind.jsonl`, and `manifest.json`. Each reviewer writes a new `.complete.jsonl` artifact and checks it independently:
 
 ```bash
 spokenform-gold validate-review \

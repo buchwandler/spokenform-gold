@@ -30,6 +30,7 @@ from .io import (
     read_json,
     read_jsonl,
     read_records,
+    sha256_file,
     write_json,
     write_jsonl,
 )
@@ -101,6 +102,34 @@ def cmd_blind_review(args):
     return 0
 
 
+def cmd_prepare_canonical_rereview(args):
+    records = read_records(args.records)
+    if not records:
+        raise ValueError("canonical re-review preparation requires at least one record")
+    output_root = Path(args.out_root)
+    if output_root.exists() and any(output_root.iterdir()):
+        raise ValueError(f"output root must be new or empty: {output_root}")
+    output_root.mkdir(parents=True, exist_ok=True)
+    review_a_path = output_root / "canonical-a.blind.jsonl"
+    review_b_path = output_root / "canonical-b.blind.jsonl"
+    write_jsonl(review_a_path, blind_review_batch(records, reviewer_slot="A"))
+    write_jsonl(review_b_path, blind_review_batch(records, reviewer_slot="B"))
+    manifest = {
+        "schema_version": "1",
+        "review_id": args.review_id,
+        "canonical_inputs": [str(path) for path in args.records],
+        "review_a": {"path": str(review_a_path), "sha256": sha256_file(review_a_path)},
+        "review_b": {"path": str(review_b_path), "sha256": sha256_file(review_b_path)},
+    }
+    manifest_path = output_root / "manifest.json"
+    write_json(manifest_path, manifest)
+    print(f"prepared canonical re-review artifacts under {output_root}")
+    print(f"review A: {review_a_path}")
+    print(f"review B: {review_b_path}")
+    print(f"manifest: {manifest_path}")
+    return 0
+
+
 def cmd_compare_reviews(args):
     comparisons = compare_review_batches(
         read_records([args.review_a]), read_records([args.review_b])
@@ -142,6 +171,24 @@ def _review_preflight_human(report: dict) -> str:
     return "\n".join(lines)
 
 
+def _artifact_issue(scope: str, path: Path, code: str, detail: str) -> dict:
+    return {
+        "scope": scope,
+        "code": code,
+        "message": f"{scope} artifact {path}: {detail}",
+    }
+
+
+def _read_review_artifact(path: Path, *, scope: str) -> tuple[list[dict], list[dict]]:
+    """Read one review artifact while preserving aggregate preflight diagnostics."""
+    if not path.is_file():
+        return [], [_artifact_issue(scope, path, "file_not_readable", "file is missing or not readable")]
+    try:
+        return read_jsonl(path), []
+    except (OSError, TypeError, ValueError) as exc:
+        return [], [_artifact_issue(scope, path, "invalid_jsonl", str(exc))]
+
+
 def _add_path_issue(report: dict, scope: str, path: str) -> None:
     report["issues"].append({
         "scope": scope,
@@ -157,13 +204,14 @@ def cmd_review_preflight(args):
     records = read_records(args.records)
     review_a_path = Path(args.review_a)
     review_b_path = Path(args.review_b)
-    review_a = read_records([review_a_path])
-    review_b = read_records([review_b_path])
+    review_a, issues_a = _read_review_artifact(review_a_path, scope="review_a")
+    review_b, issues_b = _read_review_artifact(review_b_path, scope="review_b")
     report = review_preflight(records, review_a, review_b)
-    if not review_a_path.is_file():
-        _add_path_issue(report, "review_a", str(review_a_path))
-    if not review_b_path.is_file():
-        _add_path_issue(report, "review_b", str(review_b_path))
+    report["issues"].extend(issues_a + issues_b)
+    report["issues"].sort(key=lambda item: (item.get("scope", ""), item.get("code", ""), item.get("sentence_oracle_id", ""), item.get("message", "")))
+    if report["issues"]:
+        report["ready"] = False
+        report["canonical_review_state"] = "blocked"
     if args.json:
         write_json(args.json, report)
     print(_review_preflight_human(report))
@@ -172,14 +220,11 @@ def cmd_review_preflight(args):
 
 def cmd_validate_review(args):
     path = Path(args.review)
-    rows = read_records([path])
+    rows, artifact_issues = _read_review_artifact(path, scope=f"review_{args.slot.lower()}")
     report = validate_review_rows(rows, slot=args.slot)
-    if not path.is_file():
-        report["issues"].append({
-            "scope": f"review {args.slot}",
-            "code": "file_not_readable",
-            "message": f"review artifact is not a readable file: {path}",
-        })
+    report["issues"].extend(artifact_issues)
+    report["issues"].sort(key=lambda item: (item.get("scope", ""), item.get("code", ""), item.get("sentence_oracle_id", ""), item.get("message", "")))
+    if report["issues"]:
         report["ready"] = False
     if args.json:
         write_json(args.json, {key: value for key, value in report.items() if key != "_indexed"})
@@ -650,6 +695,11 @@ def build_parser():
     blind.add_argument("--reviewer-slot", choices=["A", "B"], required=True)
     blind.add_argument("--out", required=True)
     blind.set_defaults(func=cmd_blind_review)
+    prepare = sub.add_parser("prepare-canonical-rereview")
+    prepare.add_argument("--records", nargs="+", required=True)
+    prepare.add_argument("--out-root", required=True)
+    prepare.add_argument("--review-id", required=True)
+    prepare.set_defaults(func=cmd_prepare_canonical_rereview)
 
     preflight = sub.add_parser("review-preflight")
     preflight.add_argument("--records", nargs="+", required=True)

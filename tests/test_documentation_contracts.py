@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class DocumentationContractTests(unittest.TestCase):
     def test_documented_workflow_commands_exist(self):
         help_text = build_parser().format_help()
-        for command in ("review-preflight", "validate-review", "doctor", "compare-reviews", "apply-reviewed-oracles"):
+        for command in ("review-preflight", "validate-review", "doctor", "prepare-canonical-rereview", "compare-reviews", "apply-reviewed-oracles"):
             self.assertIn(command, help_text)
 
     def test_canonical_templates_contain_safety_invariants(self):

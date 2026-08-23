@@ -516,15 +516,21 @@ def _validate_canonical_decision_shape(decision: dict, *, index: int) -> list[st
         if field in decision and (not isinstance(decision[field], str) or not decision[field].strip()):
             errors.append(f"{label}: decision field {field} must be a non-empty string")
     reviewers = decision.get("reviewers")
-    if not isinstance(reviewers, list) or len(reviewers) < 2 or any(not isinstance(item, str) or not item.strip() for item in reviewers) or len(set(reviewers)) < 2:
+    if (
+        not isinstance(reviewers, list)
+        or len(reviewers) < 2
+        or any(not isinstance(item, str) or not item.strip() for item in reviewers)
+        or len(set(reviewers)) < 2
+    ):
         errors.append(f"{label}: reviewers must contain at least two distinct non-empty strings")
     adjudicator = decision.get("adjudicator")
     if not isinstance(adjudicator, str) or not adjudicator.strip():
         errors.append(f"{label}: adjudicator must be a non-empty string")
     if decision.get("review_status") not in {"adjudicated", "release_ready"}:
         errors.append(f"{label}: review_status must be adjudicated or release_ready")
-    if decision.get("status") not in _ANNOTATION_STATUSES:
-        errors.append(f"{label}: invalid record status {decision.get('status')!r}")
+    status = decision.get("status")
+    if status not in _ANNOTATION_STATUSES:
+        errors.append(f"{label}: invalid record status {status!r}")
     units = decision.get("units")
     if not isinstance(units, list):
         errors.append(f"{label}: units must be an array")
@@ -533,11 +539,20 @@ def _validate_canonical_decision_shape(decision: dict, *, index: int) -> list[st
         for unit_index, unit in enumerate(units):
             if not isinstance(unit, dict):
                 errors.append(f"{label}: unit {unit_index} must be an object")
-            else:
-                errors.extend(f"{label}: unit {unit_index} missing {field}" for field in unit_fields if field not in unit)
-    if not isinstance(decision.get("negative_for"), list):
-        errors.append(f"{label}: negative_for must be an array")
-    if not isinstance(decision.get("expected_output"), (str, type(None))):
+                continue
+            errors.extend(f"{label}: unit {unit_index} missing {field}" for field in unit_fields if field not in unit)
+            accepted = unit.get("accepted")
+            rejected = unit.get("rejected")
+            canonical = unit.get("canonical")
+            if not isinstance(accepted, list) or canonical not in accepted:
+                errors.append(f"{label}: unit {unit_index} canonical must be in accepted")
+            if isinstance(accepted, list) and isinstance(rejected, list) and set(accepted) & _rejected_output_strings(rejected):
+                errors.append(f"{label}: unit {unit_index} accepted and rejected outputs overlap")
+    negative_for = decision.get("negative_for")
+    if not isinstance(negative_for, list) or not all(isinstance(item, str) for item in negative_for):
+        errors.append(f"{label}: negative_for must be an array of strings")
+    expected_output = decision.get("expected_output")
+    if not isinstance(expected_output, (str, type(None))):
         errors.append(f"{label}: expected_output must be a string or null")
     oracle = decision.get("oracle")
     if not isinstance(oracle, dict):
@@ -546,15 +561,20 @@ def _validate_canonical_decision_shape(decision: dict, *, index: int) -> list[st
         canonical = oracle.get("canonical_output")
         accepted = oracle.get("accepted_outputs")
         rejected = oracle.get("rejected_outputs")
-        if not isinstance(canonical, str) or not canonical:
-            errors.append(f"{label}: oracle.canonical_output is required")
-        if not isinstance(accepted, list) or canonical not in accepted:
-            errors.append(f"{label}: oracle.canonical_output must be in accepted_outputs")
+        if not isinstance(accepted, list):
+            errors.append(f"{label}: oracle.accepted_outputs must be an array")
         if not isinstance(rejected, list):
             errors.append(f"{label}: oracle.rejected_outputs must be an array")
         elif isinstance(accepted, list) and set(accepted) & _rejected_output_strings(rejected):
             errors.append(f"{label}: oracle accepted and rejected outputs overlap")
-    if decision.get("status") == "no_change" and (decision.get("expected_output") != decision.get("input") or decision.get("units") != [] or not decision.get("negative_for")):
+        if status == "ambiguous":
+            if canonical is not None or accepted != [] or expected_output is not None:
+                errors.append(f"{label}: ambiguous decisions require null expected/canonical output and empty accepted_outputs")
+        elif not isinstance(canonical, str) or not canonical:
+            errors.append(f"{label}: oracle.canonical_output is required")
+        elif not isinstance(accepted, list) or canonical not in accepted:
+            errors.append(f"{label}: oracle.canonical_output must be in accepted_outputs")
+    if status == "no_change" and (expected_output != decision.get("input") or decision.get("units") != [] or not negative_for):
         errors.append(f"{label}: no_change requires input output, no units, and negative_for")
     return errors
 

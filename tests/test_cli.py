@@ -1,4 +1,5 @@
 import contextlib
+import hashlib
 import io
 import json
 import shutil
@@ -49,6 +50,7 @@ class CliReviewWorkflowTests(unittest.TestCase):
         self.assertIn("review-preflight", help_text)
         self.assertIn("validate-review", help_text)
         self.assertIn("doctor", help_text)
+        self.assertIn("prepare-canonical-rereview", help_text)
 
     def test_blocked_preflight_returns_two_and_is_aggregate(self):
         review_a = self.work / "canonical-a.blind.jsonl"
@@ -103,6 +105,59 @@ class CliReviewWorkflowTests(unittest.TestCase):
         self.assertIn("error:", errors.getvalue())
         self.assertNotIn("Traceback", errors.getvalue())
 
+    def test_preflight_aggregates_missing_and_malformed_review_artifacts(self):
+        missing = self.work / "missing.complete.jsonl"
+        malformed = self.work / "malformed.complete.jsonl"
+        malformed.write_text("not-json\n", encoding="utf-8")
+        report_path = self.work / "preflight-errors.json"
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = main([
+                "review-preflight",
+                "--records", str(self.records_path),
+                "--review-a", str(missing),
+                "--review-b", str(malformed),
+                "--json", str(report_path),
+            ])
+        self.assertEqual(code, 2)
+        self.assertIn("file_not_readable", report_path.read_text())
+        self.assertIn("invalid_jsonl", report_path.read_text())
+        self.assertIn("ready=no", output.getvalue())
+        self.assertNotIn("Traceback", output.getvalue())
+        self.assertFalse((self.work / "comparison.jsonl").exists())
+
+
+    def test_validate_review_missing_artifact_is_cleanly_blocked(self):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = main([
+                "validate-review",
+                str(self.work / "missing.complete.jsonl"),
+                "--slot", "A",
+            ])
+        self.assertEqual(code, 2)
+        self.assertIn("file is missing", output.getvalue())
+        self.assertIn("ready=no", output.getvalue())
+
+    def test_prepare_canonical_rereview_writes_blind_artifacts_and_manifest(self):
+        output_root = self.work / "canonical"
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = main([
+                "prepare-canonical-rereview",
+                "--records", str(self.records_path),
+                "--out-root", str(output_root),
+                "--review-id", "test-review",
+            ])
+        self.assertEqual(code, 0)
+        self.assertTrue((output_root / "canonical-a.blind.jsonl").is_file())
+        self.assertTrue((output_root / "canonical-b.blind.jsonl").is_file())
+        manifest = json.loads((output_root / "manifest.json").read_text())
+        self.assertEqual(manifest["review_id"], "test-review")
+        self.assertEqual(manifest["review_a"]["sha256"], hashlib.sha256((output_root / "canonical-a.blind.jsonl").read_bytes()).hexdigest())
+        self.assertIn("canonical-a.blind.jsonl", output.getvalue())
+
+
     def test_doctor_reports_configured_paths(self):
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
@@ -112,7 +167,6 @@ class CliReviewWorkflowTests(unittest.TestCase):
         report = json.loads((self.work / "doctor.json").read_text())
         self.assertIn("work_root", report)
         self.assertEqual(len(report["canonical_records"]), 3)
-
 
 if __name__ == "__main__":
     unittest.main()

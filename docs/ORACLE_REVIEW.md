@@ -47,8 +47,16 @@ Resolve configured paths without filesystem hunting:
 spokenform-gold doctor
 ```
 
-Create independent blind artifacts, complete them in separate contexts, and
-validate each completed artifact:
+Prepare independent blank artifacts and their manifest without manual filename inference:
+
+```bash
+spokenform-gold prepare-canonical-rereview \
+  --records data/train data/dev data/test \
+  --review-id canonical-rereview-<DATE> \
+  --out-root "$SPOKENFORM_GOLD_WORK/reviews/canonical"
+```
+
+Complete them in separate contexts and validate each completed artifact:
 
 ```bash
 spokenform-gold validate-review \

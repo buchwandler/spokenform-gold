@@ -98,6 +98,36 @@ class ReviewEvidenceTests(unittest.TestCase):
         self.assertEqual(report["agreement"], 1)
         self.assertEqual(len(comparisons), 1)
 
+    def test_apply_rejects_malformed_canonical_decision_shapes(self):
+        cases = []
+        missing_oracle = self._decision()
+        missing_oracle.pop("oracle")
+        cases.append((missing_oracle, "missing oracle"))
+        one_reviewer = self._decision()
+        one_reviewer["reviewers"] = ["reviewer-a"]
+        cases.append((one_reviewer, "two distinct"))
+        empty_adjudicator = self._decision()
+        empty_adjudicator["adjudicator"] = ""
+        cases.append((empty_adjudicator, "adjudicator"))
+        invalid_review_status = self._decision()
+        invalid_review_status["review_status"] = "unreviewed"
+        cases.append((invalid_review_status, "review_status"))
+        invalid_record_status = self._decision()
+        invalid_record_status["status"] = "quarantine"
+        cases.append((invalid_record_status, "invalid record status"))
+        malformed_unit = self._decision()
+        if malformed_unit["units"]:
+            malformed_unit["units"][0]["accepted"] = []
+        else:
+            malformed_unit["units"] = [{"surface": "x"}]
+        cases.append((malformed_unit, "canonical must be in accepted"))
+        for decision, message in cases:
+            with self.subTest(message=message), self.assertRaisesRegex(ValueError, "invalid canonical review decision"):
+                apply_reviewed_oracles(
+                    [self.record], [self.review_a], [self.review_b], [decision]
+                )
+
+
     def test_apply_requires_all_decisions_and_rejects_family_migration(self):
         with self.assertRaisesRegex(ValueError, "missing adjudication"):
             apply_reviewed_oracles([self.record], [self.review_a], [self.review_b], [])
