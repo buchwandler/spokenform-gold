@@ -194,6 +194,22 @@ def _collect_blind_issues(value: Any, *, path: str = "review") -> list[str]:
     return issues
 
 
+def _rejected_output_strings(rejected: list) -> set[str]:
+    """Collect comparable output strings from rejected entries.
+
+    Oracle rejected entries are objects with an ``output`` field; unit-level
+    rejected entries are plain strings.  Tolerate both so overlap checks do
+    not attempt to hash dicts.
+    """
+    strings: set[str] = set()
+    for item in rejected:
+        if isinstance(item, str):
+            strings.add(item)
+        elif isinstance(item, dict) and isinstance(item.get("output"), str):
+            strings.add(item["output"])
+    return strings
+
+
 def _annotation_issues(row: dict, *, oracle_id: str, scope: str) -> list[dict]:
     annotation = row.get("annotation")
     if not isinstance(annotation, dict):
@@ -213,7 +229,7 @@ def _annotation_issues(row: dict, *, oracle_id: str, scope: str) -> list[dict]:
             issues.append(_issue(scope, "invalid_oracle", "oracle.canonical_output is required", oracle_id))
         if not isinstance(accepted, list) or canonical not in accepted:
             issues.append(_issue(scope, "invalid_oracle", "oracle.canonical_output must be in accepted_outputs", oracle_id))
-        if isinstance(accepted, list) and isinstance(rejected, list) and set(accepted) & set(rejected):
+        if isinstance(accepted, list) and isinstance(rejected, list) and set(accepted) & _rejected_output_strings(rejected):
             issues.append(_issue(scope, "oracle_variant_overlap", "oracle accepted and rejected outputs overlap", oracle_id))
     units = annotation.get("units")
     if not isinstance(units, list):
@@ -228,7 +244,7 @@ def _annotation_issues(row: dict, *, oracle_id: str, scope: str) -> list[dict]:
             canonical = unit.get("canonical")
             if not isinstance(accepted, list) or canonical not in accepted:
                 issues.append(_issue(scope, "invalid_unit", f"unit {index} canonical must be in accepted", oracle_id))
-            if isinstance(accepted, list) and isinstance(rejected, list) and set(accepted) & set(rejected):
+            if isinstance(accepted, list) and isinstance(rejected, list) and set(accepted) & _rejected_output_strings(rejected):
                 issues.append(_issue(scope, "unit_variant_overlap", f"unit {index} accepted and rejected overlap", oracle_id))
     if status == "no_change" and (
         annotation.get("expected_output") != row.get("input")
@@ -502,7 +518,7 @@ def _validate_canonical_decision_shape(decision: dict, *, index: int) -> list[st
             errors.append(f"{label}: oracle.canonical_output must be in accepted_outputs")
         if not isinstance(rejected, list):
             errors.append(f"{label}: oracle.rejected_outputs must be an array")
-        elif isinstance(accepted, list) and set(accepted) & set(rejected):
+        elif isinstance(accepted, list) and set(accepted) & _rejected_output_strings(rejected):
             errors.append(f"{label}: oracle accepted and rejected outputs overlap")
     if decision.get("status") == "no_change" and (decision.get("expected_output") != decision.get("input") or decision.get("units") != [] or not decision.get("negative_for")):
         errors.append(f"{label}: no_change requires input output, no units, and negative_for")

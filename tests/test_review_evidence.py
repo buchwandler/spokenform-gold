@@ -10,8 +10,10 @@ from spokenform_gold.review import (
     apply_reviewed_oracles,
     blind_review_batch,
     compare_review_batches,
+    _rejected_output_strings,
     review_preflight,
     sentence_oracle_id,
+    validate_review_rows,
     write_review_application,
 )
 from spokenform_gold.validation import validate_records
@@ -192,6 +194,29 @@ class ReviewEvidenceTests(unittest.TestCase):
         self.assertIn("missing_in_a", codes)
         self.assertIn("unknown_review_identity", codes)
 
+    def test_validate_review_accepts_dict_form_rejected_outputs(self):
+        row = copy.deepcopy(self.review_b)
+        row["annotation"]["oracle"]["rejected_outputs"] = [
+            {"output": "Wrong sentence.", "reason": "changes the meaning"}
+        ]
+        report = validate_review_rows([row], slot="B")
+        self.assertTrue(report["ready"], report["issues"])
+
+    def test_validate_review_flags_oracle_overlap_with_dict_form_outputs(self):
+        row = copy.deepcopy(self.review_b)
+        canonical = row["annotation"]["oracle"]["canonical_output"]
+        row["annotation"]["oracle"]["rejected_outputs"] = [
+            {"output": canonical, "reason": "duplicate of the canonical output"}
+        ]
+        report = validate_review_rows([row], slot="B")
+        codes = {issue["code"] for issue in report["issues"]}
+        self.assertIn("oracle_variant_overlap", codes)
+
+    def test_rejected_output_strings_handles_mixed_forms(self):
+        self.assertEqual(
+            _rejected_output_strings(["plain", {"output": "dict", "reason": "why"}, {"no": "output"}]),
+            {"plain", "dict"},
+        )
 
 if __name__ == "__main__":
     unittest.main()
