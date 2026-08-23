@@ -7,10 +7,10 @@ from pathlib import Path
 from spokenform_gold.io import read_records
 from spokenform_gold.oracle import oracle_hash
 from spokenform_gold.review import (
+    _rejected_output_strings,
     apply_reviewed_oracles,
     blind_review_batch,
     compare_review_batches,
-    _rejected_output_strings,
     review_preflight,
     sentence_oracle_id,
     validate_review_rows,
@@ -200,6 +200,23 @@ class ReviewEvidenceTests(unittest.TestCase):
             {"output": "Wrong sentence.", "reason": "changes the meaning"}
         ]
         report = validate_review_rows([row], slot="B")
+        self.assertTrue(report["ready"], report["issues"])
+
+    def test_validate_review_accepts_ambiguous_oracle_without_canonical(self):
+        row = copy.deepcopy(self.review_a)
+        row["annotation"]["status"] = "ambiguous"
+        row["annotation"]["oracle"] = {
+            "canonical_output": None,
+            "accepted_outputs": [],
+            "rejected_outputs": [],
+            "variant_mode": "explicit",
+            "comparison_profile": "sentence-exact-v1",
+            "interpretations": [
+                {"label": "first", "semantic": {"value": "one"}, "accepted_outputs": ["one"]},
+                {"label": "second", "semantic": {"value": "two"}, "accepted_outputs": ["two"]},
+            ],
+        }
+        report = validate_review_rows([row], slot="A")
         self.assertTrue(report["ready"], report["issues"])
 
     def test_validate_review_flags_oracle_overlap_with_dict_form_outputs(self):

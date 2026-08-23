@@ -225,10 +225,44 @@ def _annotation_issues(row: dict, *, oracle_id: str, scope: str) -> list[dict]:
         canonical = oracle.get("canonical_output")
         accepted = oracle.get("accepted_outputs")
         rejected = oracle.get("rejected_outputs")
-        if not isinstance(canonical, str) or not canonical:
-            issues.append(_issue(scope, "invalid_oracle", "oracle.canonical_output is required", oracle_id))
-        if not isinstance(accepted, list) or canonical not in accepted:
-            issues.append(_issue(scope, "invalid_oracle", "oracle.canonical_output must be in accepted_outputs", oracle_id))
+        if status == "ambiguous":
+            if canonical is not None:
+                issues.append(
+                    _issue(
+                        scope,
+                        "invalid_oracle",
+                        "ambiguous oracle.canonical_output must be null",
+                        oracle_id,
+                    )
+                )
+            if not isinstance(accepted, list) or accepted:
+                issues.append(
+                    _issue(
+                        scope,
+                        "invalid_oracle",
+                        "ambiguous oracle.accepted_outputs must be empty",
+                        oracle_id,
+                    )
+                )
+        else:
+            if not isinstance(canonical, str) or not canonical:
+                issues.append(
+                    _issue(
+                        scope,
+                        "invalid_oracle",
+                        "oracle.canonical_output is required",
+                        oracle_id,
+                    )
+                )
+            if not isinstance(accepted, list) or canonical not in accepted:
+                issues.append(
+                    _issue(
+                        scope,
+                        "invalid_oracle",
+                        "oracle.canonical_output must be in accepted_outputs",
+                        oracle_id,
+                    )
+                )
         if isinstance(accepted, list) and isinstance(rejected, list) and set(accepted) & _rejected_output_strings(rejected):
             issues.append(_issue(scope, "oracle_variant_overlap", "oracle accepted and rejected outputs overlap", oracle_id))
     units = annotation.get("units")
