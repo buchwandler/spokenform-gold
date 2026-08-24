@@ -14,11 +14,11 @@ class GoldAuditTests(unittest.TestCase):
         self.assertTrue(report["oracle_complete"])
         self.assertEqual(report["reviewed_oracle_conflicts"], [])
 
-    def test_strict_audit_exposes_legacy_review_gap(self):
+    def test_strict_audit_passes_canonical_rereviewed_test(self):
         report = audit_records(read_records([ROOT / "data/test"]), strict=True)
-        self.assertFalse(report["oracle_complete"])
-        self.assertTrue(report["review_gap_records"])
-
+        self.assertTrue(report["oracle_complete"])
+        self.assertEqual(report["review_gap_records"], [])
+        self.assertEqual(report["review_complete_records"], 11)
     def test_same_input_conflicting_reviewed_oracles_are_detected(self):
         records = read_records([ROOT / "data/test"])[0:1]
         other = copy.deepcopy(records[0])

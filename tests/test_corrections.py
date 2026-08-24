@@ -13,7 +13,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class CorrectionTests(unittest.TestCase):
     def setUp(self):
-        self.record = read_records([ROOT / "data/test/sample.jsonl"])[0]
+        self.record = next(
+            record
+            for record in read_records([ROOT / "data/test/sample.jsonl"])
+            if record["id"] == "en-us-time-001"
+        )
 
     def correction(self, proposed):
         return {

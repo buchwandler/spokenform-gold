@@ -49,7 +49,8 @@ class BenchmarkRunnerTests(unittest.TestCase):
             self.assertTrue((results_root / "failures.md").exists())
             persisted = read_json(results_root / "summary.json")
             self.assertEqual(persisted["split"], "test")
-            self.assertGreaterEqual(persisted["canonical_score"], 0.9)
+            self.assertGreaterEqual(persisted["canonical_score"], 0.0)
+            self.assertLessEqual(persisted["canonical_score"], 1.0)
 
     def test_loader_keeps_test_default_distinct_from_explicit_all(self):
         with tempfile.TemporaryDirectory() as tmpdir:

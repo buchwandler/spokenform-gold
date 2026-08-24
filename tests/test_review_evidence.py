@@ -23,7 +23,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ReviewEvidenceTests(unittest.TestCase):
     def setUp(self):
-        self.record = read_records([ROOT / "data/test/sample.jsonl"])[0]
+        self.record = next(
+            record
+            for record in read_records([ROOT / "data/test/sample.jsonl"])
+            if record["id"] == "en-us-time-001"
+        )
         self.review_a = self._completed("reviewer-a", "A")
         self.review_b = self._completed("reviewer-b", "B")
 

@@ -12,7 +12,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class PromotionTests(unittest.TestCase):
     def setUp(self):
-        self.candidate = read_records([ROOT / "data/test/sample.jsonl"])[0]
+        self.candidate = next(
+            record
+            for record in read_records([ROOT / "data/test/sample.jsonl"])
+            if record["locale"] == "en-US" and record["units"]
+        )
         self.existing = read_records([ROOT / "data/dev/sample.jsonl"])[0]
 
     def decision(self, **overrides):
