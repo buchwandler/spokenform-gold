@@ -9,6 +9,7 @@ from pathlib import Path
 from .adjudication import build_adjudication_queue
 from .adjudication_quality import validate_adjudication_batch
 from .census import build_upstream_census, write_census_artifacts
+from .collection import collect_batch
 from .config import (
     ConfigError,
     default_config_path,
@@ -27,8 +28,10 @@ from .corrections import (
 from .coverage import build_control_coverage, build_coverage, load_targets
 from .deduplication import deduplicate_candidates
 from .exclusions import build_exclusion_analysis, load_exclusions
+from .export import export_family_safe_splits
 from .families import suggest_families
 from .gold_audit import audit_records
+from .html_report import render_release_html
 from .importers import import_async, import_polynorm, import_proteno
 from .ingestion import run_upstream_ingestion
 from .io import (
@@ -68,6 +71,7 @@ from .source_lock import build_source_lock
 from .splitting import split_records
 from .stats import build_stats
 from .validation import load_categories, validate_records
+from .workflow import check_reviews, integrate_batch
 
 
 def cmd_stats(args):
@@ -94,6 +98,12 @@ def cmd_migrate_oracle(args):
 
 
 def cmd_validate(args):
+    if not args.paths:
+        args.paths = (
+            [Path("data/corpus.jsonl")]
+            if Path("data/corpus.jsonl").exists()
+            else [Path("data/train"), Path("data/dev"), Path("data/test")]
+        )
     records = read_records(args.paths)
     categories = load_categories(args.categories) if args.categories else None
     errors = validate_records(records, judge=args.judge, categories=categories)
@@ -637,7 +647,11 @@ def cmd_review_report(args):
     comparison = read_records([args.comparison])
     decisions = read_records([args.decisions])
     validation = validate_adjudication_batch(
-        candidates, review_a, review_b, comparison, decisions,
+        candidates,
+        review_a,
+        review_b,
+        comparison,
+        decisions,
     )
     output = render_review_html(
         args.out,
@@ -774,7 +788,9 @@ def cmd_doctor(args):
     return 0
 
 
-def _default_review_evidence_paths(repo_root: Path, work_root: Path | None) -> list[Path]:
+def _default_review_evidence_paths(
+    repo_root: Path, work_root: Path | None
+) -> list[Path]:
     roots = [repo_root]
     if work_root is not None:
         roots.append(work_root)
@@ -785,6 +801,13 @@ def _default_review_evidence_paths(repo_root: Path, work_root: Path | None) -> l
     return sorted(path for path in paths if path.is_file())
 
 
+def _default_canonical_paths(repo_root: Path) -> list[Path]:
+    corpus = repo_root / "data" / "corpus.jsonl"
+    if corpus.exists():
+        return [corpus]
+    return [repo_root / "data" / name for name in ("train", "dev", "test")]
+
+
 def cmd_trace_record(args):
     config_path = args.config if args.config is not None else default_config_path()
     config = load_config(config_path, explicit=args.config is not None)
@@ -792,18 +815,20 @@ def cmd_trace_record(args):
         config=config, source_cache=None, work_root=args.work_root
     )
     repo_root = (config.path.parent if config.path else Path.cwd()).resolve()
-    record_paths = args.records or [
-        repo_root / "data" / "train",
-        repo_root / "data" / "dev",
-        repo_root / "data" / "test",
-    ]
+    record_paths = args.records or _default_canonical_paths(repo_root)
     records = read_records(record_paths)
-    evidence_paths = [Path(path) for path in args.evidence] if args.evidence else _default_review_evidence_paths(repo_root, runtime.work_root)
+    evidence_paths = (
+        [Path(path) for path in args.evidence]
+        if args.evidence
+        else _default_review_evidence_paths(repo_root, runtime.work_root)
+    )
     evidence = read_records(evidence_paths) if evidence_paths else []
     if not evidence:
         evidence = backfill_legacy_evidence(records)
     result = resolve_record_evidence(args.record_id, records, evidence)
-    latest = max(result["evidence"], key=lambda row: row.get("review_revision", -1), default={})
+    latest = max(
+        result["evidence"], key=lambda row: row.get("review_revision", -1), default={}
+    )
     result["evidence_paths"] = [str(path) for path in evidence_paths]
     if args.json:
         print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -815,16 +840,26 @@ def cmd_trace_record(args):
     print(f"split: {record.get('split', '')}")
     print(f"family_id: {record.get('family_id', '')}")
     print(f"input: {record.get('input', '')}")
-    print(f"canonical: {(record.get('oracle') or {}).get('canonical_output', record.get('expected_output'))}")
-    print(f"oracle_hash: {record.get('oracle_hash') or latest.get('final_oracle_hash', '')}")
+    print(
+        f"canonical: {(record.get('oracle') or {}).get('canonical_output', record.get('expected_output'))}"
+    )
+    print(
+        f"oracle_hash: {record.get('oracle_hash') or latest.get('final_oracle_hash', '')}"
+    )
     print(f"review revisions: {result['review_revisions']}")
     if latest:
         print("latest review:")
         print(f"  sentence_oracle_id: {latest.get('sentence_oracle_id', '')}")
-        print(f"  reviewer A: {(latest.get('review_a') or {}).get('reviewer_id', 'missing')}")
-        print(f"  reviewer B: {(latest.get('review_b') or {}).get('reviewer_id', 'missing')}")
+        print(
+            f"  reviewer A: {(latest.get('review_a') or {}).get('reviewer_id', 'missing')}"
+        )
+        print(
+            f"  reviewer B: {(latest.get('review_b') or {}).get('reviewer_id', 'missing')}"
+        )
         print(f"  adjudicator: {decision.get('adjudicator', 'missing')}")
-        print(f"  A/B: {'disagreement' if comparison.get('disagreement') else 'agreement'}")
+        print(
+            f"  A/B: {'disagreement' if comparison.get('disagreement') else 'agreement'}"
+        )
         print(f"  decision: {decision.get('disposition', 'legacy')}")
     print("candidate lineage:")
     for candidate_id in latest.get("candidate_ids", []):
@@ -839,11 +874,17 @@ def cmd_trace_record(args):
 def _correction_inputs(args):
     config_path = args.config if args.config is not None else default_config_path()
     config = load_config(config_path, explicit=args.config is not None)
-    runtime = resolve_runtime_paths(config=config, source_cache=None, work_root=getattr(args, "work_root", None))
+    runtime = resolve_runtime_paths(
+        config=config, source_cache=None, work_root=getattr(args, "work_root", None)
+    )
     repo_root = (config.path.parent if config.path else Path.cwd()).resolve()
-    record_paths = args.records or [repo_root / "data" / name for name in ("train", "dev", "test")]
+    record_paths = args.records or _default_canonical_paths(repo_root)
     records = read_records(record_paths)
-    evidence_paths = [Path(path) for path in args.evidence] if args.evidence else _default_review_evidence_paths(repo_root, runtime.work_root)
+    evidence_paths = (
+        [Path(path) for path in args.evidence]
+        if args.evidence
+        else _default_review_evidence_paths(repo_root, runtime.work_root)
+    )
     evidence = read_records(evidence_paths) if evidence_paths else []
     if not evidence:
         evidence = backfill_legacy_evidence(records)
@@ -860,8 +901,12 @@ def cmd_prepare_correction(args):
     elif runtime.work_root is not None:
         out_root = runtime.work_root / "corrections" / args.record_id
     else:
-        raise ConfigError("prepare-correction requires --out-root or a configured work root")
-    template = (repo_root / "templates" / "correction-task.md").read_text(encoding="utf-8")
+        raise ConfigError(
+            "prepare-correction requires --out-root or a configured work root"
+        )
+    template = (repo_root / "templates" / "correction-task.md").read_text(
+        encoding="utf-8"
+    )
     paths = prepare_correction_context(record, evidence, out_root, template=template)
     for label, path in paths.items():
         print(f"{label}: {path}")
@@ -880,13 +925,130 @@ def cmd_apply_correction(args):
     elif runtime.work_root is not None:
         out_root = runtime.work_root / "corrections" / args.record_id / "applied"
     else:
-        raise ConfigError("apply-correction requires --out-root or a configured work root")
-    paths = write_correction_application(out_root, records, updated, history_item, evidence)
+        raise ConfigError(
+            "apply-correction requires --out-root or a configured work root"
+        )
+    paths = write_correction_application(
+        out_root, records, updated, history_item, evidence
+    )
     print(f"Corrected {args.record_id}.")
     print(f"Old oracle hash: {history_item['old_oracle_hash']}")
     print(f"New oracle hash: {history_item['new_oracle_hash']}")
     print(f"Preview: {paths['report']}#record={args.record_id}")
     return 0
+
+
+def cmd_collect(args):
+    observations = args.observations or sorted(Path("data/candidates").glob("*.jsonl"))
+    reviewed = args.reviewed or (
+        ["data/corpus.jsonl"] if Path("data/corpus.jsonl").exists() else []
+    )
+    result = collect_batch(
+        observations,
+        reviewed_paths=reviewed,
+        exclusion_paths=args.exclusions or [],
+        output_root=args.out_root,
+        batch_id=args.batch,
+        limit=args.limit,
+        source_lock_hash=args.source_lock_hash,
+    )
+    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+    return 0
+
+
+def cmd_review_check(args):
+    result = check_reviews(
+        read_records([args.batch / "cases.jsonl"]),
+        read_records([args.review_a]),
+        read_records([args.review_b]),
+    )
+    if args.json:
+        write_json(args.json, result)
+    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+    return 0 if result["ready"] else 2
+
+
+def cmd_integrate(args):
+    result = integrate_batch(args.batch, args.corpus, write=args.write)
+    print(
+        json.dumps(
+            {
+                key: value
+                for key, value in result.items()
+                if key != "synthetic_candidates"
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+    return 0
+
+
+def cmd_report(args):
+    records = read_records(
+        args.records
+        or (["data/corpus.jsonl"] if Path("data/corpus.jsonl").exists() else [])
+    )
+    errors = validate_records(records)
+    if errors:
+        raise ValueError("cannot report invalid corpus: " + "; ".join(errors))
+    targets = (
+        load_targets(args.targets)
+        if args.targets
+        else load_targets("taxonomy/coverage_targets.json")
+    )
+    coverage = build_coverage(records, targets)
+    counts = {
+        "records": len(records),
+        "families": len({row.get("family_id") for row in records}),
+    }
+    output = render_release_html(
+        args.out,
+        version=args.version,
+        maturity="corpus",
+        records=records,
+        coverage=coverage,
+        control_coverage={},
+        counts=counts,
+    )
+    print(f"wrote corpus report for {len(records)} records to {output}")
+    return 0
+
+
+def cmd_export(args):
+    records = read_records(args.records or ["data/corpus.jsonl"])
+    result = export_family_safe_splits(
+        records,
+        out_root=args.out_root,
+        seed=args.seed,
+        ratios=(args.train, args.dev, args.test),
+    )
+    print(" ".join(f"{name}={len(rows)}" for name, rows in result.items()))
+    return 0
+
+
+def cmd_benchmark(args):
+    from .benchmark import run_benchmark
+
+    summary = run_benchmark(
+        gold_root=args.gold_root,
+        split=args.split,
+        results_dir=args.results_dir,
+        prepare_module=args.prepare_module,
+        mode=args.mode,
+    )
+    print(
+        json.dumps(
+            {
+                "records": summary["record_count"],
+                "results_dir": str(args.results_dir),
+                "split": args.split,
+            },
+            ensure_ascii=False,
+        )
+    )
+    return 0
+
 
 def build_parser():
     parser = argparse.ArgumentParser(prog="spokenform-gold")
@@ -914,7 +1076,7 @@ def build_parser():
     migrate.set_defaults(func=cmd_migrate_oracle)
 
     validate = sub.add_parser("validate")
-    validate.add_argument("paths", nargs="+")
+    validate.add_argument("paths", nargs="*")
     validate.add_argument("--judge", action="store_true")
     validate.add_argument("--categories")
     validate.set_defaults(func=cmd_validate)
@@ -1209,6 +1371,63 @@ def build_parser():
     apply_correction.add_argument("--work-root", type=Path)
     apply_correction.add_argument("--out-root", type=Path)
     apply_correction.set_defaults(func=cmd_apply_correction)
+    collect = sub.add_parser("collect")
+    collect.add_argument("--observations", nargs="+")
+    collect.add_argument("--reviewed", nargs="+")
+    collect.add_argument("--exclusions", nargs="+")
+    collect.add_argument("--limit", type=int, default=100)
+    collect.add_argument("--batch", required=True)
+    collect.add_argument("--out-root", type=Path, required=True)
+    collect.add_argument("--source-lock-hash")
+    collect.set_defaults(func=cmd_collect)
+    review_check = sub.add_parser("review-check")
+    review_check.add_argument("--batch", type=Path, required=True)
+    review_check.add_argument("--review-a", type=Path, required=True)
+    review_check.add_argument("--review-b", type=Path, required=True)
+    review_check.add_argument("--json")
+    review_check.set_defaults(func=cmd_review_check)
+    integrate = sub.add_parser("integrate")
+    integrate.add_argument("--batch", type=Path, required=True)
+    integrate.add_argument("--corpus", type=Path, default=Path("data/corpus.jsonl"))
+    integrate.add_argument("--write", action="store_true")
+    integrate.set_defaults(func=cmd_integrate)
+    report = sub.add_parser("report")
+    report.add_argument("--records", nargs="*")
+    report.add_argument("--out", required=True)
+    report.add_argument("--targets")
+    report.add_argument("--version", default="corpus")
+    report.set_defaults(func=cmd_report)
+    export = sub.add_parser("export")
+    export.add_argument("--records", nargs="*")
+    export.add_argument("--out-root", type=Path, required=True)
+    export.add_argument("--seed", default="spokenform-gold-v2")
+    export.add_argument("--train", type=float, default=0.70)
+    export.add_argument("--dev", type=float, default=0.15)
+    export.add_argument("--test", type=float, default=0.15)
+    export.set_defaults(func=cmd_export)
+    release_v2 = sub.add_parser("release")
+    release_v2.add_argument("--version", required=True)
+    release_v2.add_argument("--data", nargs="+", default=["data/corpus.jsonl"])
+    release_v2.add_argument("--out", required=True)
+    release_v2.add_argument(
+        "--maturity",
+        choices=["experimental", "candidate", "stable"],
+        default="experimental",
+    )
+    release_v2.add_argument("--registry")
+    release_v2.add_argument("--source-manifest")
+    release_v2.add_argument("--coverage-profile", default="none")
+    release_v2.add_argument("--controls", nargs="+")
+    release_v2.set_defaults(func=cmd_release_check)
+    benchmark = sub.add_parser("benchmark")
+    benchmark.add_argument("--gold-root", required=True)
+    benchmark.add_argument("--split")
+    benchmark.add_argument("--prepare-module", required=True)
+    benchmark.add_argument("--results-dir", required=True)
+    benchmark.add_argument(
+        "--mode", choices=["canonical", "accepted"], default="canonical"
+    )
+    benchmark.set_defaults(func=cmd_benchmark)
     return parser
 
 

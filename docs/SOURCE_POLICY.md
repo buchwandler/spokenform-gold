@@ -78,3 +78,10 @@ The repository may include small candidate shards generated directly from checke
 Every fixture-derived row remains `split=candidate` and `status=quarantine`, retains `source.upstream_expected`, source IDs, source hashes, and source revisions, and must pass the normal validator. Metadata-only rows remain visible when a source category is unsupported. Do not change `release_ready`, `materialization_policy`, or license scope as part of fixture expansion.
 
 For full upstream refreshes, fetch the pinned revisions outside Git, run `ingest-upstreams`, inspect row-accounting and exclusion reports, then run dedupe, conflicts, family suggestions, coverage, ranking, and review-batch export. Review and promotion are separate human-governed steps.
+
+
+## v2 source observations
+
+The v2 corpus stores `source_observations` on the reviewed sentence. Each observation preserves benchmark, source ID, revision, upstream expectation where permitted, hashes, and materialization metadata. Multiple observations are grouped before review. `embedded` is allowed only for sources whose manifest policy permits public materialization. `external_ref` is used for restricted sources.
+
+The collector may read external caches, but it never copies a restricted upstream corpus into Git. A source disagreement is evidence for adjudication, not a majority-vote promotion rule.

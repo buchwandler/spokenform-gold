@@ -470,3 +470,27 @@ spokenform-gold apply-correction <record-id> --correction decision.json
 ```
 
 Normal corrections preserve `record.id`, family, and source identity. Review lineage and correction history are retained in sanitized `review-evidence.jsonl`.
+
+
+## Sentence-centric v2 authoring workflow
+
+New authoring data lives in `data/corpus.jsonl`. Canonical records do not contain `split`; `family_id` remains available for consumer-side leakage-safe export. Source observations are grouped before review, and one sentence case receives one A/B review pair and one adjudication.
+
+The normal workflow is:
+
+```text
+collect → review-check → adjudicate → integrate → validate → report
+```
+
+Use the primary commands:
+
+```bash
+spokenform-gold doctor
+spokenform-gold collect --limit 100 --batch batch-0001 --out-root ../spokenform-gold-work/batches/batch-0001
+spokenform-gold review-check --batch ../spokenform-gold-work/batches/batch-0001 --review-a ../spokenform-gold-work/batches/batch-0001/a.complete.jsonl --review-b ../spokenform-gold-work/batches/batch-0001/b.complete.jsonl
+spokenform-gold integrate --batch ../spokenform-gold-work/batches/batch-0001 --write
+spokenform-gold validate
+spokenform-gold report --out ../spokenform-gold-work/reports/records.html
+```
+
+The adjudicator may emit synthetic candidates, but a new sentence remains outside Gold until it receives independent A/B review. Restricted upstream observations retain external references and are not silently embedded. Immutable v1 split releases remain loadable, while v2 releases are built with `spokenform-gold release --version VERSION --out PATH` and contain `corpus.jsonl`.

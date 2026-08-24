@@ -1610,3 +1610,8 @@ For canonical corrections:
 - normal corrections preserve `record.id`, family identity, and source identity; identity migrations require an explicit supersession operation.
 
 `needs_review` and applicable `quarantine` decisions require a named hard blocker, blocker reason, and attempted resolution. A healthy batch reports resolved disagreements, disposition counts, blocker counts, critic challenges, and validation state.
+
+
+# Sentence-centric v2 operating path
+
+The canonical authoring file is `data/corpus.jsonl`, without train, dev, or test fields. Keep `family_id` for consumer-side family-safe export. The normal data path is `collect`, independent A/B review, adjudication, `integrate`, validation, and HTML report generation. Group source observations before review and preserve source materialization policy. Synthetic sentences remain candidates until a later independent A/B review. Use permanent record IDs in human reports and never direct a human to edit JSONL.

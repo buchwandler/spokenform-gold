@@ -113,7 +113,7 @@ def load_release_records(
     filtered: list[dict] = []
     for record in records:
         hydrated = resolve_release_record(record, source_loader=source_loader)
-        if split and record.get("split") != split:
+        if split and split not in {"all", "corpus"} and "split" in record and record.get("split") != split:
             continue
         if language and hydrated.get("language") != language:
             continue

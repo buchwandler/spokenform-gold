@@ -190,7 +190,10 @@ def _validate_unit(
                     f"{prefix}: ambiguity family {ambiguity_family!r} does not allow category {category!r}"
                 )
 
-    if record.get("source", {}).get("benchmark") != "spokenform_curated":
+    source = record.get("source") or {}
+    if not source and record.get("source_observations"):
+        source = record.get("source_observations")[0] or {}
+    if source.get("benchmark") != "spokenform_curated":
         source_category = unit.get("source_category")
         mapping_status = unit.get("mapping_status")
         if not isinstance(source_category, str) or not source_category:
@@ -215,6 +218,14 @@ def validate_records(
     source_manifests=None,
 ):
     errors = []
+    if not judge and any("split" not in record for record in records):
+        return validate_v2_records(
+            records,
+            categories=categories,
+            policies=policies,
+            ambiguities=ambiguities,
+            source_manifests=source_manifests,
+        )
     ids = Counter(record.get("id") for record in records)
     for record_id, count in ids.items():
         if record_id and count > 1:
@@ -513,5 +524,175 @@ def validate_records(
         if len(splits) > 1:
             errors.append(
                 f"family leakage: {family_id} appears in splits {sorted(splits)}"
+            )
+    return errors
+
+
+def validate_v2_records(
+    records,
+    *,
+    categories=None,
+    policies=None,
+    ambiguities=None,
+    source_manifests=None,
+) -> list[str]:
+    """Validate sentence-centric v2 corpus records without split state."""
+    errors: list[str] = []
+    categories = categories if categories is not None else categories_set()
+    policies = policies if policies is not None else policies_map()
+    ambiguities = ambiguities if ambiguities is not None else ambiguity_map()
+    source_manifests = (
+        source_manifests if source_manifests is not None else source_manifest_map()
+    )
+    ids = Counter(record.get("id") for record in records)
+    for record_id, count in ids.items():
+        if record_id and count > 1:
+            errors.append(f"duplicate id: {record_id} ({count} records)")
+    identities: dict[tuple[str, str, str], str] = {}
+    for record in records:
+        prefix = f"line {record.get('_source_line', '?')} ({record.get('id', '?')})"
+        for key in (
+            "schema_version",
+            "taxonomy_version",
+            "policy_version",
+            "id",
+            "language",
+            "locale",
+            "family_id",
+            "status",
+            "input",
+            "oracle",
+            "units",
+            "negative_for",
+            "source_observations",
+        ):
+            if key not in record:
+                errors.append(f"{prefix}: missing field {key}")
+        if record.get("schema_version") != "2.0.0":
+            errors.append(f"{prefix}: v2 records require schema_version 2.0.0")
+        if not isinstance(record.get("input"), str):
+            errors.append(f"{prefix}: input must be a string")
+        if record.get("status") not in STATUSES - {"quarantine"}:
+            errors.append(f"{prefix}: invalid v2 status {record.get('status')!r}")
+        if not isinstance(record.get("family_id"), str) or not record.get("family_id"):
+            errors.append(f"{prefix}: family_id is required")
+        source_observations = record.get("source_observations")
+        if not isinstance(source_observations, list) or not source_observations:
+            errors.append(f"{prefix}: source_observations must be a non-empty list")
+            source_observations = []
+        seen_sources: set[str] = set()
+        for index, source in enumerate(source_observations):
+            source_prefix = f"{prefix}: source_observations[{index}]"
+            if not isinstance(source, dict):
+                errors.append(f"{source_prefix}: source observation must be an object")
+                continue
+            benchmark = source.get("benchmark")
+            if not isinstance(benchmark, str) or not benchmark:
+                errors.append(f"{source_prefix}: benchmark is required")
+                continue
+            source_id = source.get("source_id")
+            source_version = source.get("source_version")
+            if not isinstance(source_id, str) or not source_id:
+                errors.append(f"{source_prefix}: source_id is required")
+            if not isinstance(source_version, str) or not source_version:
+                errors.append(f"{source_prefix}: source_version is required")
+            key = f"{benchmark}+{source_version}+{source_id}"
+            if key in seen_sources:
+                errors.append(f"{source_prefix}: duplicate source observation {key}")
+            seen_sources.add(key)
+            manifest = source_manifests.get(benchmark)
+            if manifest is None:
+                errors.append(
+                    f"{source_prefix}: unknown source benchmark {benchmark!r}"
+                )
+            elif source_version != manifest.get("revision") and source_version:
+                errors.append(
+                    f"{source_prefix}: source_version does not match manifest revision"
+                )
+        if not isinstance(record.get("input"), str):
+            continue
+        identity = (
+            record.get("language", ""),
+            record.get("locale", ""),
+            " ".join(record["input"].split()),
+        )
+        if identity in identities and identities[identity] != record.get("id"):
+            errors.append(
+                f"{prefix}: duplicate sentence identity also used by {identities[identity]}"
+            )
+        identities[identity] = record.get("id", "")
+        oracle = record.get("oracle")
+        if not isinstance(oracle, dict):
+            continue
+        status = record.get("status")
+        accepted = oracle.get("accepted_outputs")
+        rejected = oracle.get("rejected_outputs")
+        canonical = oracle.get("canonical_output")
+        if not isinstance(accepted, list) or not all(
+            isinstance(item, str) for item in accepted
+        ):
+            errors.append(f"{prefix}: oracle.accepted_outputs must be list[str]")
+            accepted = []
+        if not isinstance(rejected, list) or not all(
+            isinstance(item, dict)
+            and isinstance(item.get("output"), str)
+            and isinstance(item.get("reason"), str)
+            for item in rejected
+        ):
+            errors.append(
+                f"{prefix}: oracle.rejected_outputs must contain output/reason objects"
+            )
+            rejected = []
+        accepted_norm = {_norm_text(item) for item in accepted}
+        rejected_norm = {_norm_text(item["output"]) for item in rejected}
+        if accepted_norm & rejected_norm:
+            errors.append(f"{prefix}: oracle accepted/rejected overlap")
+        if status == "ambiguous":
+            if canonical is not None or accepted:
+                errors.append(
+                    f"{prefix}: ambiguous oracle must have null canonical and empty accepted_outputs"
+                )
+        elif status == "no_change":
+            if canonical != record.get("input") or accepted != [record.get("input")]:
+                errors.append(f"{prefix}: no_change oracle must preserve input")
+            if record.get("units") != [] or not record.get("negative_for"):
+                errors.append(f"{prefix}: no_change requires no units and negative_for")
+        else:
+            if (
+                not isinstance(canonical, str)
+                or _norm_text(canonical) not in accepted_norm
+            ):
+                errors.append(
+                    f"{prefix}: canonical_output must occur in accepted_outputs"
+                )
+            reconstructed = canonical_unit_reconstruction(record)
+            if reconstructed != canonical:
+                errors.append(
+                    f"{prefix}: canonical unit reconstruction does not equal oracle.canonical_output"
+                )
+        if oracle.get("variant_mode") != "explicit":
+            errors.append(f"{prefix}: oracle.variant_mode must be explicit")
+        stored_hash = record.get("oracle_hash")
+        if stored_hash is not None and stored_hash != oracle_hash(record):
+            errors.append(
+                f"{prefix}: oracle_hash does not match semantic oracle assertion"
+            )
+        units = record.get("units")
+        if not isinstance(units, list):
+            errors.append(f"{prefix}: units must be a list")
+            continue
+        for index, unit in enumerate(units):
+            if not isinstance(unit, dict):
+                errors.append(f"{prefix}: unit[{index}] must be an object")
+                continue
+            _validate_unit(
+                record,
+                unit,
+                index=index,
+                categories=categories,
+                policies=policies,
+                ambiguities=ambiguities,
+                errors=errors,
+                check_surface=True,
             )
     return errors

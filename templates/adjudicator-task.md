@@ -238,3 +238,8 @@ source error-code counts
 unresolved needs_review/quarantine rows
 mechanical completeness checks
 ```
+
+
+## v2 adjudication output
+
+Emit exactly one row per `case_id` with `decision` set to `accept`, `exclude`, or `unresolved`. An accepted row contains one complete `final_record`. Synthetic requests are candidates for a future batch and are never direct Gold. Preserve every source observation in the final record and record the adjudicator identity and rationale.

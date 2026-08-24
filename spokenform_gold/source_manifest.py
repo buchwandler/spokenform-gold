@@ -58,11 +58,14 @@ def filter_source_manifest(manifest: dict, source_names: set[str] | None) -> dic
 def referenced_source_names(records: list[dict]) -> set[str]:
     names: set[str] = set()
     for record in records:
-        source = record.get("source")
-        if isinstance(source, dict):
+        sources = record.get("source_observations") or [record.get("source")]
+        for source in sources:
+            if not isinstance(source, dict):
+                continue
             benchmark = source.get("benchmark")
             if isinstance(benchmark, str) and benchmark:
                 names.add(benchmark)
+        continue
     return names
 
 

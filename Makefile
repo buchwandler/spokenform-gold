@@ -1,6 +1,6 @@
-.PHONY: check lint test stats candidate-stats validate validate-controls coverage control-coverage conflicts split score adjudicate judge-calibrate release-check
+.PHONY: check lint test stats candidate-stats validate validate-corpus validate-controls coverage control-coverage conflicts split score adjudicate judge-calibrate release-check
 
-check: lint test stats candidate-stats validate validate-controls coverage control-coverage conflicts adjudicate score judge-calibrate release-check
+check: lint test stats candidate-stats validate validate-corpus validate-controls coverage control-coverage conflicts adjudicate score judge-calibrate release-check
 
 lint:
 	ruff check .
@@ -54,3 +54,6 @@ judge-calibrate:
 release-check:
 	rm -rf dist/spokenform-gold-v0.1.0-exp
 	PYTHONPATH=. python -m spokenform_gold.cli release-check --version 0.1.0-exp --data data/train data/dev data/test --controls data/controls --registry splits/family_assignments.json --maturity experimental --out dist/spokenform-gold-v0.1.0-exp
+
+validate-corpus:
+	PYTHONPATH=. python -m spokenform_gold.cli validate data/corpus.jsonl

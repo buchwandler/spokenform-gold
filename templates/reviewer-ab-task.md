@@ -225,3 +225,8 @@ mechanical checks performed
 ```
 
 Do not include or request the other reviewer's answers.
+
+
+## v2 sentence-case input
+
+The review input may be a v2 case with `case_id` and plural source observations omitted from the blind artifact. Review the sentence, language, locale, and policy only. Record one annotation for the case. Do not infer a final answer from the current Spokenform implementation or from upstream expected text.

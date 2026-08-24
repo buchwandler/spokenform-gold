@@ -35,3 +35,10 @@ single-agent proposals exist.
 Batch IDs are explicit and deterministic. External work roots may contain
 `batch-0000`, `batch-0001`, and `batch-0002` artifacts, but those artifacts do not
 alter canonical records or frozen split assignments.
+
+
+## Sentence case workflow
+
+Review one deduplicated sentence case, not one upstream row. The case contains all source observations for the same language, locale, and conservative normalized input. A and B receive only the sentence context and annotation policy. The adjudicator receives both completed reviews and source observations, then emits one final record or a deferred synthetic request.
+
+Use the HTML batch report for human inspection. Do not ask reviewers or maintainers to edit JSONL or enumerate line numbers. A new synthetic sentence is a future candidate and cannot be promoted without fresh independent A/B review.

@@ -49,3 +49,12 @@ outside canonical data. Their rows remain `split=candidate` and
 Durable sanitized review provenance is stored as `review-evidence.jsonl` where policy permits. Each entry is keyed by `record_id` and `review_revision` and links candidate/source references, A/B reviewer evidence, comparison, adjudication, hashes, and correction history without publishing blind-review forbidden fields.
 
 The human interface is generated HTML: `review-report.html` for batch review and `records.html` for release inspection. Humans identify corrections by record ID; they do not edit or enumerate JSONL rows.
+
+
+## Canonical v2 corpus
+
+The authoring source of truth is `data/corpus.jsonl`. A v2 record has one permanent `id`, `family_id`, language, locale, input, explicit oracle, units, status, and plural `source_observations`. It has no `split` and no duplicate `expected_output` state. Consumers can call the optional family-safe export helper to create train, dev, and test views without changing canonical records.
+
+A case identity is the conservative tuple `(language, locale, normalized input)`. A source identity is `(benchmark, source_version, source_id)`. All observations in one case move together through independent reviewer A, independent reviewer B, and one adjudicator. Synthetic sentences remain candidates until that same review path is completed.
+
+v2 releases contain `corpus.jsonl`. The loader remains compatible with v1 releases that contain split directories.
