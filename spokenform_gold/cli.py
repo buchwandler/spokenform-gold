@@ -9,7 +9,7 @@ from pathlib import Path
 from .adjudication import build_adjudication_queue
 from .adjudication_quality import validate_adjudication_batch
 from .census import build_upstream_census, write_census_artifacts
-from .collection import collect_batch
+from .collection import DEFAULT_V2_COLLECTION_LIMIT, collect_batch
 from .config import (
     ConfigError,
     default_config_path,
@@ -1375,7 +1375,7 @@ def build_parser():
     collect.add_argument("--observations", nargs="+")
     collect.add_argument("--reviewed", nargs="+")
     collect.add_argument("--exclusions", nargs="+")
-    collect.add_argument("--limit", type=int, default=100)
+    collect.add_argument("--limit", type=int, default=DEFAULT_V2_COLLECTION_LIMIT)
     collect.add_argument("--batch", required=True)
     collect.add_argument("--out-root", type=Path, required=True)
     collect.add_argument("--source-lock-hash")

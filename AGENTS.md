@@ -29,6 +29,19 @@ Before making non-trivial changes, read:
 6. `taxonomy/categories.json`
 7. `taxonomy/coverage_targets.json`
 
+
+
+## Primary authoring contract: sentence-centric v2
+
+New authoring data uses `data/corpus.jsonl`, which has no `split` field and no persisted `sentence_oracle_id`. The primary production path is:
+
+```text
+prepare observations -> collect -> review-check -> adjudicate -> integrate -> validate -> report
+```
+
+The default logical data-growth batch is 1,000 sentence cases. A 1,000-case batch is one file and validation contract; reviewers and adjudicators may checkpoint their own files, but only complete artifacts with the full case-ID set may proceed.
+
+Compatibility candidate/split and canonical-rereview workflows remain supported only where explicitly labeled. Do not direct fresh authoring work through `review-batch`, `blind-review`, `promote-reviewed`, or `--batch-limit 100`.
 If the repository also contains the long-form development reference, use it as
 the architectural source of truth.
 
@@ -1156,42 +1169,32 @@ make check
 
 # Current priority: produce the reviewed Gold corpus
 
-The repository infrastructure is already substantially implemented: source
-manifests and locks, Async/PolyNorm/Proteno importers, candidate merge and
-deduplication, coverage analysis, family-aware splitting, sentence-oracle
-validation, promotion, control suites, scoring, release construction, and the
-Spokenform benchmark adapter all exist.
+The repository infrastructure is already substantially implemented. The immediate data-growth work is review, adjudication, and policy decisions, not rebuilding ingestion or release machinery.
 
-Do **not** spend the next data-growth cycle rebuilding those mechanisms unless a
-concrete production run exposes a defect. The primary task is now to turn the
-full pinned upstream candidate pool plus curated regressions into reviewed,
-Git-tracked Gold records.
+## Sentence-centric v2 operating path
 
-A useful mental model is:
+The canonical authoring file is `data/corpus.jsonl`. New production data follows:
 
 ```text
-external source cache
-        ↓
-deterministic quarantine candidate pool
-        ↓
-coverage/conflict/dedup ranking
-        ↓
-blind review A + blind review B
-        ↓
-adjudication + source-policy decision
-        ↓
-promotion staging
-        ↓
-frozen family split
-        ↓
-Git-tracked train/dev/test Gold
-        ↓
-candidate release
-        ↓
-stable release after strict review + coverage gates
-        ↓
-Spokenform pins immutable Gold release
+prepare observations -> collect -> review-check -> adjudicate -> integrate -> validate -> report
 ```
+
+The default logical collection batch is 1,000 sentence cases. `collect` is the only primary batch selector for new v2 authoring:
+
+```bash
+spokenform-gold collect \
+  --observations "$SPOKENFORM_GOLD_WORK/candidates/all.jsonl" \
+  --reviewed data/corpus.jsonl \
+  --limit 1000 \
+  --batch batch-0001 \
+  --out-root "$SPOKENFORM_GOLD_WORK/batches/batch-0001"
+```
+
+A/B reviewers and adjudicators may checkpoint file production under one truthful identity. Partial files are never handoff artifacts. `review-check` requires complete independent reviews, and integration writes only accepted complete v2 records into `data/corpus.jsonl`. Humans inspect generated HTML reports rather than editing JSONL.
+
+## Compatibility-only: pre-v2 candidate and split workflow
+
+The former candidate ranking, promotion, family split, and split-based release machinery remains available for compatibility consumers. It must not be presented as the authoring path for new sentence cases.
 
 ## What "full Gold dataset" means
 
@@ -1213,7 +1216,7 @@ It is the reviewed canonical corpus under `data/train`, `data/dev`, and
 The external work directory is disposable build state. The Git-tracked reviewed
 records and immutable release artifact are the benchmark.
 
-## Production data-growth loop
+## Compatibility-only: pre-v2 candidate/split data-growth loop
 
 For a production refresh, keep upstream repositories outside Git. The
 repository-root `config.toml` normally points at the sibling directories created
@@ -1262,7 +1265,7 @@ review_batches/batch-0001.jsonl
 
 Reject the run if row accounting fails, pinned source revisions are wrong, candidate validation fails, or source/output conflicts are silently collapsed.
 
-## Canonical re-review workflow
+## Compatibility-only: canonical re-review workflow
 
 Canonical records do not store `sentence_oracle_id`; the review identity is derived from language, locale, and normalized input by the supported `spokenform_gold.review.sentence_oracle_id()` API. Never require or invent that field in `data/train`, `data/dev`, or `data/test`.
 
@@ -1283,7 +1286,7 @@ Use these new artifact names: `canonical-a.blind.jsonl`, `canonical-a.complete.j
 
 Do not adapt Gold to current Spokenform output or fabricate independent review evidence.
 
-## Review batches
+## Compatibility-only: legacy review batches
 
 Work in bounded batches. Prefer 50–100 records, then regenerate ranking after
 each promotion so the next batch follows the remaining coverage gaps.

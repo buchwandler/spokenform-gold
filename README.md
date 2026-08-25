@@ -314,7 +314,7 @@ Path precedence is `CLI > environment > config.toml`. Use
 The cache and work directories remain external runtime state and are not
 created by configuration loading.
 
-## Scaled upstream candidate ingestion
+## Compatibility-only: scaled upstream candidate ingestion
 
 The importers consume local source bundles and never require network access at runtime. Keep source bundles outside the repository:
 
@@ -411,12 +411,14 @@ Run collection against the external candidate pool and canonical corpus:
 spokenform-gold collect \
   --observations "$SPOKENFORM_GOLD_WORK/candidates/all.jsonl" \
   --reviewed data/corpus.jsonl \
-  --limit 100 \
+  --limit 1000 \
   --batch batch-0003 \
   --out-root "$SPOKENFORM_GOLD_WORK/batches/batch-0003"
 ```
 
 `collect` groups observations by `(language, locale, normalized input)` and emits `cases.jsonl`, `context.jsonl`, `a.blind.jsonl`, and `b.blind.jsonl`. Each blind reviewer row uses the v2 `case_id` contract and starts with `annotation: null` and `review.status: "unreviewed"`. Reviewers work in distinct fresh contexts and write `.complete.jsonl` artifacts without source expectations or current Spokenform output.
+
+The default logical `collect` batch is 1,000 sentence cases. Reviewers and adjudicators may checkpoint file production under one stable identity, but `review-check` and integration accept only complete artifacts covering the full case-ID set. Partial files are never handoff inputs.
 
 After both completed reviews pass `spokenform-gold review-check`, a separate adjudicator writes exactly one `accept`, `exclude`, or `unresolved` row per `case_id` to `adjudicated.jsonl`. Accepted rows contain complete v2 `final_record` objects. Synthetic requests remain candidates for a future independent batch, and unresolved cases cannot enter Gold.
 
@@ -497,7 +499,7 @@ Use the primary commands:
 
 ```bash
 spokenform-gold doctor
-spokenform-gold collect --limit 100 --batch batch-0001 --out-root ../spokenform-gold-work/batches/batch-0001
+spokenform-gold collect --limit 1000 --batch batch-0001 --out-root ../spokenform-gold-work/batches/batch-0001
 spokenform-gold review-check --batch ../spokenform-gold-work/batches/batch-0001 --review-a ../spokenform-gold-work/batches/batch-0001/a.complete.jsonl --review-b ../spokenform-gold-work/batches/batch-0001/b.complete.jsonl
 spokenform-gold integrate --batch ../spokenform-gold-work/batches/batch-0001 --write
 spokenform-gold validate

@@ -42,6 +42,16 @@ spokenform-gold review-check \
 
 Require `ready=true`, exact case coverage, correct slots, distinct stable reviewer IDs, non-null completed annotations, and no forbidden source or implementation output. Stop rather than filling missing review evidence.
 
+## Large-batch checkpointing
+
+A 1,000-case adjudication is one logical file contract. You may write `adjudicated.partial.jsonl` as a same-adjudicator checkpoint, but never hand it to integration.
+
+- Keep one truthful adjudicator identity for every checkpoint.
+- Preserve exactly one decision per case ID in the final artifact.
+- The final `adjudicated.jsonl` must cover the complete batch case-ID set with no duplicates.
+- Run the complete deterministic checks only after the final artifact is assembled.
+
+
 ## Adjudication procedure
 
 For each case:

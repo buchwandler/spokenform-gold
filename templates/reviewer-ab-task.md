@@ -54,6 +54,17 @@ review.status: "unreviewed"
 
 Preserve `case_id`, `language`, `locale`, `input`, `family_id`, and `reviewer_slot` byte-for-byte. Add `reviewer_id`, replace `annotation: null` with your independent review, and set `review.status` to the completed slot-specific value. Preserve no hidden source evidence because none belongs in the blind row.
 
+## Large-batch checkpointing
+
+For a logical batch of up to 1,000 cases, you may write a same-reviewer checkpoint such as `a.complete.partial.jsonl` or `b.complete.partial.jsonl` while working.
+
+- Never hand off a partial file as complete.
+- Never change reviewer identity between checkpoints.
+- Preserve every case ID and every blind input field byte-for-byte.
+- The final `.complete.jsonl` artifact must cover the full case-ID set exactly once.
+- Run `spokenform-gold validate-review` against the final artifact before handoff.
+
+
 ## Independent semantic review
 
 For every case, determine independently:

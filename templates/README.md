@@ -13,6 +13,8 @@ New authoring work uses `data/corpus.jsonl` and the external work root. The prim
 collect -> review-check -> adjudicate -> integrate -> validate -> report
 ```
 
+
+A normal production `collect` batch contains up to 1,000 sentence cases. This is one logical artifact batch: reviewers and adjudicators may checkpoint file production under one truthful identity, but only final complete artifacts may proceed to `review-check` or integration.
 `collect` groups all source observations by the conservative sentence identity `(language, locale, normalized input)` and emits one `case_id` plus one blind A row and one blind B row per case. The v2 reviewer contract uses `case_id`, `review_schema_version: "2.0.0"`, `language`, `locale`, `input`, `family_id`, `annotation: null`, and `review.status: "unreviewed"`. Reviewers write distinct `.complete.jsonl` artifacts without source expectations or current Spokenform output.
 
 The adjudicator reads `cases.jsonl`, `context.jsonl`, both completed reviews, and policy/schema documentation. It writes exactly one `accept`, `exclude`, or `unresolved` row per `case_id` to `adjudicated.jsonl`; accepted rows contain a complete v2 `final_record`. Synthetic requests remain future candidates until independently reviewed.

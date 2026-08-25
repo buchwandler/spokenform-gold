@@ -5,7 +5,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from spokenform_gold.collection import build_batch, cluster_observations
+from spokenform_gold.collection import (
+    build_batch,
+    cluster_observations,
+    collect_batch,
+    select_cases,
+)
 from spokenform_gold.corpus import migrate_record, sentence_key
 from spokenform_gold.io import read_records, write_jsonl
 from spokenform_gold.workflow import check_reviews, integrate_batch
@@ -112,6 +117,78 @@ class SentenceCentricTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 integrate_batch(root, target, write=True)
             self.assertEqual(before, target.read_bytes())
+
+    @staticmethod
+    def _collection_observations(count=1005):
+        return [
+            {
+                "language": "en",
+                "locale": "en-US",
+                "input": f"Case {index}.",
+                "source": {
+                    "benchmark": "fixture",
+                    "source_id": f"source-{index}",
+                    "source_version": "v1",
+                },
+            }
+            for index in range(count)
+        ]
+
+    def test_default_collection_selects_1000_deterministically(self):
+        observations = self._collection_observations()
+        selected, available = select_cases(observations)
+        repeated, repeated_available = select_cases(list(reversed(observations)))
+
+        self.assertEqual(len(selected), 1000)
+        self.assertEqual(len(available), 1005)
+        self.assertEqual(len(repeated), 1000)
+        self.assertEqual(len(repeated_available), 1005)
+        self.assertEqual(
+            [case["case_id"] for case in selected],
+            [case["case_id"] for case in repeated],
+        )
+        self.assertEqual(len({case["case_id"] for case in selected}), 1000)
+
+    def test_collection_limit_validation_and_explicit_limits(self):
+        observations = self._collection_observations()
+
+        selected, available = select_cases(observations, limit=25)
+        self.assertEqual(len(selected), 25)
+        self.assertEqual(len(available), 1005)
+        with self.assertRaisesRegex(ValueError, "limit must not be negative"):
+            select_cases(observations, limit=-1)
+
+    def test_collect_batch_writes_complete_1000_case_artifacts(self):
+        observations = self._collection_observations()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            observation_path = root / "observations.jsonl"
+            output_root = root / "batch-1000"
+            write_jsonl(observation_path, observations)
+
+            result = collect_batch(
+                [observation_path],
+                output_root=output_root,
+                batch_id="batch-1000",
+            )
+
+            self.assertEqual(result["case_count"], 1000)
+            self.assertEqual(result["available_case_count"], 1005)
+            self.assertEqual(
+                len(read_records([output_root / "cases.jsonl"])),
+                1000,
+            )
+            self.assertEqual(
+                len(read_records([output_root / "a.blind.jsonl"])),
+                1000,
+            )
+            self.assertEqual(
+                len(read_records([output_root / "b.blind.jsonl"])),
+                1000,
+            )
+            metadata = json.loads((output_root / "batch.json").read_text())
+            self.assertEqual(metadata["case_count"], 1000)
+            self.assertEqual(metadata["source_observation_count"], 1000)
 
 
 if __name__ == "__main__":

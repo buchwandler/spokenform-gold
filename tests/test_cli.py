@@ -203,6 +203,12 @@ class CliReviewWorkflowTests(unittest.TestCase):
         self.assertIn("work_root", report)
         self.assertEqual(len(report["canonical_records"]), 3)
 
+    def test_collect_parser_defaults_to_1000_cases(self):
+        args = build_parser().parse_args(
+            ["collect", "--batch", "batch-1000", "--out-root", "/tmp/batch"],
+        )
+        self.assertEqual(args.limit, 1000)
+
 
 if __name__ == "__main__":
     unittest.main()

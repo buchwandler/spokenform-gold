@@ -89,12 +89,17 @@ def _exclusion_keys(paths: Iterable[str | Path]) -> set[str]:
     return keys
 
 
+DEFAULT_V2_COLLECTION_LIMIT = 1000
+
+
 def select_cases(
     observations: Iterable[dict],
     reviewed: Iterable[dict] = (),
     exclusions: Iterable[str | Path] = (),
-    limit: int = 100,
+    limit: int = DEFAULT_V2_COLLECTION_LIMIT,
 ) -> tuple[list[dict], list[dict]]:
+    if limit < 0:
+        raise ValueError("limit must not be negative")
     reviewed_records = list(reviewed)
     reviewed_sources = corpus_source_keys(reviewed_records)
     reviewed_identities = corpus_identity_map(reviewed_records)
@@ -192,7 +197,7 @@ def collect_batch(
     exclusion_paths: Iterable[str | Path] = (),
     output_root: str | Path,
     batch_id: str,
-    limit: int = 100,
+    limit: int = DEFAULT_V2_COLLECTION_LIMIT,
     source_lock_hash: str | None = None,
 ) -> dict:
     observations = read_records(observation_paths)

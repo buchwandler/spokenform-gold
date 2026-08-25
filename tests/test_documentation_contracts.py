@@ -81,16 +81,26 @@ class DocumentationContractTests(unittest.TestCase):
 
 
     def test_sentence_centric_v2_workflow_is_primary(self):
-        paths = [
+        primary_paths = [
             ROOT / "README.md",
             ROOT / "AGENTS.md",
             ROOT / "templates/README.md",
+            ROOT / "templates/coding-agent-first-task.md",
+            ROOT / "spokenform-gold-template-review-and-release-runbook.md",
         ]
-        combined = "\n".join(path.read_text() for path in paths)
+        combined = "\n".join(path.read_text() for path in primary_paths)
         self.assertIn("collect -> review-check -> adjudicate -> integrate -> validate -> report", combined)
         self.assertIn("data/corpus.jsonl", combined)
+        self.assertIn("--limit 1000", combined)
+        self.assertIn('review_schema_version: "2.0.0"', combined)
+        self.assertIn("Compatibility-only", combined)
         self.assertNotIn("review-batch as the primary", combined)
         self.assertNotIn("train/dev/test authoring", combined)
+
+        coding_template = (ROOT / "templates/coding-agent-first-task.md").read_text()
+        primary_section = coding_template.split("## Compatibility-only workflows", 1)[0]
+        for legacy_command in ("blind-review", "promote-reviewed", "--batch-limit 100"):
+            self.assertNotIn(legacy_command, primary_section)
 
     def test_v2_reviewer_contract_is_documented(self):
         reviewer = (ROOT / "templates/reviewer-ab-task.md").read_text()
@@ -101,6 +111,9 @@ class DocumentationContractTests(unittest.TestCase):
             "a.complete.jsonl",
             "b.complete.jsonl",
             'review.status: "unreviewed"',
+            "Large-batch checkpointing",
+            "partial",
+            "full case-ID set",
         ):
             self.assertIn(text, reviewer)
         self.assertIn("Compatibility-only legacy path", reviewer)
@@ -117,6 +130,9 @@ class DocumentationContractTests(unittest.TestCase):
             "accept",
             "exclude",
             "unresolved",
+            "Large-batch checkpointing",
+            "adjudicated.partial.jsonl",
+            "complete batch case-ID set",
         ):
             self.assertIn(text, adjudicator)
         self.assertIn("Compatibility-only legacy candidate path", adjudicator)

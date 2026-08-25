@@ -1,305 +1,207 @@
 # Spokenform Gold Review and Release Runbook
 
-This runbook is the operational companion to the task templates in
-`templates/`. It separates semantic review from mechanical integration and
-release work. The benchmark policy and schemas are authoritative; current
-Spokenform output and upstream expected strings are evidence, not Gold
-authority.
+This runbook describes the primary sentence-centric v2 workflow for producing reviewed Gold data. Compatibility workflows remain available in the final sections, but they are not the authoring path for new sentence cases.
 
-## Workflow
+## Primary contract
+
+The canonical authoring source is `data/corpus.jsonl`. It has no `split`, no persisted `sentence_oracle_id`, and no duplicate legacy `expected_output` state. New data follows:
 
 ```text
-baseline and path resolution
-        |
-        +--> canonical re-review:
-        |       blank A/B -> independent A/B reviews
-        |       -> preflight -> comparison -> canonical adjudication
-        |       -> isolated oracle application -> validation/audit
-        |
-        +--> new data:
-                quarantine ingestion -> coverage/ranking
-                -> bounded independent A/B review
-                -> candidate adjudication -> promotion staging
-                -> frozen family split -> candidate release
-                                                        |
-                                                        v
-                                         Spokenform integration
-                                                        |
-                                                        v
-                                              stable release gates
-                                                        |
-                                                        v
-                                           explicit publication
+prepare observations -> collect -> review-check -> adjudicate -> integrate -> validate -> report
 ```
 
-Use separate contexts for independent reviewers, adjudication, mechanical
-integration, and publication. Do not invent reviewer identities or silently
-repair incomplete evidence.
+A normal logical production batch contains up to 1,000 sentence cases. The 1,000 cases are one file and validation contract. Reviewers and adjudicators may checkpoint their own files, but the final artifacts must contain the complete case-ID set and partial files must never be handed off.
 
-## Authoritative inputs
+The benchmark policy defines Gold. Upstream expected strings and current Spokenform output are evidence only.
 
-Before a non-trivial run, read:
+## Read before operating
 
-- `AGENTS.md`
-- `README.md`
-- `DATA_MODEL.md`
-- `docs/ANNOTATION.md`
-- `docs/ORACLE_REVIEW.md`
-- `docs/SOURCE_POLICY.md`
-- `taxonomy/categories.json`
-- `taxonomy/coverage_targets.json`
-- the schemas named by the applicable task template
+```text
+AGENTS.md
+README.md
+DATA_MODEL.md
+docs/ANNOTATION.md
+docs/SOURCE_POLICY.md
+taxonomy/categories.json
+taxonomy/coverage_targets.json
+sources/manifest.json
+templates/reviewer-ab-task.md
+templates/adjudicator-task.md
+```
 
-Resolve configured paths first:
+Resolve configured paths before source work:
 
 ```bash
 spokenform-gold doctor
 ```
 
-The external source cache and work root are disposable build state. Review
-artifacts, candidate pools, reports, and release outputs must not be copied into
-Git unless an explicit policy requires a small audit artifact.
+Keep source caches and review artifacts in the configured external work root. Do not copy restricted source bundles into Git.
 
-## Canonical re-review
+## Stage 1: prepare the observation pool
 
-Canonical records do not store `sentence_oracle_id`. The supported review API
-derives it from language, locale, and normalized input. Do not recreate it in an
-ad-hoc script.
-
-### Prepare independent review artifacts
+Verify the pinned source cache and create source-lock evidence:
 
 ```bash
-spokenform-gold prepare-canonical-rereview \
-  --records data/train data/dev data/test \
-  --review-id canonical-rereview-<DATE> \
-  --out-root "$SPOKENFORM_GOLD_WORK/reviews/canonical"
-```
-
-This creates:
-
-```text
-canonical-a.blind.jsonl
-canonical-b.blind.jsonl
-manifest.json
-```
-
-Complete A and B in genuinely isolated contexts using
-`templates/reviewer-ab-task.md`. Each reviewer must not see the other review,
-upstream expected output, current Spokenform output, comparisons, or decisions.
-Validate each completed artifact independently:
-
-```bash
-spokenform-gold validate-review \
-  "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-a.complete.jsonl" --slot A
-spokenform-gold validate-review \
-  "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-b.complete.jsonl" --slot B
-```
-
-### Mandatory aggregate gate
-
-Run this before inspecting source evidence, Git history, release reports,
-canonical oracle values, or current implementation output:
-
-```bash
-spokenform-gold review-preflight \
-  --records data/train data/dev data/test \
-  --review-a "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-a.complete.jsonl" \
-  --review-b "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-b.complete.jsonl" \
-  --json "$SPOKENFORM_GOLD_WORK/reviews/canonical/preflight.json"
-```
-
-If `ready=no`, stop immediately. Do not search for alternative review files,
-run comparison or adjudication, fabricate identities, or repair mismatched
-review evidence.
-
-### Compare and adjudicate
-
-Only after `ready=yes`:
-
-```bash
-spokenform-gold compare-reviews \
-  "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-a.complete.jsonl" \
-  "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-b.complete.jsonl" \
-  --out "$SPOKENFORM_GOLD_WORK/reviews/canonical/comparison.jsonl"
-```
-
-Use `templates/canonical-rereview-adjudicator-task.md` to produce one decision
-for every derived `sentence_oracle_id`, using
-`schemas/canonical-review-decision.schema.json`. Preserve the existing record
-ID, family ID, source identity, input, language, and locale. Do not make source
-materialization or promotion decisions in this role.
-
-Each decision must contain complete units and a full-sentence `oracle` with:
-
-- `canonical_output`;
-- explicit `accepted_outputs`;
-- explicit `rejected_outputs`;
-- `variant_mode: "explicit"`.
-
-Verify that the decision count and identity set exactly match the canonical
-records. Record SHA256 hashes for both completed reviews, the comparison, and
-the decisions. Hand these artifacts to the separate mechanical integration
-context.
-
-## Canonical mechanical integration
-
-Use `templates/canonical-rereview-integration-task.md` only after preflight,
-comparison, and adjudication are complete. It may run:
-
-```bash
-spokenform-gold apply-reviewed-oracles \
-  --records data/train data/dev data/test \
-  --review-a "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-a.complete.jsonl" \
-  --review-b "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-b.complete.jsonl" \
-  --decisions "$SPOKENFORM_GOLD_WORK/reviews/canonical/decisions.jsonl" \
-  --out-root "$SPOKENFORM_GOLD_WORK/reviews/canonical/integration"
-```
-
-Keep output isolated. Inspect the oracle diff and verify that record IDs, family
-IDs, source provenance, frozen family assignments, and split membership are
-unchanged except for the intended oracle/review metadata. Restore deterministic
-`train`, `dev`, and `test` shards with the frozen family splitter; never
-hand-pick a split.
-
-Before any copy into Git, run:
-
-```bash
-spokenform-gold validate data/train data/dev data/test
-spokenform-gold gold-audit data/train data/dev data/test
-spokenform-gold conflicts data/train data/dev data/test --mode unit
-spokenform-gold coverage \
-  data/train data/dev data/test \
-  --targets taxonomy/coverage_targets.json \
-  --json "$SPOKENFORM_GOLD_WORK/reports/coverage-after.json"
-spokenform-gold validate-controls data/controls
-spokenform-gold control-coverage \
-  data/controls \
-  --targets taxonomy/coverage_targets.json \
-  --json "$SPOKENFORM_GOLD_WORK/reports/control-coverage.json"
-```
-
-Copy only after explicit approval. The integration role does not reinterpret
-semantics, edit decisions, change taxonomy or policy, or update Spokenform
-pins.
-
-## New candidate data
-
-Keep upstream datasets logically separate and preserve their provenance. Import
-into quarantine candidates; never promote imported rows automatically.
-
-For a production refresh, pin and verify source revisions first:
-
-```bash
+python scripts/setup-source-cache.py --verify-only
 spokenform-gold source-lock \
   --manifest sources/manifest.json \
   --out sources/source-lock.json
+
 spokenform-gold ingest-upstreams \
+  --source-cache "$SPOKENFORM_GOLD_SOURCE_CACHE" \
+  --work-root "$SPOKENFORM_GOLD_WORK" \
   --sources async_tn polynorm proteno \
-  --languages en de es fr it pt \
-  --reviewed data/train data/dev data/test \
-  --targets taxonomy/coverage_targets.json \
-  --batch-limit 100
+  --languages en de es fr it pt
 ```
 
-Inspect row accounting, deduplication, conflicts, exclusions, coverage, and
-ranked candidates before selecting a bounded review batch. Use independent A/B
-review contexts and `templates/adjudicator-task.md`. Candidate adjudication
-must decide status, family, oracle, and license/materialization disposition.
+Inspect at least:
 
-Promote only reviewed decisions:
+```text
+reports/ingestion-summary.json
+reports/upstream_pool_summary.json
+reports/dedupe.json
+reports/conflicts.json
+reports/coverage-reviewed.json
+reports/exclusions.json
+census/summary.json
+candidates/all.jsonl
+```
+
+Require pinned revisions, required paths, row accounting, candidate validation, source identity, upstream expectations, and materialization metadata to be intact. Ingestion creates quarantine observations. It does not adjudicate, assign Gold families, or promote data.
+
+## Stage 2: collect one v2 logical batch
 
 ```bash
-spokenform-gold promote-reviewed \
-  --candidates "$SPOKENFORM_GOLD_WORK/review_batches/batch-0001.jsonl" \
-  --decisions "$SPOKENFORM_GOLD_WORK/reviews/batch-0001-decisions.jsonl" \
-  --against data/train data/dev data/test \
-  --out "$SPOKENFORM_GOLD_WORK/promotion_staging/batch-0001.jsonl" \
-  --report "$SPOKENFORM_GOLD_WORK/promotion_staging/batch-0001-report.json"
+spokenform-gold collect \
+  --observations "$SPOKENFORM_GOLD_WORK/candidates/all.jsonl" \
+  --reviewed data/corpus.jsonl \
+  --limit 1000 \
+  --batch batch-0001 \
+  --out-root "$SPOKENFORM_GOLD_WORK/batches/batch-0001"
 ```
 
-Run the frozen family splitter over the complete canonical corpus plus the
-staging records. Inspect the family-registry diff before copying generated
-shards into Git. Regenerate ranking and coverage after each bounded batch.
+Collection groups observations by `(language, locale, normalized input)` and writes:
 
-## Release ladder
+```text
+cases.jsonl
+context.jsonl
+a.blind.jsonl
+b.blind.jsonl
+batch.json
+```
 
-A candidate release is for integration testing and may still expose coverage or
-review gaps:
+Check that `batch.json` records the selected `case_count` and complete remaining `available_case_count`. Every blind row must use `review_schema_version: "2.0.0"`, a stable `case_id`, preserved input identity, `annotation: null`, and `review.status: "unreviewed"`.
+
+## Stage 3: independent A/B review
+
+Use `templates/reviewer-ab-task.md` in two genuinely independent fresh contexts:
+
+```text
+$SPOKENFORM_GOLD_WORK/batches/batch-0001/a.blind.jsonl -> reviewer A
+$SPOKENFORM_GOLD_WORK/batches/batch-0001/b.blind.jsonl -> reviewer B
+```
+
+The reviewers must not see `context.jsonl`, source expectations, current Spokenform output, the other review, comparisons, or decisions. Each reviewer preserves the blind identity fields and writes only their own final artifact:
+
+```text
+$SPOKENFORM_GOLD_WORK/batches/batch-0001/a.complete.jsonl
+$SPOKENFORM_GOLD_WORK/batches/batch-0001/b.complete.jsonl
+```
+
+For a large batch, `a.complete.partial.jsonl` and `b.complete.partial.jsonl` are permitted checkpoints. They must retain one truthful reviewer identity and are never complete handoff artifacts. The final complete files must cover the exact full case-ID set once and pass `validate-review`.
+
+## Stage 4: aggregate review-check gate
+
+Before source inspection or adjudication, run:
 
 ```bash
-spokenform-gold release-check \
-  --version 0.x.y-candidate.N \
-  --data data/train data/dev data/test \
-  --controls data/controls \
-  --maturity candidate \
-  --out "$SPOKENFORM_GOLD_WORK/releases/0.x.y-candidate.N"
+spokenform-gold review-check \
+  --batch "$SPOKENFORM_GOLD_WORK/batches/batch-0001" \
+  --review-a "$SPOKENFORM_GOLD_WORK/batches/batch-0001/a.complete.jsonl" \
+  --review-b "$SPOKENFORM_GOLD_WORK/batches/batch-0001/b.complete.jsonl" \
+  --json "$SPOKENFORM_GOLD_WORK/batches/batch-0001/review-check.json"
 ```
 
-A stable release requires strict audit and stable coverage gates:
+Require `ready=true`, exact case-ID coverage, correct reviewer slots, distinct stable reviewer IDs, complete annotations, and no forbidden source or implementation output. If the gate is not ready, stop. Do not search for alternative files or fabricate missing evidence.
+
+## Stage 5: adjudicate
+
+Use `templates/adjudicator-task.md` only after review-check is ready. The adjudicator may inspect both reviews, source observations, and upstream expectations. The adjudicator writes exactly one `accept`, `exclude`, or `unresolved` row per case ID to:
+
+```text
+$SPOKENFORM_GOLD_WORK/batches/batch-0001/adjudicated.jsonl
+```
+
+Accepted rows contain complete v2 `final_record` objects. Unresolved cases remain outside Gold. A/B disagreement alone is not a blocker; unresolved requires a named hard blocker, reason, and attempted resolution.
+
+For a 1,000-case logical file, `adjudicated.partial.jsonl` is allowed as a same-adjudicator checkpoint only. The final `adjudicated.jsonl` must contain one decision per case ID with no duplicates and must never be replaced by a partial file.
+
+## Stage 6: integrate and inspect
+
+Run a dry run first:
 
 ```bash
-spokenform-gold gold-audit data/train data/dev data/test --strict
-spokenform-gold release-check \
-  --version X.Y.Z \
-  --data data/train data/dev data/test \
-  --controls data/controls \
-  --maturity stable \
-  --coverage-profile stable \
-  --out "$SPOKENFORM_GOLD_WORK/releases/X.Y.Z"
+spokenform-gold integrate \
+  --batch "$SPOKENFORM_GOLD_WORK/batches/batch-0001"
 ```
 
-Do not weaken coverage, oracle, control, provenance, or review gates to make a
-release pass. Spokenform must consume an immutable accepted release, not the
-external candidate work directory.
-
-## Handoff checklist
-
-Every review, integration, or release handoff records:
-
-- source revisions and row-accounting summary;
-- candidate, exclusion, and disposition counts;
-- coverage gaps before and after the change;
-- review and adjudication artifact paths;
-- reviewer and adjudicator identities;
-- changed family assignments, if any;
-- oracle, comparison, decision, split, and release hashes;
-- validation, audit, conflict, control, and coverage results;
-- approval, copy, commit, publication, and downstream-pin state;
-- unresolved semantic, source, license, or policy blockers.
-
-Never claim completion from proposals, quarantine candidates, or work-root
-artifacts alone.
-
-## Stop conditions
-
-Stop and report a blocker when:
-
-- pinned source revisions or row accounting fail;
-- review artifacts are incomplete, blank, mismatched, or not independent;
-- canonical identity, family assignment, or source identity would change;
-- semantic context is insufficient and ambiguity would be hidden;
-- source materialization is not permitted;
-- a frozen family would move across splits;
-- validation, strict audit, controls, conflicts, coverage, or release checks fail.
-
-## Human review interface and correction flow
-
-JSONL remains the machine interchange format. It is not the human review interface.
-After A/B review, compare and adjudicate automatically, run the deterministic quality gate, and generate:
+After decisions are complete and the dry run is clean:
 
 ```bash
-spokenform-gold adjudication-check --candidates ... --review-a ... --review-b ... --comparison ... --decisions ...
-spokenform-gold review-report --candidates ... --review-a ... --review-b ... --comparison ... --decisions ... --out review-report.html
+spokenform-gold integrate \
+  --batch "$SPOKENFORM_GOLD_WORK/batches/batch-0001" \
+  --write
+
+spokenform-gold validate data/corpus.jsonl
+spokenform-gold report \
+  --records data/corpus.jsonl \
+  --out "$SPOKENFORM_GOLD_WORK/reports/corpus.html"
 ```
 
-The human handoff must say **Open `review-report.html`**, and must report candidate/cluster counts, A/B agreement/disagreement, resolved dispositions, hard blockers, critic challenges, and validation state. Do not ask the human to inspect `comparison.jsonl`, edit JSONL, find line numbers, or maintain a disagreement list.
+Integration preserves source observations and canonical identity, rejects unresolved or incomplete decisions, and does not add `split` or persisted `sentence_oracle_id`. Humans receive `review-report.html` or `records.html`; do not ask humans to inspect, edit, or enumerate JSONL rows. Corrections use the permanent `record.id`.
 
-Canonical release records use immutable `record.id` as the correction handle:
+## Release checks
+
+After a reviewed increment, inspect validation, coverage, conflicts, and controls. Candidate and stable release commands remain separate from authoring:
 
 ```bash
-spokenform-gold trace-record <record-id>
-spokenform-gold prepare-correction <record-id>
-spokenform-gold apply-correction <record-id> --correction decision.json
+spokenform-gold validate data/corpus.jsonl
+spokenform-gold report --records data/corpus.jsonl --out "$SPOKENFORM_GOLD_WORK/reports/corpus.html"
 ```
 
-These commands resolve review lineage, source references, hashes, correction history, and previews from the record ID. Normal corrections preserve record ID, family, and source identity; an input correction may change the derived `sentence_oracle_id` while historical evidence remains archived.
+Do not claim stable completeness from a candidate artifact. Stable gates must retain strict oracle, provenance, coverage, control, and review requirements.
+
+## Human review interface
+
+JSONL is machine interchange, not the human UI. Batch review produces `review-report.html`, and release inspection produces `records.html`. Human corrections identify the permanent `record.id`. A/B disagreement is resolved by adjudication; it is not silently dropped. `needs_review` and applicable `quarantine` decisions require a named hard blocker, blocker reason, and attempted resolution.
+
+## Compatibility-only canonical rereview
+
+Existing canonical records can still use the compatibility canonical rereview workflow. It is not a method for creating new v2 sentence cases. Its artifacts remain explicitly named:
+
+```text
+canonical-a.blind.jsonl
+canonical-a.complete.jsonl
+canonical-b.blind.jsonl
+canonical-b.complete.jsonl
+preflight.json
+comparison.jsonl
+decisions.jsonl
+manifest.json
+schemas/canonical-review-decision.schema.json
+```
+
+Run `review-preflight` before source inspection. Canonical records do not store `sentence_oracle_id`; the identity is derived by the supported review API. Apply corrections only through the dedicated compatibility integration task, preserving record, family, source, and split identity.
+
+## Compatibility-only pre-v2 candidate and split workflow
+
+The former candidate ranking and split-based promotion commands remain available for compatibility consumers. They are not the v2 authoring path:
+
+```bash
+spokenform-gold review-batch ...
+spokenform-gold blind-review ...
+spokenform-gold promote-reviewed ...
+spokenform-gold split ...
+```
+
+Legacy candidate rows remain quarantine material until independent review, adjudication, source-policy, family, and release gates pass. Never use these commands as a substitute for `collect`, and never silently copy their output into `data/corpus.jsonl`.
