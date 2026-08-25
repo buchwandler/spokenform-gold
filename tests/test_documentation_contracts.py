@@ -80,5 +80,47 @@ class DocumentationContractTests(unittest.TestCase):
                     self.assertNotIn('"sentence_oracle_id"', line)
 
 
+    def test_sentence_centric_v2_workflow_is_primary(self):
+        paths = [
+            ROOT / "README.md",
+            ROOT / "AGENTS.md",
+            ROOT / "templates/README.md",
+        ]
+        combined = "\n".join(path.read_text() for path in paths)
+        self.assertIn("collect -> review-check -> adjudicate -> integrate -> validate -> report", combined)
+        self.assertIn("data/corpus.jsonl", combined)
+        self.assertNotIn("review-batch as the primary", combined)
+        self.assertNotIn("train/dev/test authoring", combined)
+
+    def test_v2_reviewer_contract_is_documented(self):
+        reviewer = (ROOT / "templates/reviewer-ab-task.md").read_text()
+        for text in (
+            'review_schema_version: "2.0.0"',
+            "case_id",
+            "schemas/review.schema.json",
+            "a.complete.jsonl",
+            "b.complete.jsonl",
+            'review.status: "unreviewed"',
+        ):
+            self.assertIn(text, reviewer)
+        self.assertIn("Compatibility-only legacy path", reviewer)
+        self.assertNotIn("sentence_oracle_id", reviewer)
+
+    def test_v2_adjudicator_contract_is_documented(self):
+        adjudicator = (ROOT / "templates/adjudicator-task.md").read_text()
+        for text in (
+            "cases.jsonl",
+            "context.jsonl",
+            "adjudicated.jsonl",
+            "schemas/adjudication.schema.json",
+            "final_record",
+            "accept",
+            "exclude",
+            "unresolved",
+        ):
+            self.assertIn(text, adjudicator)
+        self.assertIn("Compatibility-only legacy candidate path", adjudicator)
+
+
 if __name__ == "__main__":
     unittest.main()

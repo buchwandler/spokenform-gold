@@ -1,232 +1,148 @@
-# Independent Reviewer A/B — Fresh-Context Task Template
+# Independent Reviewer A/B, Sentence-Centric v2
 
-> Run this template in two separate, isolated contexts: once for slot A and once
-> for slot B. Replace every `<PLACEHOLDER>` before handing it to a reviewer.
+> Run this template twice, once in a distinct fresh context for slot A and once in a distinct fresh context for slot B. Replace every placeholder with truthful values.
 
----
+## Role and isolation
 
-You are independent reviewer **<A_OR_B>** for Spokenform Gold batch
-**<BATCH_ID>**.
+You are independent reviewer **<A_OR_B>** for batch **<BATCH_ID>**. Use the stable truthful identity **<REVIEWER_ID>** in every output row.
 
-This protocol may be performed by an LLM review agent. Slot A and slot B must run in different fresh contexts with distinct stable reviewer IDs. Do not claim independence if either context saw the other review, upstream expected output, current Spokenform output, comparison, or decision.
-## Goal
-
-Complete every row in the explicit blind preparation artifact without consulting upstream
-expected outputs, current Spokenform behavior, the other reviewer, or an
-adjudication result:
-
-```text
-<ABSOLUTE_PATH_TO_CANONICAL_REVIEW_A_OR_B_BLIND_JSONL>
-```
-
-Write the completed reviewer artifact to a new `.complete.jsonl` file; never overwrite the `.blind.jsonl` input:
-
-```text
-<ABSOLUTE_PATH_TO_CANONICAL_REVIEW_A_OR_B_COMPLETE_JSONL>
-```
-
-Use this stable, truthful reviewer identity in every row:
-
-```text
-<REVIEWER_ID>
-```
-
-Do not invent an identity or claim independence if another person or agent
-supplied your semantic answers.
-
-## Repository policy available to you
-
-You may read only the following policy/schema files plus your blind artifact:
+Read only the reviewer policy and schema files named below plus your assigned blind artifact:
 
 ```text
 AGENTS.md
 README.md
 DATA_MODEL.md
 docs/ANNOTATION.md
-docs/ORACLE_REVIEW.md
 docs/SOURCE_POLICY.md
-docs/ROADMAP.md
-taxonomy/coverage_targets.json
 taxonomy/categories.json
 taxonomy/policies.json
-taxonomy/ambiguity_families.json
-schemas/oracle.schema.json
-schemas/oracle-review.schema.json
+schemas/review.schema.json
 schemas/record.schema.json
+<ABSOLUTE_PATH_TO_<A_OR_B>.blind.jsonl>
 ```
 
-Do **not** inspect candidate files, source caches, source expected outputs,
-Spokenform code/output, another review file, comparison files, or decisions.
-Do not search the web for the source sentence.
+Do not inspect `context.jsonl`, source candidates, source caches, upstream expected outputs, current Spokenform output, the other review, comparison files, adjudication files, or the web. Do not claim independence if your context saw another reviewer’s answers or hidden source evidence.
 
-The benchmark policy defines Gold; the current implementation does not. Canonical records do not store `sentence_oracle_id`; the review identity is derived from language, locale, and normalized input and must be preserved exactly from the blind artifact.
+## Input and output
 
-## Input contract
-
-Each input row represents one sentence-oracle cluster and contains:
+Input:
 
 ```text
-review_schema_version
-sentence_oracle_id
+<ABSOLUTE_PATH_TO_<A_OR_B>.blind.jsonl>
+```
+
+Write a new completed artifact. Never overwrite the blind artifact:
+
+```text
+<ABSOLUTE_PATH_TO_a.complete.jsonl> for slot A
+<ABSOLUTE_PATH_TO_b.complete.jsonl> for slot B
+```
+
+`collect` emits one row per sentence case with exactly this v2 preparation contract:
+
+```text
+review_schema_version: "2.0.0"
+case_id
 reviewer_slot
 language
 locale
 input
-materialization
-source_refs
+family_id
 annotation: null
-review.status: unreviewed
+review.status: "unreviewed"
 ```
 
-Multiple source candidates can share one sentence-oracle row. Review the
-sentence and locale, not the source's preferred answer. Do not alter
-`sentence_oracle_id`, input, language, locale, materialization, or source refs.
+Preserve `case_id`, `language`, `locale`, `input`, `family_id`, and `reviewer_slot` byte-for-byte. Add `reviewer_id`, replace `annotation: null` with your independent review, and set `review.status` to the completed slot-specific value. Preserve no hidden source evidence because none belongs in the blind row.
 
-Before annotating, verify:
+## Independent semantic review
 
-1. every row has your assigned `reviewer_slot`;
-2. every annotation is null;
-3. no row contains `upstream_expected`, `upstream_output`, `current_output`,
-   `spokenform_output`, or another completed annotation;
-4. the output path differs from the input path.
+For every case, determine independently:
 
-Stop and report the problem if any check fails.
-
-## Required semantic review
-
-For every row, independently determine:
-
-1. exact normalization spans using zero-based, end-exclusive offsets;
-2. canonical taxonomy category for each span;
+1. exact zero-based, end-exclusive normalization spans;
+2. taxonomy category for every span;
 3. machine-readable semantics;
 4. whether the sentence is genuinely ambiguous;
-5. registered policy ID;
+5. the registered policy ID;
 6. canonical unit realization;
 7. explicit meaning-preserving unit variants;
 8. plausible but wrong unit variants;
 9. canonical full-sentence output;
 10. explicit accepted full-sentence outputs;
 11. rejected full-sentence outputs and reasons;
-12. nearby false-positive risk and whether this row should remain unchanged.
+12. nearby false-positive risk and whether the sentence is a `no_change` control.
 
-Do not guess missing context. Use an ambiguity status when the sentence itself
-cannot determine one interpretation. Do not silently repair the source text.
+Do not guess missing context. Use an ambiguity status when the sentence does not determine one interpretation. Do not silently repair the input.
 
-## Completed row shape
+For reviewed non-ambiguous rows, ensure:
 
-Preserve all input fields and add `reviewer_id`. Replace `annotation: null` with
-this shape:
+```text
+annotation.expected_output == annotation.oracle.canonical_output
+annotation.oracle.canonical_output is in annotation.oracle.accepted_outputs
+unit.canonical is in unit.accepted
+unit.accepted and unit.rejected are disjoint
+```
+
+For `no_change`, use `expected_output == input`, `units == []`, and a non-empty `negative_for` list.
+
+## Completed row requirements
+
+Each completed row must remain a valid `schemas/review.schema.json` row and contain:
 
 ```json
 {
-  "review_schema_version": "1.0.0",
-  "sentence_oracle_id": "<PRESERVE>",
+  "review_schema_version": "2.0.0",
+  "case_id": "<PRESERVE>",
   "reviewer_slot": "<A_OR_B>",
   "reviewer_id": "<REVIEWER_ID>",
   "language": "<PRESERVE>",
   "locale": "<PRESERVE>",
   "input": "<PRESERVE>",
-  "materialization": "<PRESERVE>",
-  "source_refs": [{ "benchmark": "<PRESERVE>", "source_id": "<PRESERVE>" }],
+  "family_id": "<PRESERVE>",
   "annotation": {
     "status": "gold",
     "expected_output": "Canonical full sentence.",
-    "units": [
-      {
-        "surface": "3/4",
-        "start": 4,
-        "end": 7,
-        "category": "fraction",
-        "semantic": { "numerator": 3, "denominator": 4 },
-        "policy": "<REGISTERED_POLICY_ID>",
-        "canonical": "three quarters",
-        "accepted": ["three quarters", "three fourths"],
-        "rejected": ["three slash four"],
-        "features": { "surface_pattern": "numeric_fraction" }
-      }
-    ],
+    "units": [],
     "negative_for": [],
     "notes": "Independent semantic-review rationale.",
     "oracle": {
       "canonical_output": "Canonical full sentence.",
       "accepted_outputs": ["Canonical full sentence."],
-      "rejected_outputs": [
-        { "output": "Wrong full sentence.", "reason": "Changes the meaning." }
-      ],
+      "rejected_outputs": [],
       "variant_mode": "explicit",
       "comparison_profile": "sentence-exact-v1"
     }
   },
   "review": {
     "status": "review_a_complete",
-    "protocol_version": "1.0.0"
+    "protocol_version": "2.0.0"
   }
 }
 ```
 
-For slot B use `review_b_complete`. The example values are illustrative only;
-do not copy them into unrelated rows.
+Use `review_b_complete` for slot B. The example values are illustrative and must not be copied into unrelated cases.
 
-Status guidance:
+## Mechanical handoff
 
-- `gold`: one clear reviewed interpretation;
-- `multi_valid`: multiple policy-equivalent spoken realizations;
-- `policy_choice`: policy deliberately chooses among plausible conventions;
-- `ambiguous`: context does not determine one interpretation;
-- `no_change`: input must remain unchanged, `units == []`,
-  `expected_output == input`, and `negative_for` is non-empty.
-
-For reviewed non-ambiguous rows:
-
-```text
-annotation.expected_output == annotation.oracle.canonical_output
-oracle.canonical_output must occur in oracle.accepted_outputs
-unit.canonical must occur in unit.accepted
-unit.accepted and unit.rejected must be disjoint
-```
-
-Accepted sentence outputs are explicit. Do not infer an unchecked Cartesian
-product from unit variants.
-
-## Mechanical checks before handoff
-
-Confirm locally that:
+Before handoff, verify:
 
 - output is valid JSONL with one object per line;
-- row count and `sentence_oracle_id` set match the blank artifact;
-- every row has the same non-empty reviewer ID;
-- every annotation is complete;
-- lifecycle status matches your slot;
-- preserved context fields are byte-for-byte unchanged;
-- forbidden blind fields are absent.
+- row count and case ID set match the blind artifact;
+- every row has the same non-empty truthful reviewer ID;
+- every row has the assigned slot;
+- every annotation is complete and no annotation is null;
+- preserved fields are unchanged;
+- no forbidden source or implementation output fields are present.
 
-Run the independent artifact check before handoff:
+Run:
 
 ```bash
-spokenform-gold validate-review <ABSOLUTE_PATH_TO_COMPLETE_JSONL> --slot <A_OR_B>
+spokenform-gold validate-review <ABSOLUTE_PATH_TO_<A_OR_B>.complete.jsonl> --slot <A_OR_B>
 ```
 
-Do not run `compare-reviews`; that step requires both independent artifacts and
-belongs to the adjudication context.
+Do not run `compare-reviews`; that belongs to the adjudication context after both reviews are complete.
 
-## Handoff
+Report only the batch ID, slot and reviewer ID, input/output paths, row count, ambiguity and no-change counts, rows flagged for adjudication, and mechanical checks performed. Do not include the other reviewer’s answers.
 
-Report only:
+## Compatibility-only legacy path
 
-```text
-batch ID
-reviewer slot and reviewer ID
-input and output artifact paths
-row count
-ambiguous count
-no-change count
-rows flagged in notes for adjudication
-mechanical checks performed
-```
-
-Do not include or request the other reviewer's answers.
-
-
-## v2 sentence-case input
-
-The review input may be a v2 case with `case_id` and plural source observations omitted from the blind artifact. Review the sentence, language, locale, and policy only. Record one annotation for the case. Do not infer a final answer from the current Spokenform implementation or from upstream expected text.
+The repository still supports legacy canonical re-review artifacts for compatibility. That path may use its separately documented derived identity and canonical rereview schemas, but it is not the v2 data-growth contract above. Do not mix legacy fields or lifecycle names into a v2 `collect` batch.

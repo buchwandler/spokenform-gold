@@ -1614,4 +1614,14 @@ For canonical corrections:
 
 # Sentence-centric v2 operating path
 
-The canonical authoring file is `data/corpus.jsonl`, without train, dev, or test fields. Keep `family_id` for consumer-side family-safe export. The normal data path is `collect`, independent A/B review, adjudication, `integrate`, validation, and HTML report generation. Group source observations before review and preserve source materialization policy. Synthetic sentences remain candidates until a later independent A/B review. Use permanent record IDs in human reports and never direct a human to edit JSONL.
+The canonical authoring file is `data/corpus.jsonl`, without train, dev, or test fields. Keep `family_id` for consumer-side family-safe export. The primary data-growth path is:
+
+```text
+collect -> review-check -> adjudicate -> integrate -> validate -> report
+```
+
+`collect` groups source observations by `(language, locale, normalized input)` and emits one `case_id` plus `cases.jsonl`, `context.jsonl`, `a.blind.jsonl`, and `b.blind.jsonl`. A v2 blind reviewer row contains `review_schema_version: "2.0.0"`, `case_id`, `reviewer_slot`, `language`, `locale`, `input`, `family_id`, `annotation: null`, and `review.status: "unreviewed"`. Reviewers preserve those fields, add a truthful reviewer identity, and write `.complete.jsonl` files in distinct fresh contexts without source expectations, current Spokenform output, or the other review.
+
+The adjudicator may inspect the two completed reviews and all source observations only after the review-check gate. It writes exactly one `accept`, `exclude`, or `unresolved` row per `case_id` to `adjudicated.jsonl`. Accepted rows contain a complete v2 `final_record` compatible with `schemas/record.schema.json`; synthetic requests remain candidates for a future independent batch. Unresolved cases cannot enter Gold.
+
+Use `data/corpus.jsonl` as the authoring source of truth. It has no `split`, no persisted `sentence_oracle_id`, and no duplicate legacy expected-output state. Keep legacy split and canonical rereview commands available only as clearly labeled compatibility workflows. The human receives generated HTML reports, not JSONL rows to edit.

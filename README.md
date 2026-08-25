@@ -397,23 +397,34 @@ The fixture run is triage evidence only. Candidates retain quarantine status, so
 
 ## Data-growth batch contract
 
-Full-dataset growth is executed in bounded batches. The checked-in repository
-contains canonical `data/train`, `data/dev`, and `data/test` release inputs;
-`data/train` is part of release materialization, while the normal Spokenform
-benchmark defaults to the held-out `test` split. Selecting `all` is explicit and
-must not silently change the default benchmark split.
+## Primary data-growth workflow: sentence-centric v2
 
-Batch 0 is repository/process hygiene. Batch 1 targets stable-required category
-and surface coverage using only reviewed policy and available candidate evidence.
-Batch 2 expands multilingual coverage and reports Czech gaps until independently
-authored and reviewed Czech records exist. Upstream and discovered rows remain
-quarantine candidates until two independent reviews, adjudication, a
-Spokenform-owned family, and a source/materialization decision are recorded.
+New authoring data lives in `data/corpus.jsonl`, which has no `split` field. The primary path is:
 
-Review artifacts and upstream caches belong in the disposable external work root.
-They are not release data and must not be copied into `data/train`, `data/dev`, or
-`data/test` merely because a ranker, model, or current Spokenform output suggests
-an answer.
+```text
+collect -> review-check -> adjudicate -> integrate -> validate -> report
+```
+
+Run collection against the external candidate pool and canonical corpus:
+
+```bash
+spokenform-gold collect \
+  --observations "$SPOKENFORM_GOLD_WORK/candidates/all.jsonl" \
+  --reviewed data/corpus.jsonl \
+  --limit 100 \
+  --batch batch-0003 \
+  --out-root "$SPOKENFORM_GOLD_WORK/batches/batch-0003"
+```
+
+`collect` groups observations by `(language, locale, normalized input)` and emits `cases.jsonl`, `context.jsonl`, `a.blind.jsonl`, and `b.blind.jsonl`. Each blind reviewer row uses the v2 `case_id` contract and starts with `annotation: null` and `review.status: "unreviewed"`. Reviewers work in distinct fresh contexts and write `.complete.jsonl` artifacts without source expectations or current Spokenform output.
+
+After both completed reviews pass `spokenform-gold review-check`, a separate adjudicator writes exactly one `accept`, `exclude`, or `unresolved` row per `case_id` to `adjudicated.jsonl`. Accepted rows contain complete v2 `final_record` objects. Synthetic requests remain candidates for a future independent batch, and unresolved cases cannot enter Gold.
+
+The integration context runs a dry run before `integrate --write`, then `spokenform-gold validate` and `spokenform-gold report`. Humans inspect generated HTML reports, not JSONL rows. The benchmark policy defines Gold; upstream outputs and current Spokenform output are evidence only.
+
+## Compatibility-only split workflow
+
+The former ranking, promotion, family split, and split-based release commands remain available for compatibility and release consumers. They are not the authoring path for new sentence cases. Review artifacts and upstream caches remain in the disposable external work root and must not be copied into canonical data without independent review, adjudication, and source-policy decisions.
 
 ## Strict canonical re-review workflow
 

@@ -5,37 +5,25 @@ into agent prompts, reviewer instructions, release-publication checklists, or
 batch handoff documents. The benchmark policy in `AGENTS.md`, the schemas, the
 taxonomy, and source policy remain authoritative.
 
-## Production workflow overview
+## Primary workflow: sentence-centric v2 data growth
 
-The workflow has separate tracks and role boundaries:
+New authoring work uses `data/corpus.jsonl` and the external work root. The primary path is:
 
 ```text
-real checkout and baseline
-        |
-        +--> legacy canonical re-review: blank A/B -> independent A/B
-        |       -> canonical adjudicator -> isolated apply -> frozen split restore
-        |
-        +--> new data: quarantine ingestion -> coverage/ranking -> bounded batch
-                -> independent A/B -> candidate adjudicator
-                -> promotion/split/integration -> candidate release
-                                                        |
-                                                        v
-                                      Spokenform integration -> stable gates
-                                                        |
-                                                        v
-                                      explicit release publication -> verification
+collect -> review-check -> adjudicate -> integrate -> validate -> report
 ```
 
-Upstream expected outputs are evidence, never Gold authority. A and B must run
-in genuinely isolated contexts without seeing each other's work, current
-Spokenform output, or hidden upstream expectations. Human review and
-adjudication cannot be replaced by a proposal or an automated judge.
+`collect` groups all source observations by the conservative sentence identity `(language, locale, normalized input)` and emits one `case_id` plus one blind A row and one blind B row per case. The v2 reviewer contract uses `case_id`, `review_schema_version: "2.0.0"`, `language`, `locale`, `input`, `family_id`, `annotation: null`, and `review.status: "unreviewed"`. Reviewers write distinct `.complete.jsonl` artifacts without source expectations or current Spokenform output.
 
-The human interface is generated HTML, not JSONL: candidate batches use
-`review-report.html`, release inspection uses `records.html`, and corrections use
-the permanent `record.id` with `trace-record` and `prepare-correction`. A/B
-disagreement is resolved by the adjudicator; `needs_review` requires a named hard
-blocker, blocker reason, and attempted resolution.
+The adjudicator reads `cases.jsonl`, `context.jsonl`, both completed reviews, and policy/schema documentation. It writes exactly one `accept`, `exclude`, or `unresolved` row per `case_id` to `adjudicated.jsonl`; accepted rows contain a complete v2 `final_record`. Synthetic requests remain future candidates until independently reviewed.
+
+Only after the review and adjudication gates pass may the integration context run a dry run and then `integrate --write`. It preserves source observations, rejects unresolved cases, and does not add `split` or legacy `sentence_oracle_id` state to `data/corpus.jsonl`. Generate `review-report.html` or `records.html` for human inspection rather than asking humans to edit JSONL.
+
+Upstream expected outputs are evidence, never Gold authority. A and B must run in genuinely isolated fresh contexts without seeing each other's work, current Spokenform output, or hidden upstream expectations. Human review and adjudication cannot be replaced by a proposal or automated judge.
+
+## Compatibility workflow
+
+Legacy canonical re-review and split-based promotion templates remain available for compatibility. They are not the primary authoring path and must not be mixed with v2 `case_id` artifacts.
 
 ## Role templates
 
@@ -48,15 +36,11 @@ source cache, ingests and ranks quarantine candidates, creates blank review
 artifacts, and prepares handoffs. It must stop before semantic review and must
 not impersonate reviewers or adjudicators.
 
-### `reviewer-ab-task.md` — T1/T2 independent review
+### `reviewer-ab-task.md` — v2 independent review
 
-**Use when:** completing reviewer A or reviewer B in a separate isolated
-context.
+**Use when:** completing reviewer A or reviewer B for a `collect` batch in a separate fresh context.
 
-The reviewer annotates spans, categories, semantics, ambiguity, policies,
-canonical and accepted/rejected unit variants, and the explicit full-sentence
-oracle. It must not inspect upstream expected output, current Spokenform output,
-the other review, comparison, or decisions.
+The reviewer preserves `case_id`, language, locale, input, and family ID, fills the independent semantic annotation, and writes `a.complete.jsonl` or `b.complete.jsonl`. It must not inspect context/source observations, upstream expected output, current Spokenform output, the other review, comparison, or decisions.
 
 ### `canonical-rereview-adjudicator-task.md` — T3a canonical re-review
 
@@ -66,13 +50,11 @@ Canonical records do not store `sentence_oracle_id`; the identity is derived fro
 
 This role produces adjudicated/release-ready oracle decisions for `apply-reviewed-oracles`; it is not a candidate promotion or source-materialization decision.
 
-### `adjudicator-task.md` — T3b candidate adjudication
+### `adjudicator-task.md` — v2 candidate adjudication
 
-**Use when:** a new candidate batch has two completed independent reviews.
+**Use when:** a new `collect` batch has two completed independent reviews.
 
-This role compares reviews, resolves semantics, assigns a Spokenform-owned
-family, decides source/license disposition, and emits one promotion decision per
-candidate. It must not apply, split, copy, commit, or publish.
+This role reads `cases.jsonl`, `context.jsonl`, `a.complete.jsonl`, and `b.complete.jsonl`, compares the independent annotations, resolves policy/source issues, and emits one `accept`, `exclude`, or `unresolved` row per `case_id` to `adjudicated.jsonl`. Accepted rows contain a complete v2 `final_record`. It must not apply, split, copy, commit, or publish.
 
 ### `promote-split-commit-task.md` — T4 mechanical integration
 
