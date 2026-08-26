@@ -62,7 +62,7 @@ For a logical batch of up to 1,000 cases, you may write a same-reviewer checkpoi
 - Never change reviewer identity between checkpoints.
 - Preserve every case ID and every blind input field byte-for-byte.
 - The final `.complete.jsonl` artifact must cover the full case-ID set exactly once.
-- Run `spokenform-gold validate-review` against the final artifact before handoff.
+- Run the single-review mechanical check against the final artifact before handoff; this does not replace the aggregate A/B gate.
 
 
 ## Independent semantic review
@@ -144,12 +144,23 @@ Before handoff, verify:
 - preserved fields are unchanged;
 - no forbidden source or implementation output fields are present.
 
-Run:
+Run the v2 single-review check:
 
 ```bash
-spokenform-gold validate-review <ABSOLUTE_PATH_TO_<A_OR_B>.complete.jsonl> --slot <A_OR_B>
+spokenform-gold validate-review \
+  <ABSOLUTE_PATH_TO_<A_OR_B>.complete.jsonl> \
+  --slot <A_OR_B> \
+  --contract v2
 ```
 
+This checks one v2 artifact only. The mandatory aggregate pre-adjudication gate remains:
+
+```bash
+spokenform-gold review-check \
+  --batch <ABSOLUTE_PATH_TO_BATCH_ROOT> \
+  --review-a <ABSOLUTE_PATH_TO_a.complete.jsonl> \
+  --review-b <ABSOLUTE_PATH_TO_b.complete.jsonl>
+```
 Do not run `compare-reviews`; that belongs to the adjudication context after both reviews are complete.
 
 Report only the batch ID, slot and reviewer ID, input/output paths, row count, ambiguity and no-change counts, rows flagged for adjudication, and mechanical checks performed. Do not include the other reviewer’s answers.

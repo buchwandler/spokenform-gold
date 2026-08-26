@@ -62,13 +62,30 @@ class SentenceCentricTests(unittest.TestCase):
 
         def row(slot, reviewer):
             return {
+                "review_schema_version": "2.0.0",
                 "case_id": "case-1",
                 "reviewer_slot": slot,
                 "reviewer_id": reviewer,
-                "annotation": {},
-                "review": {"status": "complete"},
+                "language": "en",
+                "locale": "en-US",
+                "input": "x",
+                "family_id": None,
+                "annotation": {
+                    "status": "no_change",
+                    "expected_output": "x",
+                    "units": [],
+                    "negative_for": ["normalization"],
+                    "oracle": {
+                        "canonical_output": "x",
+                        "accepted_outputs": ["x"],
+                        "rejected_outputs": [],
+                    },
+                },
+                "review": {
+                    "status": f"review_{slot.lower()}_complete",
+                    "protocol_version": "2.0.0",
+                },
             }
-
         self.assertTrue(
             check_reviews([case], [row("A", "a")], [row("B", "b")])["ready"]
         )

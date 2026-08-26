@@ -1,5 +1,7 @@
 # Sentence Oracle Review Artifacts
 
+
+This document describes the compatibility-only canonical re-review contract keyed by derived `sentence_oracle_id`; primary sentence-centric v2 review uses `case_id` and `review-check`.
 Canonical re-review artifacts live in the external configured work root, not in
 `data/train`, `data/dev`, or `data/test`.
 
@@ -9,7 +11,7 @@ Canonical re-review artifacts live in the external configured work root, not in
    context and source references but `annotation: null`, `review.status: unreviewed`, and no reviewer identity.
 2. **Completed reviewer row** — the corresponding `.complete.jsonl`; one isolated
    reviewer adds one stable `reviewer_id`, a complete annotation, and the slot
-   lifecycle state. Validate it independently with `validate-review`.
+   lifecycle state. Validate it independently with `validate-review --contract canonical`.
 3. **Canonical decision** — an adjudicator artifact using
    `schemas/canonical-review-decision.schema.json`; it records two reviewer IDs,
    an adjudicator, final oracle data, disagreement, and source-error metadata.
@@ -56,12 +58,13 @@ spokenform-gold prepare-canonical-rereview \
 ```
 
 Complete them in separate contexts and validate each completed artifact:
-
 ```bash
 spokenform-gold validate-review \
-  "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-a.complete.jsonl" --slot A
+  "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-a.complete.jsonl" \
+  --slot A --contract canonical
 spokenform-gold validate-review \
-  "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-b.complete.jsonl" --slot B
+  "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-b.complete.jsonl" \
+  --slot B --contract canonical
 ```
 
 Run the aggregate readiness gate before reading source evidence, Git history,

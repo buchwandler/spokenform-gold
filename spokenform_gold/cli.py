@@ -55,8 +55,10 @@ from .review import (
     apply_reviewed_oracles,
     blind_review_batch,
     compare_review_batches,
+    detect_review_contract,
     review_preflight,
     validate_review_rows,
+    validate_v2_review_rows,
     write_review_application,
 )
 from .review_html import render_review_html
@@ -260,18 +262,63 @@ def cmd_review_preflight(args):
     return 0 if report["ready"] else 2
 
 
+def _v2_review_human(report: dict) -> str:
+    lines = [
+        "review_contract=sentence-centric-v2",
+        f"review_state={'ready' if report['ready'] else 'blocked'}",
+        f"rows={report['rows']}",
+        f"slot={report['slot']}",
+        f"reviewer_id={report.get('reviewer_id') or 'missing'}",
+        f"completed={report['completed']}",
+        f"unreviewed={report['unreviewed']}",
+        f"duplicate_case_ids={len(report.get('duplicate_case_ids', []))}",
+        f"ready={'yes' if report['ready'] else 'no'}",
+    ]
+    if report.get("issues"):
+        lines.append("issues:")
+        lines.extend(f"- {issue['message']}" for issue in report["issues"])
+    return "\n".join(lines)
+
+
 def cmd_validate_review(args):
     path = Path(args.review)
     rows, artifact_issues = _read_review_artifact(
         path, scope=f"review_{args.slot.lower()}"
     )
-    report = validate_review_rows(rows, slot=args.slot)
+    contract = detect_review_contract(rows, requested=args.contract)
+    if contract == "v2":
+        report = validate_v2_review_rows(rows, slot=args.slot)
+    elif contract == "canonical":
+        report = validate_review_rows(rows, slot=args.slot)
+        report["contract"] = "canonical"
+    else:
+        message = (
+            "review artifact mixes sentence-centric v2 and canonical re-review identities"
+            if rows
+            else "unable to determine review artifact contract"
+        )
+        report = {
+            "contract": "indeterminate",
+            "slot": args.slot,
+            "rows": len(rows),
+            "reviewer_id": None,
+            "reviewer_ids": [],
+            "completed": 0,
+            "unreviewed": 0,
+            "issues": [{
+                "scope": f"review {args.slot.lower()}",
+                "code": "mixed_review_contract",
+                "message": message,
+            }],
+            "ready": False,
+            "_indexed": {},
+        }
     report["issues"].extend(artifact_issues)
     report["issues"].sort(
         key=lambda item: (
             item.get("scope", ""),
             item.get("code", ""),
-            item.get("sentence_oracle_id", ""),
+            item.get("case_id", item.get("sentence_oracle_id", "")),
             item.get("message", ""),
         )
     )
@@ -282,38 +329,41 @@ def cmd_validate_review(args):
             args.json,
             {key: value for key, value in report.items() if key != "_indexed"},
         )
-    print(
-        _review_preflight_human(
-            {
-                "canonical_review_state": "ready" if report["ready"] else "blocked",
-                "canonical_records": 0,
-                "sentence_oracles": report["rows"],
-                "review_a": report
-                if args.slot == "A"
-                else {
-                    "slot": "A",
-                    "rows": 0,
-                    "reviewer_id": None,
-                    "completed": 0,
-                    "unreviewed": 0,
-                },
-                "review_b": report
-                if args.slot == "B"
-                else {
-                    "slot": "B",
-                    "rows": 0,
-                    "reviewer_id": None,
-                    "completed": 0,
-                    "unreviewed": 0,
-                },
-                "id_sets_match": True,
-                "context_match": True,
-                "canonical_identity_match": True,
-                "ready": report["ready"],
-                "issues": report["issues"],
-            }
+    if contract == "v2":
+        print(_v2_review_human(report))
+    else:
+        print(
+            _review_preflight_human(
+                {
+                    "canonical_review_state": "ready" if report["ready"] else "blocked",
+                    "canonical_records": 0,
+                    "sentence_oracles": report["rows"],
+                    "review_a": report
+                    if args.slot == "A"
+                    else {
+                        "slot": "A",
+                        "rows": 0,
+                        "reviewer_id": None,
+                        "completed": 0,
+                        "unreviewed": 0,
+                    },
+                    "review_b": report
+                    if args.slot == "B"
+                    else {
+                        "slot": "B",
+                        "rows": 0,
+                        "reviewer_id": None,
+                        "completed": 0,
+                        "unreviewed": 0,
+                    },
+                    "id_sets_match": True,
+                    "context_match": True,
+                    "canonical_identity_match": True,
+                    "ready": report["ready"],
+                    "issues": report["issues"],
+                }
+            )
         )
-    )
     return 0 if report["ready"] else 2
 
 
@@ -1102,6 +1152,12 @@ def build_parser():
     validate_review = sub.add_parser("validate-review")
     validate_review.add_argument("review")
     validate_review.add_argument("--slot", choices=["A", "B"], required=True)
+    validate_review.add_argument(
+        "--contract",
+        choices=["auto", "v2", "canonical"],
+        default="auto",
+        help="Review contract to validate; auto detects v2 or canonical artifacts.",
+    )
     validate_review.add_argument("--json")
     validate_review.set_defaults(func=cmd_validate_review)
 

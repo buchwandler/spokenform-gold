@@ -108,7 +108,7 @@ $SPOKENFORM_GOLD_WORK/batches/batch-0001/a.complete.jsonl
 $SPOKENFORM_GOLD_WORK/batches/batch-0001/b.complete.jsonl
 ```
 
-For a large batch, `a.complete.partial.jsonl` and `b.complete.partial.jsonl` are permitted checkpoints. They must retain one truthful reviewer identity and are never complete handoff artifacts. The final complete files must cover the exact full case-ID set once and pass `validate-review`.
+For a large batch, `a.complete.partial.jsonl` and `b.complete.partial.jsonl` are permitted checkpoints. They must retain one truthful reviewer identity and are never complete handoff artifacts. The final complete files must cover the exact full case-ID set once and pass `validate-review --contract v2`; the authoritative pre-adjudication gate is Stage 4 `review-check`.
 
 ## Stage 4: aggregate review-check gate
 

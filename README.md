@@ -418,6 +418,8 @@ spokenform-gold collect \
 
 `collect` groups observations by `(language, locale, normalized input)` and emits `cases.jsonl`, `context.jsonl`, `a.blind.jsonl`, and `b.blind.jsonl`. Each blind reviewer row uses the v2 `case_id` contract and starts with `annotation: null` and `review.status: "unreviewed"`. Reviewers work in distinct fresh contexts and write `.complete.jsonl` artifacts without source expectations or current Spokenform output.
 
+
+For an individual completed v2 artifact, use `spokenform-gold validate-review <PATH> --slot A|B --contract v2` as a mechanical check. It does not replace the mandatory A/B `review-check` gate before adjudication.
 The default logical `collect` batch is 1,000 sentence cases. Reviewers and adjudicators may checkpoint file production under one stable identity, but `review-check` and integration accept only complete artifacts covering the full case-ID set. Partial files are never handoff inputs.
 
 After both completed reviews pass `spokenform-gold review-check`, a separate adjudicator writes exactly one `accept`, `exclude`, or `unresolved` row per `case_id` to `adjudicated.jsonl`. Accepted rows contain complete v2 `final_record` objects. Synthetic requests remain candidates for a future independent batch, and unresolved cases cannot enter Gold.
@@ -447,13 +449,15 @@ spokenform-gold prepare-canonical-rereview \
   --out-root "$SPOKENFORM_GOLD_WORK/reviews/canonical"
 ```
 
-This creates only `canonical-a.blind.jsonl`, `canonical-b.blind.jsonl`, and `manifest.json`. Each reviewer writes a new `.complete.jsonl` artifact and checks it independently:
+This creates only `canonical-a.blind.jsonl`, `canonical-b.blind.jsonl`, and `manifest.json`. Each reviewer writes a new `.complete.jsonl` artifact and checks it independently with the compatibility-only canonical contract:
 
 ```bash
 spokenform-gold validate-review \
-  "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-a.complete.jsonl" --slot A
+  "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-a.complete.jsonl" \
+  --slot A --contract canonical
 spokenform-gold validate-review \
-  "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-b.complete.jsonl" --slot B
+  "$SPOKENFORM_GOLD_WORK/reviews/canonical/canonical-b.complete.jsonl" \
+  --slot B --contract canonical
 ```
 
 Run the aggregate first gate before source inspection or comparison:

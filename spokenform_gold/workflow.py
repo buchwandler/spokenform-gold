@@ -11,6 +11,7 @@ from .corpus import (
     write_records_atomic,
 )
 from .io import read_records, write_json, write_jsonl
+from .review import validate_v2_review_rows
 from .validation import validate_records
 
 FINAL_DECISIONS = {"accept", "exclude", "unresolved"}
@@ -28,48 +29,52 @@ def _reviewer_id(row: dict) -> str | None:
 def check_reviews(
     cases: Iterable[dict], review_a: Iterable[dict], review_b: Iterable[dict]
 ) -> dict:
-    case_map = {case.get("case_id"): case for case in cases}
-    reports = []
+    """Validate both completed sentence-centric v2 artifacts as one gate."""
+    cases_list = list(cases)
+    case_map = {
+        case.get("case_id"): case
+        for case in cases_list
+        if isinstance(case, dict) and isinstance(case.get("case_id"), str)
+    }
     issues: list[str] = []
-    for slot, rows in (("A", list(review_a)), ("B", list(review_b))):
-        ids: set[str] = set()
-        reviewer_ids: set[str] = set()
-        for row in rows:
-            case_id = row.get("case_id")
-            if not isinstance(case_id, str) or case_id not in case_map:
+    reports: list[dict] = []
+    for slot, raw_rows in (("A", list(review_a)), ("B", list(review_b))):
+        validation = validate_v2_review_rows(raw_rows, slot=slot)
+        issues.extend(
+            f"review {slot}: {issue['message']}"
+            for issue in validation["issues"]
+        )
+        indexed = validation.get("_indexed", {})
+        for case_id, row in indexed.items():
+            case = case_map.get(case_id)
+            if case is None:
                 issues.append(f"review {slot}: unknown or missing case_id {case_id!r}")
-            if case_id in ids:
-                issues.append(f"review {slot}: duplicate case_id {case_id}")
-            ids.add(case_id)
-            if row.get("reviewer_slot") != slot:
-                issues.append(f"review {slot}: reviewer_slot mismatch for {case_id}")
-            reviewer = _reviewer_id(row)
-            if reviewer:
-                reviewer_ids.add(reviewer)
-            else:
-                issues.append(f"review {slot}: missing reviewer_id for {case_id}")
-            review = row.get("review") or {}
-            annotation = row.get("annotation")
-            if not isinstance(annotation, dict) or review.get("status") in {
-                None,
-                "unreviewed",
-            }:
-                issues.append(f"review {slot}: incomplete annotation for {case_id}")
-            if any(
-                key in row
-                for key in ("upstream_expected", "current_output", "spokenform_output")
-            ):
-                issues.append(
-                    f"review {slot}: blind input exposes forbidden output for {case_id}"
-                )
-        if len(reviewer_ids) > 1:
-            issues.append(f"review {slot}: multiple reviewer identities")
+                continue
+            fields = ["language", "locale", "input"]
+            if "family_id" in case:
+                fields.append("family_id")
+            for field in fields:
+                if row.get(field) != case.get(field):
+                    issues.append(
+                        f"review {slot}: context mismatch for {case_id} in {field}"
+                    )
+        review_case_ids = set(indexed)
+        expected_case_ids = set(case_map)
+        for case_id in sorted(expected_case_ids - review_case_ids):
+            issues.append(f"review {slot}: missing case_id {case_id}")
         reports.append(
             {
                 "slot": slot,
-                "rows": len(rows),
-                "case_ids": sorted(ids),
-                "reviewer_id": next(iter(reviewer_ids), None),
+                "rows": len(raw_rows),
+                "case_ids": sorted(review_case_ids),
+                "reviewer_id": validation["reviewer_id"],
+                "completed": validation["completed"],
+                "unreviewed": validation["unreviewed"],
+                "validation": {
+                    key: value
+                    for key, value in validation.items()
+                    if key != "_indexed"
+                },
             }
         )
     a_ids, b_ids = set(reports[0]["case_ids"]), set(reports[1]["case_ids"])
@@ -77,13 +82,12 @@ def check_reviews(
         issues.append(
             f"review case sets differ: only_a={sorted(a_ids - b_ids)} only_b={sorted(b_ids - a_ids)}"
         )
-    case_ids = set(case_map)
-    if a_ids != case_ids or b_ids != case_ids:
+    expected_case_ids = set(case_map)
+    if a_ids != expected_case_ids or b_ids != expected_case_ids:
         issues.append("review artifacts do not cover exactly the batch cases")
-    if (
-        reports[0]["reviewer_id"]
-        and reports[0]["reviewer_id"] == reports[1]["reviewer_id"]
-    ):
+    reviewer_a = reports[0]["reviewer_id"]
+    reviewer_b = reports[1]["reviewer_id"]
+    if reviewer_a and reviewer_a == reviewer_b:
         issues.append("reviewer A and reviewer B must have distinct identities")
     return {
         "ready": not issues,

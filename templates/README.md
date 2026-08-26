@@ -95,7 +95,8 @@ claim completion from candidate work-root artifacts alone.
 | Artifact/operation                            | Allowed context                                    |
 | --------------------------------------------- | -------------------------------------------------- |
 | blank A/B review artifacts                    | T0 preparation                                     |
-| `validate-review`                             | T1/T2 before reviewer handoff                      |
+| `validate-review --contract v2`                  | Primary sentence-centric v2 reviewer A/B artifact |
+| `validate-review --contract canonical`            | Compatibility-only canonical re-review artifact   |
 | semantic annotation                           | T1/T2 only, one reviewer per isolated context      |
 | `compare-reviews`                             | T3a/T3b after both reviews complete                |
 | canonical sentence-oracle decision            | T3a only                                           |
