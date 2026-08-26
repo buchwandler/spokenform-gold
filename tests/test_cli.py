@@ -10,6 +10,7 @@ from pathlib import Path
 from spokenform_gold.cli import build_parser, main
 from spokenform_gold.io import read_records, write_jsonl
 from spokenform_gold.review import blind_review_batch, sentence_oracle_id
+from spokenform_gold.review_lineage import backfill_legacy_evidence
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -202,6 +203,29 @@ class CliReviewWorkflowTests(unittest.TestCase):
         report = json.loads((self.work / "doctor.json").read_text())
         self.assertIn("work_root", report)
         self.assertIn("corpus", report)
+
+    def test_trace_record_handles_missing_legacy_comparison(self):
+        evidence_path = self.work / "review-evidence.jsonl"
+        evidence = backfill_legacy_evidence([self.records[0]])
+        evidence[0]["decision"] = None
+        write_jsonl(evidence_path, evidence)
+        output = io.StringIO()
+        errors = io.StringIO()
+        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+            code = main(
+                [
+                    "trace-record",
+                    self.records[0]["id"],
+                    "--records",
+                    str(self.records_path),
+                    "--evidence",
+                    str(evidence_path),
+                ]
+            )
+        self.assertEqual(code, 0)
+        self.assertIn("A/B: missing", output.getvalue())
+        self.assertNotIn("A/B: agreement", output.getvalue())
+        self.assertNotIn("Traceback", errors.getvalue())
 
     def test_collect_parser_defaults_to_1000_cases(self):
         args = build_parser().parse_args(

@@ -1162,8 +1162,10 @@ def cmd_trace_record(args):
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     record = result["record"]
-    decision = latest.get("decision", {}) if isinstance(latest, dict) else {}
-    comparison = latest.get("comparison", {}) if isinstance(latest, dict) else {}
+    raw_decision = latest.get("decision") if isinstance(latest, dict) else None
+    decision = raw_decision if isinstance(raw_decision, dict) else {}
+    raw_comparison = latest.get("comparison") if isinstance(latest, dict) else None
+    comparison = raw_comparison if isinstance(raw_comparison, dict) else None
     print(f"record_id: {args.record_id}")
     print(f"family_id: {record.get('family_id', '')}")
     print(f"input: {record.get('input', '')}")
@@ -1183,9 +1185,13 @@ def cmd_trace_record(args):
             f"  reviewer_b: {(latest.get('review_b') or {}).get('reviewer_id', 'missing')}"
         )
         print(f"  adjudicator: {decision.get('adjudicator', 'missing')}")
-        print(
-            f"  A/B: {'disagreement' if comparison.get('disagreement') else 'agreement'}"
-        )
+        if comparison is None:
+            comparison_status = "missing"
+        elif comparison.get("disagreement"):
+            comparison_status = "disagreement"
+        else:
+            comparison_status = "agreement"
+        print(f"  A/B: {comparison_status}")
         print(f"  decision: {decision.get('disposition', 'legacy')}")
     print(f"source_refs: {len(latest.get('source_refs', [])) if latest else 0}")
     print(f"evidence_files: {len(result['evidence_paths'])}")

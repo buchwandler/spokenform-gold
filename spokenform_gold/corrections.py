@@ -11,6 +11,7 @@ from .oracle import oracle_hash
 from .review import assert_record_identity_preserved, sentence_oracle_id
 from .review_lineage import (
     artifact_sha256,
+    record_evidence_history,
     sanitize_review_artifact,
     validate_review_evidence,
 )
@@ -125,10 +126,7 @@ def prepare_correction_context(
         raise ValueError(f"correction output root must be new or empty: {root}")
     root.mkdir(parents=True, exist_ok=True)
     record_id = record.get("id")
-    history = sorted(
-        (row for row in evidence if row.get("record_id") == record_id),
-        key=lambda row: row.get("review_revision", -1),
-    )
+    history = record_evidence_history(record_id, evidence)
     context = {
         "record_id": record_id,
         "family_id": record.get("family_id"),

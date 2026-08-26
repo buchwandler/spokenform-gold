@@ -8,6 +8,7 @@ from spokenform_gold.review_lineage import (
     artifact_sha256,
     backfill_legacy_evidence,
     build_review_evidence,
+    record_evidence_history,
     sanitize_review_artifact,
     validate_review_evidence,
 )
@@ -76,6 +77,21 @@ class ReviewLineageTests(unittest.TestCase):
         self.assertTrue(entry["legacy"])
         self.assertEqual(entry["evidence_status"], "legacy_review_metadata_only")
         self.assertEqual(validate_review_evidence([entry]), [])
+
+    def test_identical_revision_rows_are_deduplicated(self):
+        entry = backfill_legacy_evidence([self.record])[0]
+        history = record_evidence_history(
+            self.record["id"], [entry, copy.deepcopy(entry)]
+        )
+        self.assertEqual(history, [entry])
+        self.assertEqual(len(history), 1)
+
+    def test_conflicting_revision_rows_are_rejected(self):
+        entry = backfill_legacy_evidence([self.record])[0]
+        conflicting = copy.deepcopy(entry)
+        conflicting["final_oracle_hash"] = "sha256:conflict"
+        with self.assertRaisesRegex(ValueError, "conflicting review evidence"):
+            record_evidence_history(self.record["id"], [entry, conflicting])
 
 
 if __name__ == "__main__":

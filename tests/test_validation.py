@@ -90,6 +90,40 @@ class ValidationTests(unittest.TestCase):
         errors = validate_records([broken], judge=True)
         self.assertTrue(any("ambiguity_family" in error for error in errors))
 
+    def test_ambiguous_date_units_require_candidate_semantics(self):
+        records = read_records([ROOT / "data/corpus.jsonl"])
+        record = copy.deepcopy(
+            next(item for item in records if item["id"] == "sfg-000ec27c2adaddabdea0")
+        )
+        date_units = [
+            unit
+            for unit in record["units"]
+            if unit.get("category") == "date"
+            and unit.get("mapping_status") == "ambiguous"
+        ]
+        self.assertGreaterEqual(len(date_units), 2)
+        for unit in date_units:
+            semantic = unit["semantic"]
+            if "candidates" in semantic:
+                semantic = semantic["candidates"][0]
+            unit["canonical"] = None
+            unit["semantic"] = copy.deepcopy(semantic)
+        errors = validate_records([record])
+        self.assertEqual(
+            sum("ambiguous date unit requires" in error for error in errors),
+            len(date_units),
+        )
+
+        for unit in date_units:
+            semantic = copy.deepcopy(unit["semantic"])
+            alternate = copy.deepcopy(semantic)
+            alternate["year"] -= 100
+            unit["semantic"] = {"candidates": [semantic, alternate]}
+        errors = validate_records([record])
+        self.assertFalse(
+            any("ambiguous date unit requires" in error for error in errors)
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -145,6 +145,16 @@ def _validate_unit(
     elif semantic or record.get("status") in REVIEWED_STATUSES | {"ambiguous"}:
         for message in validate_semantic(category, semantic):
             errors.append(f"{prefix}: {message}")
+        if (
+            record.get("status") == "ambiguous"
+            and category == "date"
+            and unit.get("mapping_status") == "ambiguous"
+        ):
+            candidates = semantic.get("candidates")
+            if not isinstance(candidates, list) or len(candidates) < 2:
+                errors.append(
+                    f"{prefix}: ambiguous date unit requires at least two semantic candidates"
+                )
 
     accepted = unit.get("accepted")
     rejected = unit.get("rejected")

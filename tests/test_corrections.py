@@ -1,4 +1,5 @@
 import copy
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -7,6 +8,7 @@ from spokenform_gold.corrections import apply_correction, prepare_correction_con
 from spokenform_gold.io import read_records
 from spokenform_gold.oracle import oracle_hash
 from spokenform_gold.review import sentence_oracle_id
+from spokenform_gold.review_lineage import backfill_legacy_evidence
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -79,6 +81,18 @@ class CorrectionTests(unittest.TestCase):
             self.assertEqual(set(paths), {"context", "decision", "task", "report"})
             self.assertIn(self.record["id"], paths["task"].read_text())
             self.assertTrue(paths["report"].exists())
+
+    def test_prepare_context_deduplicates_review_history(self):
+        entry = backfill_legacy_evidence([self.record])[0]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            paths = prepare_correction_context(
+                self.record,
+                [entry, copy.deepcopy(entry)],
+                Path(tmpdir) / "correction",
+                template="# <RECORD_ID>",
+            )
+            context = json.loads(paths["context"].read_text())
+            self.assertEqual(len(context["review_history"]), 1)
 
 
 if __name__ == "__main__":

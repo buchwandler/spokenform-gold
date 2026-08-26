@@ -88,6 +88,25 @@ def _revision_for(record_id: str, previous: Iterable[dict]) -> int:
     return max(revisions, default=0) + 1
 
 
+def record_evidence_history(record_id: str, evidence: Iterable[dict]) -> list[dict]:
+    """Return one deterministic evidence row per review revision."""
+    by_revision: dict[int, dict] = {}
+    for row in evidence:
+        if not isinstance(row, dict) or row.get("record_id") != record_id:
+            continue
+        revision = row.get("review_revision")
+        if not isinstance(revision, int):
+            continue
+        prior = by_revision.get(revision)
+        if prior is None:
+            by_revision[revision] = row
+        elif artifact_sha256(prior) != artifact_sha256(row):
+            raise ValueError(
+                f"conflicting review evidence for {record_id} revision {revision}"
+            )
+    return [by_revision[revision] for revision in sorted(by_revision)]
+
+
 def build_review_evidence(
     candidates: Iterable[dict],
     review_a: Iterable[dict],
@@ -365,10 +384,7 @@ def resolve_record_evidence(
     record = next((row for row in records if row.get("id") == record_id), None)
     if record is None:
         raise KeyError(f"unknown canonical record id: {record_id}")
-    history = sorted(
-        (row for row in evidence if row.get("record_id") == record_id),
-        key=lambda row: row.get("review_revision", -1),
-    )
+    history = record_evidence_history(record_id, evidence)
     return {
         "record": sanitize_review_artifact(record),
         "evidence": history,
@@ -394,6 +410,7 @@ __all__ = [
     "artifact_sha256",
     "backfill_legacy_evidence",
     "build_review_evidence",
+    "record_evidence_history",
     "resolve_record_evidence",
     "sanitize_review_artifact",
     "validate_review_evidence",
