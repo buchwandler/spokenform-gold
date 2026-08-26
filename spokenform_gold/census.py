@@ -4,6 +4,7 @@ from collections import Counter, defaultdict
 from collections.abc import Iterable
 from pathlib import Path
 
+from .corpus import find_identity_collisions
 from .deduplication import normalize_for_fingerprint
 from .io import sha256_text, write_json, write_jsonl
 
@@ -91,6 +92,7 @@ def build_upstream_census(
         )
         for record in candidates
     ]
+    identity_collisions = find_identity_collisions(candidates)
     exclusion_rows = [_exclusion_row(item) for item in exclusions]
     rows = sorted(
         candidate_rows + exclusion_rows,
@@ -130,9 +132,15 @@ def build_upstream_census(
             1 for row in rows if row.get("state") == "release_ready"
         ),
         "sentence_clusters": len(clusters),
+        "identity_collision_count": len(identity_collisions),
         "row_accounting_ok": accounting_ok,
     }
-    return {"rows": rows, "sentence_clusters": clusters, "summary": summary}
+    return {
+        "rows": rows,
+        "sentence_clusters": clusters,
+        "identity_collisions": identity_collisions,
+        "summary": summary,
+    }
 
 
 def build_sentence_clusters(records: Iterable[dict]) -> list[dict]:
@@ -189,11 +197,14 @@ def write_census_artifacts(work_root: str | Path, census: dict) -> dict:
     rows_path = root / "upstream_rows.jsonl"
     clusters_path = root / "sentence_clusters.jsonl"
     summary_path = root / "summary.json"
+    collisions_path = root / "identity_collisions.jsonl"
     write_jsonl(rows_path, census["rows"])
     write_jsonl(clusters_path, census["sentence_clusters"])
+    write_jsonl(collisions_path, census.get("identity_collisions", []))
     write_json(summary_path, census["summary"])
     return {
         "rows": str(rows_path),
         "sentence_clusters": str(clusters_path),
+        "identity_collisions": str(collisions_path),
         "summary": str(summary_path),
     }

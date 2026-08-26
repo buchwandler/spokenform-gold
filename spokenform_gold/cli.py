@@ -33,7 +33,7 @@ from .families import suggest_families
 from .gold_audit import audit_records
 from .html_report import render_release_html
 from .importers import import_async, import_polynorm, import_proteno
-from .ingestion import run_upstream_ingestion
+from .ingestion import DEFAULT_INGEST_LANGUAGES, run_upstream_ingestion
 from .io import (
     expand_jsonl_paths,
     read_json,
@@ -86,6 +86,16 @@ from .scoring import load_predictions, score_records
 from .source_lock import build_source_lock
 from .splitting import split_records
 from .stats import build_stats
+from .translation import (
+    check_translation_batch,
+    finalize_translations,
+    merge_translation_adjudication_rows,
+    merge_translation_rows,
+    prepare_translation_batch,
+    translation_adjudication_packet_rows,
+    translation_packet_rows,
+    validate_target_locale,
+)
 from .validation import load_categories, validate_records
 from .workflow import check_reviews, integrate_batch
 
@@ -461,7 +471,9 @@ def cmd_oracle_diff(args):
 
 def cmd_coverage(args):
     records = read_records(args.paths)
-    result = build_coverage(records, load_targets(args.targets))
+    result = build_coverage(
+        records, load_targets(args.targets, profile=args.language_profile)
+    )
     if args.json:
         write_json(args.json, result)
     print(
@@ -517,6 +529,130 @@ def _write_import_outputs(args, result):
     print(
         f"wrote {len(result.records)} candidate records to {args.out} from {result.source_rows} source rows"
     )
+    return 0
+
+
+def _translation_target(value: str) -> tuple[str, str]:
+    language, separator, locale_tail = value.partition("-")
+    locale = f"{language}-{locale_tail}" if separator else ""
+    validate_target_locale(language, locale)
+    return language, locale
+
+
+def cmd_translation_prepare(args):
+    language, locale = _translation_target(args.target)
+    records = read_records(args.records)
+    if args.limit is not None:
+        records = records[: args.limit]
+    result = prepare_translation_batch(
+        records,
+        args.out_root,
+        target_language=language,
+        target_locale=locale,
+        batch_id=args.batch,
+        requested_mode=args.mode.replace("-", "_"),
+    )
+    print(f"prepared {result['case_count']} translation cases under {args.out_root}")
+    return 0
+
+
+def _translation_root(path: str | Path) -> Path:
+    root = Path(path)
+    if not root.is_dir():
+        raise ValueError(f"translation batch is not a directory: {root}")
+    return root
+
+
+def cmd_translation_packet(args):
+    root = _translation_root(args.batch)
+    blind_path = root / f"{args.slot.lower()}.blind.jsonl"
+    completed_path = (
+        Path(args.completed)
+        if args.completed
+        else root / f"{args.slot.lower()}.complete.jsonl"
+    )
+    completed = read_records([completed_path]) if completed_path.is_file() else []
+    rows = translation_packet_rows(
+        read_records([blind_path]),
+        completed,
+        max_cases=args.max_cases,
+        max_bytes=args.max_bytes,
+    )
+    write_jsonl(args.out, rows)
+    print(f"wrote {len(rows)} translation packet rows to {args.out}")
+    return 0
+
+
+def cmd_translation_merge(args):
+    root = _translation_root(args.batch)
+    blind_path = (
+        Path(args.blind) if args.blind else root / f"{args.slot.lower()}.blind.jsonl"
+    )
+    blind = read_records([blind_path])
+    existing_path = (
+        Path(args.existing)
+        if args.existing
+        else root / f"{args.slot.lower()}.complete.partial.jsonl"
+    )
+    existing = read_records([existing_path]) if existing_path.is_file() else []
+    rows = merge_translation_rows(
+        blind, existing, read_records([args.results]), slot=args.slot, output=args.out
+    )
+    print(f"merged={args.out} translations={len(rows)}")
+    return 0
+
+
+def cmd_translation_check(args):
+    root = _translation_root(args.batch)
+    report = check_translation_batch(
+        read_records([root / "tasks.jsonl"]),
+        read_records([args.translation_a]),
+        read_records([args.translation_b]),
+    )
+    if args.json:
+        write_json(args.json, report)
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 1
+
+
+def cmd_translation_adjudication_packet(args):
+    root = _translation_root(args.batch)
+    rows = translation_adjudication_packet_rows(
+        read_records([root / "tasks.jsonl"]),
+        read_records([args.translation_a]),
+        read_records([args.translation_b]),
+        read_records([args.decisions]) if args.decisions else [],
+        max_cases=args.max_cases,
+        max_bytes=args.max_bytes,
+    )
+    write_jsonl(args.out, rows)
+    print(f"wrote {len(rows)} translation adjudication rows to {args.out}")
+    return 0
+
+
+def cmd_translation_adjudication_merge(args):
+    root = _translation_root(args.batch)
+    existing_path = (
+        Path(args.decisions) if args.decisions else root / "adjudicated.partial.jsonl"
+    )
+    existing = read_records([existing_path]) if existing_path.is_file() else []
+    rows = merge_translation_adjudication_rows(
+        existing, read_records([args.packet_result]), output=args.out
+    )
+    print(f"merged={args.out} decisions={len(rows)}")
+    return 0
+
+
+def cmd_translation_finalize(args):
+    root = _translation_root(args.batch)
+    candidates = finalize_translations(
+        read_records([root / "tasks.jsonl"]),
+        read_records([args.translation_a]),
+        read_records([args.translation_b]),
+        read_records([args.decisions]),
+        output=args.out,
+    )
+    print(f"wrote {len(candidates)} translation candidate observations to {args.out}")
     return 0
 
 
@@ -1444,6 +1580,11 @@ def build_parser():
     coverage = sub.add_parser("coverage")
     coverage.add_argument("paths", nargs="+")
     coverage.add_argument("--targets")
+    coverage.add_argument(
+        "--language-profile",
+        choices=["stable", "cjk-experimental", "all-active"],
+        default="stable",
+    )
     coverage.add_argument("--json")
     coverage.set_defaults(func=cmd_coverage)
 
@@ -1534,6 +1675,71 @@ def build_parser():
     batch.add_argument("--out", required=True)
     batch.set_defaults(func=cmd_review_batch)
 
+    translation_prepare = sub.add_parser("translation-prepare")
+    translation_prepare.add_argument("--records", nargs="+", required=True)
+    translation_prepare.add_argument(
+        "--target", required=True, help="Target locale such as ja-JP"
+    )
+    translation_prepare.add_argument("--limit", type=int)
+    translation_prepare.add_argument(
+        "--mode",
+        choices=["semantic_translation", "locale_transplant", "locale-transplant"],
+        default="locale_transplant",
+    )
+    translation_prepare.add_argument("--batch", required=True)
+    translation_prepare.add_argument("--out-root", type=Path, required=True)
+    translation_prepare.set_defaults(func=cmd_translation_prepare)
+
+    translation_packet = sub.add_parser("translation-packet")
+    translation_packet.add_argument("--batch", required=True)
+    translation_packet.add_argument("--slot", choices=["A", "B"], required=True)
+    translation_packet.add_argument("--completed", type=Path)
+    translation_packet.add_argument("--max-cases", type=int, default=25)
+    translation_packet.add_argument("--max-bytes", type=int, default=100000)
+    translation_packet.add_argument("--out", type=Path, required=True)
+    translation_packet.set_defaults(func=cmd_translation_packet)
+
+    translation_merge = sub.add_parser("translation-merge")
+    translation_merge.add_argument("--batch", required=True)
+    translation_merge.add_argument("--blind", type=Path)
+    translation_merge.add_argument("--existing", type=Path)
+    translation_merge.add_argument("--results", type=Path, required=True)
+    translation_merge.add_argument("--slot", choices=["A", "B"], required=True)
+    translation_merge.add_argument("--out", type=Path, required=True)
+    translation_merge.set_defaults(func=cmd_translation_merge)
+
+    translation_check = sub.add_parser("translation-check")
+    translation_check.add_argument("--batch", required=True)
+    translation_check.add_argument("--translation-a", type=Path, required=True)
+    translation_check.add_argument("--translation-b", type=Path, required=True)
+    translation_check.add_argument("--json", type=Path)
+    translation_check.set_defaults(func=cmd_translation_check)
+
+    translation_adj_packet = sub.add_parser("translation-adjudication-packet")
+    translation_adj_packet.add_argument("--batch", required=True)
+    translation_adj_packet.add_argument("--translation-a", type=Path, required=True)
+    translation_adj_packet.add_argument("--translation-b", type=Path, required=True)
+    translation_adj_packet.add_argument("--decisions", type=Path)
+    translation_adj_packet.add_argument("--max-cases", type=int, default=100)
+    translation_adj_packet.add_argument("--max-bytes", type=int, default=98304)
+    translation_adj_packet.add_argument("--out", type=Path, required=True)
+    translation_adj_packet.set_defaults(func=cmd_translation_adjudication_packet)
+
+    translation_adj_merge = sub.add_parser("translation-adjudication-merge")
+    translation_adj_merge.add_argument("--batch", required=True)
+    translation_adj_merge.add_argument("--packet-result", type=Path, required=True)
+    translation_adj_merge.add_argument("--decisions", type=Path)
+    translation_adj_merge.add_argument("--out", type=Path, required=True)
+    translation_adj_merge.set_defaults(func=cmd_translation_adjudication_merge)
+
+    translation_finalize = sub.add_parser("translation-finalize")
+    translation_finalize.add_argument("--batch", required=True)
+    translation_finalize.add_argument("--translation-a", type=Path, required=True)
+    translation_finalize.add_argument("--translation-b", type=Path, required=True)
+    translation_finalize.add_argument("--decisions", type=Path, required=True)
+    translation_finalize.add_argument("--out", type=Path, required=True)
+    translation_finalize.set_defaults(func=cmd_translation_finalize)
+
     ingest = sub.add_parser("ingest-upstreams")
     ingest.add_argument("--source-cache", type=Path, default=None)
     ingest.add_argument("--work-root", type=Path, default=None)
@@ -1541,7 +1747,7 @@ def build_parser():
         "--sources", nargs="+", default=["async_tn", "polynorm", "proteno"]
     )
     ingest.add_argument(
-        "--languages", nargs="+", default=["en", "de", "es", "fr", "it", "pt"]
+        "--languages", nargs="+", default=list(DEFAULT_INGEST_LANGUAGES)
     )
     ingest.add_argument("--reviewed", nargs="+", default=None)
     ingest.add_argument("--targets")

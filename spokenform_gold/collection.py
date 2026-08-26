@@ -5,8 +5,10 @@ from collections.abc import Iterable
 from pathlib import Path
 
 from .corpus import (
+    IdentityCollisionError,
     corpus_identity_map,
     corpus_source_keys,
+    find_identity_collisions,
     sentence_key,
     source_key,
     stable_case_id,
@@ -32,10 +34,18 @@ def _observation(record: dict) -> dict:
             "materialization", source.get("materialization", "embedded")
         ),
         "source_artifact": source.get("source_artifact"),
+        "translation_parent_record_id": source.get("translation_parent_record_id"),
+        "translation_parent_oracle_hash": source.get("translation_parent_oracle_hash"),
+        "translation_target_locale": source.get("translation_target_locale"),
+        "translation_relation": source.get("translation_relation"),
     }
 
 
 def cluster_observations(records: Iterable[dict]) -> list[dict]:
+    records = list(records)
+    collisions = find_identity_collisions(records)
+    if collisions:
+        raise IdentityCollisionError(collisions)
     groups: dict[tuple[str, str, str], list[dict]] = defaultdict(list)
     for record in records:
         if not isinstance(record, dict):
@@ -68,6 +78,7 @@ def cluster_observations(records: Iterable[dict]) -> list[dict]:
                 "language": key[0],
                 "locale": key[1],
                 "input": first["input"],
+                "family_id": first.get("family_id") or first.get("family_suggestion"),
                 "source_observations": [by_source[k] for k in sorted(by_source)],
             }
         )

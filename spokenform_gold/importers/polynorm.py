@@ -305,6 +305,7 @@ def _make_record(
             "projection_notes": row.get("projection_notes", ""),
             "import_format": format_name,
             "importer_version": "1.0.0",
+            "materialization": "external_ref",
         },
         "units": units,
         "negative_for": [],

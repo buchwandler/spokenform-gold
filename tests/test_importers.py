@@ -118,10 +118,10 @@ class ImporterTests(unittest.TestCase):
         self.assertIn("unsupported", single.records[1]["notes"])
         self.assertEqual(single.exclusions[0]["reason"], "unsupported_category")
 
-        self.assertEqual(combined.source_rows, 5)
+        self.assertEqual(combined.source_rows, 7)
         self.assertEqual(
             {record["locale"] for record in combined.records},
-            {"de-DE", "en-US"},
+            {"de-DE", "en-US", "ja-JP", "zh-CN"},
         )
         self.assertEqual(
             len(combined.records) + len(combined.exclusions), combined.source_rows

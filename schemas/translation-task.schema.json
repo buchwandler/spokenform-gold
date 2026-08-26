@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "translation-task.schema.json",
+  "title": "Spokenform translation task",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "translation_schema_version",
+    "translation_case_id",
+    "source_record_id",
+    "source_oracle_hash",
+    "target_language",
+    "target_locale",
+    "source_input",
+    "requested_mode",
+    "review"
+  ],
+  "properties": {
+    "translation_schema_version": { "const": "1.0.0" },
+    "translation_case_id": { "type": "string", "minLength": 1 },
+    "source_record_id": { "type": "string", "minLength": 1 },
+    "source_oracle_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "source_language": { "type": "string", "minLength": 2 },
+    "source_locale": { "type": "string", "minLength": 2 },
+    "target_language": { "enum": ["ja", "ko", "zh"] },
+    "target_locale": { "enum": ["ja-JP", "ko-KR", "zh-CN"] },
+    "source_input": { "type": "string" },
+    "source_status": { "type": ["string", "null"] },
+    "source_oracle": { "type": "object" },
+    "source_units": { "type": "array" },
+    "parent_family_id": { "type": ["string", "null"] },
+    "requested_mode": { "enum": ["semantic_translation", "locale_transplant"] },
+    "source_license": { "type": "object" },
+    "translation": { "type": ["object", "null"] },
+    "review": { "type": "object", "required": ["status"] }
+  }
+}

@@ -36,6 +36,26 @@ def _field(label: str, value: object) -> str:
     return f'<div class="field"><dt>{_escape(label)}</dt><dd>{_escape(value if value is not None else "—")}</dd></div>'
 
 
+def _primary_source(record: dict) -> dict:
+    sources = record.get("source_observations") or [record.get("source", {})]
+    return next((item for item in sources if isinstance(item, dict)), {})
+
+
+def _translation_lineage(record: dict) -> str:
+    source = _primary_source(record)
+    derived = source.get("benchmark") == "spokenform_translation" or bool(
+        source.get("translation_parent_record_id")
+    )
+    if not derived:
+        return '<div class="lineage"><strong>Provenance:</strong> native</div>'
+    return (
+        '<div class="lineage"><strong>Provenance:</strong> translation-derived '
+        f"(parent: {_escape(source.get('translation_parent_record_id'))}; "
+        f"relation: {_escape(source.get('translation_relation'))}; "
+        f"source: {_escape(source.get('benchmark'))})</div>"
+    )
+
+
 def _review_lineage(evidence: dict | None, record: dict) -> str:
     review_record = record.get("review") or {}
     evidence = evidence if isinstance(evidence, dict) else {}
@@ -144,7 +164,9 @@ def _record_row(record: dict, evidence: dict | None = None) -> str:
     source_names = sorted(
         {
             item.get("benchmark", "")
-            for item in (record.get("source_observations") or [])
+            for item in (
+                record.get("source_observations") or [record.get("source", {})]
+            )
             if isinstance(item, dict)
         }
     )
@@ -155,6 +177,12 @@ def _record_row(record: dict, evidence: dict | None = None) -> str:
         "status": record.get("status", ""),
         "categories": " ".join(categories),
         "source": " ".join(source_names),
+        "provenance": "translation-derived"
+        if "spokenform_translation" in source_names
+        else "native",
+        "translation-parent": _primary_source(record).get(
+            "translation_parent_record_id", ""
+        ),
         "record-id": record_id,
         "search": " ".join(
             str(value)
@@ -178,7 +206,7 @@ def _record_row(record: dict, evidence: dict | None = None) -> str:
         f"<td>{_escape(record.get('split', 'corpus'))}<small>{_escape(record.get('locale', ''))}</small></td>"
         f"<td>{_escape(record.get('status', ''))}</td>"
         f"<td>{_escape(', '.join(categories) or 'negative control')}</td>"
-        f"<td><strong>Input</strong><div>{_escape(record.get('input', ''))}</div><strong>Canonical</strong><div>{_escape(canonical)}</div>{variants}{details}</td>"
+        f"<td><strong>Input</strong><div>{_escape(record.get('input', ''))}</div><strong>Canonical</strong><div>{_escape(canonical)}</div>{_translation_lineage(record)}{variants}{details}</td>"
         "</tr>"
     )
 

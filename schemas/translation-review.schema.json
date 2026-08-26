@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "translation-review.schema.json",
+  "title": "Completed independent translation review",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "translation_schema_version",
+    "translation_case_id",
+    "translator_slot",
+    "translator_id",
+    "source_record_id",
+    "source_oracle_hash",
+    "target_language",
+    "target_locale",
+    "translation",
+    "review"
+  ],
+  "properties": {
+    "translation_schema_version": { "const": "1.0.0" },
+    "translation_case_id": { "type": "string", "minLength": 1 },
+    "translator_slot": { "enum": ["A", "B"] },
+    "translator_id": { "type": "string", "minLength": 1 },
+    "source_record_id": { "type": "string", "minLength": 1 },
+    "source_oracle_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "target_language": { "enum": ["ja", "ko", "zh"] },
+    "target_locale": { "enum": ["ja-JP", "ko-KR", "zh-CN"] },
+    "translation": {
+      "type": "object",
+      "required": ["decision"],
+      "properties": {
+        "decision": {
+          "enum": ["propose", "not_transferable", "needs_source_context"]
+        },
+        "transfer_relation": { "enum": ["equivalent", "adapted"] },
+        "target_input": { "type": "string" },
+        "target_status_proposal": { "type": ["string", "null"] },
+        "target_oracle_proposal": { "type": "object" },
+        "target_units_proposal": { "type": "array" },
+        "target_negative_for_proposal": { "type": "array" },
+        "notes": { "type": "string" }
+      }
+    },
+    "review": { "type": "object", "required": ["status"] }
+  }
+}

@@ -233,6 +233,19 @@ def _cluster_rows(
                     if isinstance(unit, dict) and unit.get("category")
                 }
             )
+        primary_source = next(
+            (
+                candidate.get("source", {})
+                for candidate in members
+                if isinstance(candidate.get("source"), dict)
+            ),
+            {},
+        )
+        translation_derived = primary_source.get(
+            "benchmark"
+        ) == "spokenform_translation" or bool(
+            primary_source.get("translation_parent_record_id")
+        )
         disagreement = comparison_map.get(oracle_id, {}).get("disagreement", False)
         dimensions = comparison_map.get(oracle_id, {}).get("dimensions", {})
         rows.append(
@@ -259,6 +272,11 @@ def _cluster_rows(
                 or (members[0].get("locale") if members else ""),
                 "categories": categories,
                 "sources": sources,
+                "translation_derived": translation_derived,
+                "translation_parent_record_id": primary_source.get(
+                    "translation_parent_record_id", ""
+                ),
+                "translation_relation": primary_source.get("translation_relation", ""),
                 "agreement": "disagreement" if disagreement else "agreement",
                 "dimensions": [
                     key for key, changed in sorted(dimensions.items()) if changed
@@ -325,6 +343,7 @@ def render_review_html(
         ("locale", "Locale", _option_values(rows, "locale")),
         ("categories", "Category", _option_values(rows, "categories")),
         ("sources", "Source", _option_values(rows, "sources")),
+        ("translation_derived", "Translation-derived", ["true", "false"]),
         ("agreement", "A/B agreement", _option_values(rows, "agreement")),
         (
             "dimensions",
@@ -354,6 +373,7 @@ def render_review_html(
             "locale": row["locale"],
             "categories": " ".join(row["categories"]),
             "sources": " ".join(row["sources"]),
+            "translation_derived": str(row["translation_derived"]).lower(),
             "agreement": row["agreement"],
             "dimensions": " ".join(row["dimensions"]),
             "blocker": row["blocker"],
@@ -389,7 +409,9 @@ def render_review_html(
             f'<span class="badge">{_escape(row["decision"])}</span></header>'
             f"<p><strong>Input:</strong> {_escape(row['input'])}</p>"
             f"<p><strong>Final:</strong> {_escape(row['canonical'])}</p>"
-            f'<p class="muted">Status: {_escape(row["status"])} · Source: {_escape(row["sources"])} · Categories: {_escape(row["categories"])}</p>'
+            f'<p class="muted">Status: {_escape(row["status"])} · Source: {_escape(row["sources"])} · Categories: {_escape(row["categories"])} · Provenance: {_escape("translation-derived" if row["translation_derived"] else "native")}'
+            f"{_escape('; Parent: ' + row['translation_parent_record_id']) if row['translation_derived'] and row['translation_parent_record_id'] else ''}"
+            f"{_escape('; Relation: ' + row['translation_relation']) if row['translation_derived'] and row['translation_relation'] else ''}</p>"
             f"<details><summary>Review evidence</summary>{review_evidence}</details>"
             "</article>"
         )

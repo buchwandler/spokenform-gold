@@ -6,13 +6,43 @@ from pathlib import Path
 from .io import read_json
 
 
-def load_targets(path: str | Path | None):
+def load_targets(path: str | Path | None, profile: str | None = None):
     if not path:
         return {}
-    return read_json(path)
+    targets = read_json(path)
+    if profile and profile != "none":
+        profiles = targets.get("language_profiles", {})
+        if profile not in profiles:
+            raise ValueError(
+                f"unknown language profile {profile!r}; "
+                f"expected one of {sorted(profiles)}"
+            )
+        targets = {
+            **targets,
+            "languages": profiles[profile],
+            "language_profile": profile,
+        }
+    return targets
+
+
+def _provenance_class(record: dict) -> str:
+    sources = record.get("source_observations") or [record.get("source", {})]
+    source = next((item for item in sources if isinstance(item, dict)), {})
+    if source.get("benchmark") == "spokenform_translation" or source.get(
+        "translation_parent_record_id"
+    ):
+        return (
+            "translation_equivalent"
+            if source.get("translation_relation") == "equivalent"
+            else "translation_adapted"
+        )
+    if source.get("benchmark") == "spokenform_curated":
+        return "native_curated"
+    return "native_upstream_external"
 
 
 def build_coverage(records, targets=None):
+    records = list(records)
     targets = targets or {}
     cat_units = Counter()
     cat_records = Counter()
@@ -22,7 +52,13 @@ def build_coverage(records, targets=None):
     cat_patterns = defaultdict(Counter)
     negative = Counter()
 
+    provenance = Counter()
+    category_provenance = defaultdict(Counter)
+    language_locales = Counter()
     for record in records:
+        provenance_class = _provenance_class(record)
+        provenance[provenance_class] += 1
+        language_locales[f"{record.get('language')}:{record.get('locale')}"] += 1
         for category in record.get("negative_for", []):
             negative[category] += 1
         seen = set()
@@ -40,6 +76,7 @@ def build_coverage(records, targets=None):
             seen.add(category)
         for category in seen:
             cat_records[category] += 1
+            category_provenance[category][provenance_class] += 1
 
     configured = set(targets.get("categories", {}))
     categories = sorted(set(cat_units) | configured)
@@ -70,6 +107,7 @@ def build_coverage(records, targets=None):
                 ),
                 "locales": sorted(value for value in cat_locales[category] if value),
                 "statuses": dict(cat_status[category]),
+                "provenance": dict(sorted(category_provenance[category].items())),
                 "negative_controls": negative[category],
                 "patterns": dict(cat_patterns[category]),
                 "missing_languages": missing_languages,
@@ -115,6 +153,22 @@ def build_coverage(records, targets=None):
         "records": len(records),
         "categories_observed": len(cat_units),
         "categories_targeted": len(configured),
+        "language_profile": targets.get("language_profile", "stable"),
+        "language_locales": dict(sorted(language_locales.items())),
+        "provenance": dict(sorted(provenance.items())),
+        "translation_derived_records": sum(
+            value for key, value in provenance.items() if key.startswith("translation_")
+        ),
+        "translation_derived_fraction": (
+            sum(
+                value
+                for key, value in provenance.items()
+                if key.startswith("translation_")
+            )
+            / len(records)
+            if records
+            else 0.0
+        ),
         "coverage": rows,
         "gaps": gaps,
     }

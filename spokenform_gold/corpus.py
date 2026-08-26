@@ -26,6 +26,72 @@ def sentence_key(language: str, locale: str, input_text: str) -> tuple[str, str,
     return language or "", locale or "", normalized
 
 
+def exact_surface_hash(input_text: str) -> str:
+    """Hash the exact input surface without compatibility normalization."""
+    if not isinstance(input_text, str):
+        raise TypeError("input_text must be a string")
+    return "sha256:" + hashlib.sha256(input_text.encode("utf-8")).hexdigest()
+
+
+def _nfkc_surface_key(input_text: str) -> str:
+    """Normalize compatibility characters while preserving whitespace."""
+    return unicodedata.normalize(
+        "NFKC", input_text.replace("\r\n", "\n").replace("\r", "\n")
+    )
+
+
+def find_identity_collisions(records: Iterable[dict]) -> list[dict]:
+    """Find distinct compatibility surfaces that share a legacy sentence key."""
+    groups: dict[tuple[str, str, str], dict[str, list[dict]]] = {}
+    for record in records:
+        if not isinstance(record, dict) or not isinstance(record.get("input"), str):
+            continue
+        key = sentence_key(
+            record.get("language", ""), record.get("locale", ""), record["input"]
+        )
+        surface_key = _nfkc_surface_key(record["input"])
+        groups.setdefault(key, {}).setdefault(surface_key, []).append(record)
+
+    collisions = []
+    for key, surfaces in sorted(groups.items()):
+        exact_inputs = {
+            record["input"] for members in surfaces.values() for record in members
+        }
+        if len(exact_inputs) < 2 or len(surfaces) != 1:
+            continue
+        rows = [record for members in surfaces.values() for record in members]
+        collisions.append(
+            {
+                "language": key[0],
+                "locale": key[1],
+                "legacy_normalized_input": key[2],
+                "exact_inputs": sorted(exact_inputs),
+                "exact_surface_hashes": sorted(
+                    {exact_surface_hash(record["input"]) for record in rows}
+                ),
+                "record_ids": sorted(
+                    record["id"] for record in rows if record.get("id")
+                ),
+            }
+        )
+    return collisions
+
+
+class IdentityCollisionError(ValueError):
+    """Raised when compatibility-distinct inputs would share one legacy case."""
+
+    def __init__(self, collisions: list[dict]):
+        self.collisions = collisions
+        super().__init__(
+            f"identity collision detected for {len(collisions)} sentence case(s)"
+        )
+
+
+# Descriptive aliases for callers that use the normalization-specific name.
+find_nfkc_collisions = find_identity_collisions
+detect_identity_collisions = find_identity_collisions
+
+
 def source_key(source: dict) -> str:
     benchmark = source.get("benchmark", "")
     version = source.get("source_version", "")

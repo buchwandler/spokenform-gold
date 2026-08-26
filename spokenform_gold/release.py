@@ -335,7 +335,10 @@ def build_corpus_release(
     )
     if control_errors:
         raise ValueError("control validation failed: " + "; ".join(control_errors))
-    targets = load_targets(root / "taxonomy" / "coverage_targets.json")
+    targets = load_targets(
+        root / "taxonomy" / "coverage_targets.json",
+        profile=coverage_profile if coverage_profile != "none" else None,
+    )
     control_coverage = build_control_coverage(control_records, targets)
     forbidden = sorted(
         record.get("id") for record in records if record.get("status") == "quarantine"
@@ -546,7 +549,10 @@ def build_release(
     )
     if control_errors:
         raise ValueError("control validation failed: " + "; ".join(control_errors))
-    targets = load_targets(root / "taxonomy" / "coverage_targets.json")
+    targets = load_targets(
+        root / "taxonomy" / "coverage_targets.json",
+        profile=coverage_profile if coverage_profile != "none" else None,
+    )
     control_coverage = build_control_coverage(control_records, targets)
 
     forbidden = sorted(

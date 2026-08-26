@@ -9,6 +9,8 @@ These templates describe the maintained sentence-centric v2 workflow:
 - `correction-task.md` - targeted correction by permanent record ID
 - `release-publish-task.md` - immutable release verification and publication
 - `batch-handoff.md` - compact batch continuation metadata
+- `translator-ab-task.md` - independent locale-transplant candidate generation
+- `translation-adjudicator-task.md` - translation candidate selection before Gold review
 
 The canonical path is:
 

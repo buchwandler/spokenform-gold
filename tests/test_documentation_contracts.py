@@ -10,6 +10,8 @@ ACTIVE_TEMPLATES = {
     "correction-task.md",
     "release-publish-task.md",
     "batch-handoff.md",
+    "translator-ab-task.md",
+    "translation-adjudicator-task.md",
 }
 OBSOLETE_TEMPLATES = {
     "canonical-rereview-adjudicator-task.md",

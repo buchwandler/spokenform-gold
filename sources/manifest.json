@@ -108,6 +108,16 @@
           "path": "tests/fixtures/importers/polynorm_official/de-DE/de-DE_groundtruth.jsonl",
           "role": "official-de-de-fixture",
           "sha256": "18fe51325932b856b62cf2ab47fe4e78fbdb97f71652f1f68829cc64c9101f35"
+        },
+        {
+          "path": "tests/fixtures/importers/polynorm_official/ja-JP/ja-JP_groundtruth.jsonl",
+          "role": "official-ja-jp-fixture",
+          "sha256": "a6966cbedb2c3d8d12df14b77ae08cbbff399796ff6da647bb20d9320fd7c239"
+        },
+        {
+          "path": "tests/fixtures/importers/polynorm_official/zh-CN/zh-CN_groundtruth.jsonl",
+          "role": "official-zh-cn-fixture",
+          "sha256": "8827e8177227a92cd735451729169dc0fa05b9328955a48643701eba5851ece9"
         }
       ],
       "kind": "projection_cache",
@@ -285,6 +295,36 @@
       "release_ready": false,
       "revision": "01_todo.md",
       "source_url": "local://spokenform-gold/01_todo.md"
+    },
+    {
+      "files": [
+        {
+          "path": "docs/TRANSLATION.md",
+          "role": "translation-policy",
+          "sha256": "cc19aa56a3cf4098ee455a411a50f5754496ad95a3c96ae8183e02359f70e4bd"
+        },
+        {
+          "path": "templates/translator-ab-task.md",
+          "role": "translator-contract",
+          "sha256": "7db3fab7d228a436858b8a49be68a3f2efbaa0cd48b6a60a6fa99190b0888458"
+        },
+        {
+          "path": "templates/translation-adjudicator-task.md",
+          "role": "translation-adjudicator-contract",
+          "sha256": "97ea0186556753f746c7eeec4c047df6839233f14c6a49e30c78965c0ffdda4b"
+        }
+      ],
+      "kind": "curated",
+      "license": "CC-BY-4.0",
+      "license_id": "CC-BY-4.0",
+      "license_scope": "repository:translation-protocol",
+      "materialization_policy": "embedded_public",
+      "name": "spokenform_translation",
+      "notes": "Repository-owned translation and locale-transplant protocol; outputs remain candidate observations until ordinary Gold review.",
+      "redistribution_status": "allowed",
+      "release_ready": false,
+      "revision": "translation-protocol-1.0.0",
+      "source_url": "spokenform-gold://translation"
     }
   ]
 }

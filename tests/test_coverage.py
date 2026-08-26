@@ -17,6 +17,29 @@ class CoverageTests(unittest.TestCase):
         self.assertTrue(any(gap["kind"] == "low_volume" for gap in result["gaps"]))
         self.assertTrue(any(row["category"] == "decimal" for row in result["coverage"]))
 
+    def test_language_profiles_and_translation_provenance_are_reported(self):
+        targets_path = ROOT / "taxonomy/coverage_targets.json"
+        cjk_targets = load_targets(targets_path, profile="cjk-experimental")
+        self.assertEqual(cjk_targets["languages"], ["ja", "ko", "zh"])
+        records = [
+            {
+                "language": "ja",
+                "locale": "ja-JP",
+                "status": "no_change",
+                "negative_for": ["date"],
+                "units": [],
+                "source": {
+                    "benchmark": "spokenform_translation",
+                    "translation_parent_record_id": "parent-1",
+                    "translation_relation": "adapted",
+                },
+            }
+        ]
+        result = build_coverage(records, cjk_targets)
+        self.assertEqual(result["translation_derived_records"], 1)
+        self.assertEqual(result["translation_derived_fraction"], 1.0)
+        self.assertEqual(result["language_profile"], "cjk-experimental")
+
 
 if __name__ == "__main__":
     unittest.main()

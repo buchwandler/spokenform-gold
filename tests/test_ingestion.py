@@ -104,6 +104,49 @@ class IngestionTests(unittest.TestCase):
             self.assertEqual(first["records"], second["records"])
             self.assertEqual(first["exclusions"], second["exclusions"])
 
+    def test_polynorm_cjk_languages_are_explicitly_supported(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            cache = self._cache(root)
+            summary = run_upstream_ingestion(
+                cache,
+                root / "work",
+                sources=("polynorm",),
+                languages=("ja", "zh"),
+                batch_limit=3,
+            )
+            records = read_records([root / "work" / "candidates" / "all.jsonl"])
+            self.assertEqual(summary["records"], 2)
+            self.assertEqual({record["language"] for record in records}, {"ja", "zh"})
+            self.assertEqual(
+                {record["locale"] for record in records}, {"ja-JP", "zh-CN"}
+            )
+            self.assertTrue(
+                all(
+                    record["source"]["materialization"] == "external_ref"
+                    for record in records
+                )
+            )
+
+    def test_source_language_capability_and_empty_selection_are_explicit(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            cache = self._cache(root)
+            with self.assertRaisesRegex(ValueError, "does not support"):
+                run_upstream_ingestion(
+                    cache,
+                    root / "unsupported",
+                    sources=("proteno",),
+                    languages=("ja",),
+                )
+            with self.assertRaisesRegex(ValueError, "has no rows"):
+                run_upstream_ingestion(
+                    cache,
+                    root / "empty",
+                    sources=("polynorm",),
+                    languages=("lt",),
+                )
+
     def test_named_review_batch_is_deterministic_and_does_not_overwrite_default(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

@@ -21,7 +21,13 @@ from .taxonomy import repo_root, source_manifest_map
 from .validation import validate_records
 
 SUPPORTED_SOURCES = ("async_tn", "polynorm", "proteno")
-SUPPORTED_LANGUAGES = ("en", "de", "es", "fr", "it", "pt")
+DEFAULT_INGEST_LANGUAGES = ("en", "de", "es", "fr", "it", "pt")
+SOURCE_LANGUAGE_CAPABILITIES = {
+    "async_tn": frozenset(DEFAULT_INGEST_LANGUAGES),
+    "polynorm": frozenset({"en", "de", "es", "fr", "it", "lt", "ja", "zh"}),
+    "proteno": frozenset({"en", "es"}),
+}
+SUPPORTED_LANGUAGES = tuple(sorted(set().union(*SOURCE_LANGUAGE_CAPABILITIES.values())))
 
 
 def _filter_result_languages(
@@ -73,6 +79,18 @@ def _git_revision(path: Path) -> str | None:
     except (OSError, subprocess.CalledProcessError) as exc:
         raise ValueError(f"could not read Git revision for {path}: {exc}") from exc
     return completed.stdout.strip()
+
+
+def _validate_source_language_request(
+    source: str, languages: set[str], *, strict: bool
+) -> None:
+    unsupported = sorted(languages - SOURCE_LANGUAGE_CAPABILITIES[source])
+    if unsupported and strict:
+        supported = sorted(SOURCE_LANGUAGE_CAPABILITIES[source])
+        raise ValueError(
+            f"source {source!r} does not support requested languages {unsupported}; "
+            f"supported languages: {supported}"
+        )
 
 
 def _verify_checkout(path: Path, source_name: str, expected_revision: str) -> dict:
@@ -132,7 +150,7 @@ def run_upstream_ingestion(
     work_root: str | Path,
     *,
     sources: Iterable[str] = SUPPORTED_SOURCES,
-    languages: Iterable[str] = SUPPORTED_LANGUAGES,
+    languages: Iterable[str] = DEFAULT_INGEST_LANGUAGES,
     reviewed_paths: Iterable[str | Path] | None = None,
     targets_path: str | Path | None = None,
     batch_limit: int = 100,
@@ -149,10 +167,15 @@ def run_upstream_ingestion(
     unknown_sources = sorted(requested_sources - set(SUPPORTED_SOURCES))
     if unknown_sources:
         raise ValueError(f"unsupported ingestion sources: {unknown_sources}")
+    strict_source_language_selection = len(selected_sources) == 1
     selected_languages = set(languages)
     unknown_languages = sorted(selected_languages - set(SUPPORTED_LANGUAGES))
     if unknown_languages:
         raise ValueError(f"unsupported ingestion languages: {unknown_languages}")
+    for source in selected_sources:
+        _validate_source_language_request(
+            source, selected_languages, strict=strict_source_language_selection
+        )
 
     manifests = source_manifest_map()
     checkouts: dict[str, dict] = {}
@@ -179,9 +202,26 @@ def run_upstream_ingestion(
 
     def add_shard(name: str, result):
         nonlocal shard_paths, all_exclusions, import_reports
+        filtered_result = _filter_result_languages(result, selected_languages)
+        if strict_source_language_selection:
+            requested_rows = [
+                record
+                for record in result.records
+                if record.get("language") in selected_languages
+            ]
+            requested_exclusions = [
+                item
+                for item in result.exclusions
+                if item.get("language") in selected_languages
+            ]
+            if not requested_rows and not requested_exclusions:
+                raise ValueError(
+                    f"source {selected_sources[0]!r} has no rows for requested "
+                    f"languages {sorted(selected_languages)}"
+                )
         candidate_path, _, report, exclusions = _write_shard(
             name=name,
-            result=_filter_result_languages(result, selected_languages),
+            result=filtered_result,
             candidate_dir=candidate_dir,
             exclusion_dir=exclusion_dir,
             report_dir=report_dir,

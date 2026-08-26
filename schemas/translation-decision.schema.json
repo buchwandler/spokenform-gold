@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "translation-decision.schema.json",
+  "title": "Translation adjudication decision",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "translation_schema_version",
+    "translation_case_id",
+    "adjudicator_id",
+    "decision",
+    "rationale"
+  ],
+  "properties": {
+    "translation_schema_version": { "const": "1.0.0" },
+    "translation_case_id": { "type": "string", "minLength": 1 },
+    "adjudicator_id": { "type": "string", "minLength": 1 },
+    "decision": {
+      "enum": ["accept_a", "accept_b", "merge", "exclude", "unresolved"]
+    },
+    "selection": { "enum": ["A", "B"] },
+    "rationale": { "type": "string", "minLength": 1 },
+    "final_translation": {
+      "type": "object",
+      "required": [
+        "target_language",
+        "target_locale",
+        "target_input",
+        "transfer_relation"
+      ],
+      "properties": {
+        "target_language": { "enum": ["ja", "ko", "zh"] },
+        "target_locale": { "enum": ["ja-JP", "ko-KR", "zh-CN"] },
+        "target_input": { "type": "string", "minLength": 1 },
+        "transfer_relation": { "enum": ["equivalent", "adapted"] },
+        "parent_record_id": { "type": "string" },
+        "parent_oracle_hash": { "type": "string" },
+        "parent_family_id": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

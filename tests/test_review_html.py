@@ -15,6 +15,11 @@ class ReviewHtmlTests(unittest.TestCase):
         record = read_records([ROOT / "data/test/sample.jsonl"])[0]
         record = copy.deepcopy(record)
         record["input"] = '<script>alert("x")</script>'
+        record["source"] = {
+            "benchmark": "spokenform_translation",
+            "translation_parent_record_id": "parent-1",
+            "translation_relation": "adapted",
+        }
         reviews = []
         for slot, reviewer in (("A", "review-a"), ("B", "review-b")):
             row = blind_review_batch([record], reviewer_slot=slot)[0]
@@ -75,6 +80,9 @@ class ReviewHtmlTests(unittest.TestCase):
         self.assertIn("&lt;script&gt;", first)
         self.assertNotIn('<script>alert("x")</script>', first)
         self.assertNotIn('"upstream_expected"', first)
+
+        self.assertIn("translation-derived", first)
+        self.assertIn("parent-1", first)
 
 
 if __name__ == "__main__":

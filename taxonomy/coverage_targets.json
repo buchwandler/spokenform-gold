@@ -1,6 +1,11 @@
 {
   "taxonomy_version": "1.0.0",
   "languages": ["cs", "de", "en", "es", "fr", "it", "pt"],
+  "language_profiles": {
+    "stable": ["cs", "de", "en", "es", "fr", "it", "pt"],
+    "cjk-experimental": ["ja", "ko", "zh"],
+    "all-active": ["cs", "de", "en", "es", "fr", "it", "ja", "ko", "pt", "zh"]
+  },
   "default": {
     "min_units": 20,
     "min_ambiguous": 2,
