@@ -101,7 +101,6 @@ spokenform-gold validate data/corpus/
 spokenform-gold report --records data/corpus/ --out <REPORT.html>
 ```
 
-
 Use `batch-status --batch <BATCH_ID>` to resolve configured paths and counts.
 Use `agent-search` for bounded source search and `trace-case` or `trace-record`
 for exact lookup. Detailed reports belong in files, not stdout.
