@@ -114,17 +114,35 @@ class V2ReviewValidationTests(unittest.TestCase):
     def test_v2_identity_lifecycle_and_annotation_failures(self):
         cases = [
             ("duplicate_case_id", lambda row: None),
-            ("invalid_lifecycle", lambda row: row["review"].update({"status": "review_b_complete"})),
+            (
+                "invalid_lifecycle",
+                lambda row: row["review"].update({"status": "review_b_complete"}),
+            ),
             ("incomplete_annotation", lambda row: row.update({"annotation": None})),
-            ("invalid_oracle", lambda row: row["annotation"]["oracle"].update({"accepted_outputs": []})),
-            ("oracle_variant_overlap", lambda row: row["annotation"]["oracle"].update({"rejected_outputs": [row["input"]]})),
-            ("invalid_no_change", lambda row: row["annotation"].update({"negative_for": []})),
+            (
+                "invalid_oracle",
+                lambda row: row["annotation"]["oracle"].update(
+                    {"accepted_outputs": []}
+                ),
+            ),
+            (
+                "oracle_variant_overlap",
+                lambda row: row["annotation"]["oracle"].update(
+                    {"rejected_outputs": [row["input"]]}
+                ),
+            ),
+            (
+                "invalid_no_change",
+                lambda row: row["annotation"].update({"negative_for": []}),
+            ),
         ]
         for code, mutate in cases:
             with self.subTest(code=code):
                 row = completed_v2()
                 if code == "duplicate_case_id":
-                    report = validate_v2_review_rows([row, copy.deepcopy(row)], slot="A")
+                    report = validate_v2_review_rows(
+                        [row, copy.deepcopy(row)], slot="A"
+                    )
                 else:
                     mutate(row)
                     report = validate_v2_review_rows([row], slot="A")
@@ -135,7 +153,9 @@ class V2ReviewValidationTests(unittest.TestCase):
         row = completed_v2()
         row["annotation"]["expected_output"] = "different"
         report = validate_v2_review_rows([row], slot="A")
-        self.assertIn("oracle_output_mismatch", {issue["code"] for issue in report["issues"]})
+        self.assertIn(
+            "oracle_output_mismatch", {issue["code"] for issue in report["issues"]}
+        )
 
         row = completed_v2()
         row["annotation"]["units"] = [
@@ -151,7 +171,9 @@ class V2ReviewValidationTests(unittest.TestCase):
         second["reviewer_id"] = "reviewer-b"
         report = validate_v2_review_rows([first, second], slot="A")
         self.assertFalse(report["ready"])
-        self.assertIn("unstable_reviewer_id", {issue["code"] for issue in report["issues"]})
+        self.assertIn(
+            "unstable_reviewer_id", {issue["code"] for issue in report["issues"]}
+        )
 
     def test_review_check_preserves_context_and_reuses_v2_validation(self):
         case = v2_case()
@@ -159,31 +181,40 @@ class V2ReviewValidationTests(unittest.TestCase):
         review_b = completed_v2("B", "reviewer-b")
         self.assertTrue(check_reviews([case], [review_a], [review_b])["ready"])
 
-        for field, value in ((
-            "input",
-            "Changed 3/4.",
-        ), (
-            "language",
-            "de",
-        ), (
-            "locale",
-            "de-DE",
-        ), (
-            "family_id",
-            "family-2",
-        )):
+        for field, value in (
+            (
+                "input",
+                "Changed 3/4.",
+            ),
+            (
+                "language",
+                "de",
+            ),
+            (
+                "locale",
+                "de-DE",
+            ),
+            (
+                "family_id",
+                "family-2",
+            ),
+        ):
             with self.subTest(field=field):
                 changed = copy.deepcopy(review_b)
                 changed[field] = value
                 result = check_reviews([case], [review_a], [changed])
                 self.assertFalse(result["ready"])
-                self.assertTrue(any("context mismatch" in issue for issue in result["issues"]))
+                self.assertTrue(
+                    any("context mismatch" in issue for issue in result["issues"])
+                )
 
         malformed = copy.deepcopy(review_a)
         malformed["annotation"] = None
         result = check_reviews([case], [malformed], [review_b])
         self.assertFalse(result["ready"])
-        self.assertTrue(any("annotation must be an object" in issue for issue in result["issues"]))
+        self.assertTrue(
+            any("annotation must be an object" in issue for issue in result["issues"])
+        )
 
     def test_collect_to_review_check_smoke(self):
         observations = [
@@ -217,7 +248,13 @@ class V2ReviewValidationTests(unittest.TestCase):
             ):
                 for row in rows:
                     completed = completed_v2(slot, reviewer)
-                    for field in ("case_id", "language", "locale", "input", "family_id"):
+                    for field in (
+                        "case_id",
+                        "language",
+                        "locale",
+                        "input",
+                        "family_id",
+                    ):
                         completed[field] = row[field]
                     row.clear()
                     row.update(completed)

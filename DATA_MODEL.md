@@ -50,7 +50,6 @@ Durable sanitized review provenance is stored as `review-evidence.jsonl` where p
 
 The human interface is generated HTML: `review-report.html` for batch review and `records.html` for release inspection. Humans identify corrections by record ID; they do not edit or enumerate JSONL rows.
 
-
 ## Canonical v2 corpus
 
 The authoring source of truth is `data/corpus.jsonl`. A v2 record has one permanent `id`, `family_id`, language, locale, input, explicit oracle, units, status, and plural `source_observations`. It has no `split` and no duplicate `expected_output` state. Consumers can call the optional family-safe export helper to create train, dev, and test views without changing canonical records.

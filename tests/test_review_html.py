@@ -19,14 +19,54 @@ class ReviewHtmlTests(unittest.TestCase):
         for slot, reviewer in (("A", "review-a"), ("B", "review-b")):
             row = blind_review_batch([record], reviewer_slot=slot)[0]
             row["reviewer_id"] = reviewer
-            row["annotation"] = {"status": "gold", "units": record["units"], "oracle": record["oracle"], "notes": "rationale"}
+            row["annotation"] = {
+                "status": "gold",
+                "units": record["units"],
+                "oracle": record["oracle"],
+                "notes": "rationale",
+            }
             row["review"] = {"status": f"review_{slot.lower()}_complete"}
             reviews.append(row)
-        comparison = [{"sentence_oracle_id": reviews[0]["sentence_oracle_id"], "dimensions": {"semantic": True}, "disagreement": True, "state": "disagreement"}]
-        decision = [{"candidate_id": record["id"], "record_id": record["id"], "decision": "needs_review", "status": "ambiguous", "blocker_code": "semantic_ambiguity_irreducible", "blocker_reason": "Context remains ambiguous.", "attempted_resolution": "Both interpretations were compared.", "adjudicator": "adj", "reviewers": ["review-a", "review-b"]}]
+        comparison = [
+            {
+                "sentence_oracle_id": reviews[0]["sentence_oracle_id"],
+                "dimensions": {"semantic": True},
+                "disagreement": True,
+                "state": "disagreement",
+            }
+        ]
+        decision = [
+            {
+                "candidate_id": record["id"],
+                "record_id": record["id"],
+                "decision": "needs_review",
+                "status": "ambiguous",
+                "blocker_code": "semantic_ambiguity_irreducible",
+                "blocker_reason": "Context remains ambiguous.",
+                "attempted_resolution": "Both interpretations were compared.",
+                "adjudicator": "adj",
+                "reviewers": ["review-a", "review-b"],
+            }
+        ]
         with tempfile.TemporaryDirectory() as tmpdir:
-            first = render_review_html(Path(tmpdir) / "one.html", candidates=[record], review_a=reviews[:1], review_b=reviews[1:], comparisons=comparison, decisions=decision, batch_id="batch-1").read_text()
-            second = render_review_html(Path(tmpdir) / "two.html", candidates=[record], review_a=reviews[:1], review_b=reviews[1:], comparisons=comparison, decisions=decision, batch_id="batch-1").read_text()
+            first = render_review_html(
+                Path(tmpdir) / "one.html",
+                candidates=[record],
+                review_a=reviews[:1],
+                review_b=reviews[1:],
+                comparisons=comparison,
+                decisions=decision,
+                batch_id="batch-1",
+            ).read_text()
+            second = render_review_html(
+                Path(tmpdir) / "two.html",
+                candidates=[record],
+                review_a=reviews[:1],
+                review_b=reviews[1:],
+                comparisons=comparison,
+                decisions=decision,
+                batch_id="batch-1",
+            ).read_text()
         self.assertEqual(first, second)
         self.assertIn("Reviewer A", first)
         self.assertIn("semantic", first)

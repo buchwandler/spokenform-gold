@@ -19,6 +19,7 @@ class GoldAuditTests(unittest.TestCase):
         self.assertTrue(report["oracle_complete"])
         self.assertEqual(report["review_gap_records"], [])
         self.assertEqual(report["review_complete_records"], 11)
+
     def test_same_input_conflicting_reviewed_oracles_are_detected(self):
         records = read_records([ROOT / "data/test"])[0:1]
         other = copy.deepcopy(records[0])

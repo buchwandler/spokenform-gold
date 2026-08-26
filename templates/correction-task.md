@@ -1,38 +1,34 @@
-# Spokenform Gold correction task: `<RECORD_ID>`
+# Spokenform Gold v2 correction: `<RECORD_ID>`
 
-You are preparing a targeted correction for exactly the canonical Gold record
-identified by `record.id` above.
+Prepare a targeted correction for exactly the canonical record identified by
+`record.id`.
 
-## Human-interface contract
+## Human interface
 
-- Resolve all machine artifacts from `record.id` and the generated context.
-- Do not ask the human to open or edit JSONL.
-- Do not ask the human to identify A/B rows, comparison rows, or artifact paths.
-- `record.id` is the permanent canonical correction handle.
+The human supplies `record.id`. Tools resolve review evidence, source
+references, hashes, and correction history. Do not ask the human to inspect or
+edit JSONL, identify artifact paths, or enumerate review rows.
 
-## Required context
+## Scope
 
-Read `context.json`, inspect the current canonical record, the latest review
-lineage, A/B evidence, comparison, adjudication, source references permitted by
-policy, and the registered taxonomy/policy definitions. Determine whether the
-reported problem is valid under benchmark policy; do not adapt Gold to current
-Spokenform output.
+The canonical authoring source is `data/corpus.jsonl`. This is a v2 correction,
+not a split-based authoring operation. Preserve the permanent `record.id`,
+family identity, and source identity unless an explicit supersession decision
+proves one is wrong. Do not adapt Gold to current Spokenform output.
 
-## Required correction procedure
+## Procedure
 
-1. Preserve the exact `record.id`.
-2. Preserve `family_id` and source identity unless an explicit migration or
-   supersession decision proves they are wrong.
-3. Propose corrected semantic/oracle data, including explicit accepted and
-   rejected variants.
-4. Emit a complete `oracle-correction` artifact in `decision.json` with old and
-   new oracle hashes, review revision, reviewers, adjudicator, reason, and
-   review-evidence lineage hashes.
-5. Validate the proposed record before replacing any canonical data.
-6. Preserve the old review evidence and append a new correction revision.
-7. Regenerate `report.html` and inspect the corrected record through its stable
-   deep link.
+1. Resolve the current record and latest review lineage from `record.id`.
+2. Determine the policy-valid semantic/oracle correction, including explicit
+   accepted and rejected variants.
+3. Write a complete artifact conforming to
+   `schemas/oracle-correction.schema.json` with `record_id`, old and new oracle
+   hashes, reason, reviewers, adjudicator, review lineage hashes, and
+   `new_record`.
+4. Validate the proposed record before changing the corpus.
+5. Preserve prior evidence, append a correction revision, and regenerate the
+   HTML report.
 
-The input may change, which may produce a new derived `sentence_oracle_id`.
-That does not permit changing the permanent `record.id`, and historical review
-evidence must not be rewritten.
+A changed input may change derived review evidence, but it never permits silent
+mutation of the permanent record ID. Report the record ID, decision, evidence
+hashes, validation result, and generated report path.

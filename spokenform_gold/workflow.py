@@ -41,8 +41,7 @@ def check_reviews(
     for slot, raw_rows in (("A", list(review_a)), ("B", list(review_b))):
         validation = validate_v2_review_rows(raw_rows, slot=slot)
         issues.extend(
-            f"review {slot}: {issue['message']}"
-            for issue in validation["issues"]
+            f"review {slot}: {issue['message']}" for issue in validation["issues"]
         )
         indexed = validation.get("_indexed", {})
         for case_id, row in indexed.items():
@@ -71,9 +70,7 @@ def check_reviews(
                 "completed": validation["completed"],
                 "unreviewed": validation["unreviewed"],
                 "validation": {
-                    key: value
-                    for key, value in validation.items()
-                    if key != "_indexed"
+                    key: value for key, value in validation.items() if key != "_indexed"
                 },
             }
         )

@@ -13,7 +13,12 @@ from .io import write_jsonl
 from .oracle import oracle_hash
 from .review import sentence_oracle_id
 
-_FORBIDDEN = {"upstream_expected", "upstream_output", "current_output", "spokenform_output"}
+_FORBIDDEN = {
+    "upstream_expected",
+    "upstream_output",
+    "current_output",
+    "spokenform_output",
+}
 _TRANSIENT = {"_source_file", "_source_line"}
 
 
@@ -112,7 +117,9 @@ def build_review_evidence(
     }
     decision_by_record: dict[str, list[dict]] = {}
     for decision in decision_rows:
-        record_id = decision.get("record_id") or decision.get("represented_by_record_id")
+        record_id = decision.get("record_id") or decision.get(
+            "represented_by_record_id"
+        )
         if isinstance(record_id, str) and record_id:
             decision_by_record.setdefault(record_id, []).append(decision)
 
@@ -124,7 +131,9 @@ def build_review_evidence(
     for decision in decision_rows:
         record_id = decision.get("record_id")
         if isinstance(record_id, str) and record_id and record_id not in targets:
-            targets[record_id] = candidate_map.get(decision.get("candidate_id"), decision)
+            targets[record_id] = candidate_map.get(
+                decision.get("candidate_id"), decision
+            )
 
     previous_rows = list(previous)
     entries: list[dict] = []
@@ -138,7 +147,11 @@ def build_review_evidence(
                 if decision.get("candidate_id") == record_id
             ]
         primary = next(
-            (decision for decision in matched if decision.get("record_id") == record_id),
+            (
+                decision
+                for decision in matched
+                if decision.get("record_id") == record_id
+            ),
             matched[0] if matched else {},
         )
         candidate_ids = sorted(
@@ -152,15 +165,31 @@ def build_review_evidence(
         if not candidate_ids and record_id in candidate_map:
             candidate_ids = [record_id]
         source_refs = _unique_refs(
-            [candidate_map[item].get("source", {}) for item in candidate_ids if item in candidate_map]
+            [
+                candidate_map[item].get("source", {})
+                for item in candidate_ids
+                if item in candidate_map
+            ]
             + [record.get("source", {})]
         )
         oracle_id = primary.get("sentence_oracle_id")
         if not isinstance(oracle_id, str) or not oracle_id:
             oracle_id = sentence_oracle_id(record)
-        a = sanitize_review_artifact(review_a_map.get(oracle_id)) if oracle_id in review_a_map else None
-        b = sanitize_review_artifact(review_b_map.get(oracle_id)) if oracle_id in review_b_map else None
-        comparison = sanitize_review_artifact(comparison_map.get(oracle_id)) if oracle_id in comparison_map else None
+        a = (
+            sanitize_review_artifact(review_a_map.get(oracle_id))
+            if oracle_id in review_a_map
+            else None
+        )
+        b = (
+            sanitize_review_artifact(review_b_map.get(oracle_id))
+            if oracle_id in review_b_map
+            else None
+        )
+        comparison = (
+            sanitize_review_artifact(comparison_map.get(oracle_id))
+            if oracle_id in comparison_map
+            else None
+        )
         decision = sanitize_review_artifact(primary) if primary else None
         review_revision = _revision_for(record_id, previous_rows)
         entry: dict[str, Any] = {
@@ -177,7 +206,9 @@ def build_review_evidence(
                         "reviewer_id": a.get("reviewer_id"),
                         "annotation": a.get("annotation"),
                     }
-                ) if a is not None else None,
+                )
+                if a is not None
+                else None,
             },
             "review_b": {
                 "reviewer_id": b.get("reviewer_id") if isinstance(b, dict) else None,
@@ -187,29 +218,51 @@ def build_review_evidence(
                         "reviewer_id": b.get("reviewer_id"),
                         "annotation": b.get("annotation"),
                     }
-                ) if b is not None else None,
+                )
+                if b is not None
+                else None,
             },
             "comparison": {
-                "dimensions": comparison.get("dimensions") if isinstance(comparison, dict) else {},
-                "disagreement": comparison.get("disagreement", False) if isinstance(comparison, dict) else False,
+                "dimensions": comparison.get("dimensions")
+                if isinstance(comparison, dict)
+                else {},
+                "disagreement": comparison.get("disagreement", False)
+                if isinstance(comparison, dict)
+                else False,
                 "artifact_sha256": artifact_sha256(
                     {
-                        "dimensions": comparison.get("dimensions") if isinstance(comparison, dict) else {},
-                        "disagreement": comparison.get("disagreement", False) if isinstance(comparison, dict) else False,
+                        "dimensions": comparison.get("dimensions")
+                        if isinstance(comparison, dict)
+                        else {},
+                        "disagreement": comparison.get("disagreement", False)
+                        if isinstance(comparison, dict)
+                        else False,
                     }
-                ) if comparison is not None else None,
+                )
+                if comparison is not None
+                else None,
             },
             "decision": {
-                "adjudicator": decision.get("adjudicator") if isinstance(decision, dict) else None,
-                "disposition": decision.get("decision") if isinstance(decision, dict) else None,
-                "artifact_sha256": artifact_sha256(decision) if decision is not None else None,
+                "adjudicator": decision.get("adjudicator")
+                if isinstance(decision, dict)
+                else None,
+                "disposition": decision.get("decision")
+                if isinstance(decision, dict)
+                else None,
+                "artifact_sha256": artifact_sha256(decision)
+                if decision is not None
+                else None,
                 "data": decision,
             },
             "final_oracle_hash": record.get("oracle_hash") or oracle_hash(record),
             "correction": None,
         }
-        if isinstance(record.get("review"), dict) and record["review"].get("correction_history"):
-            entry["correction_history"] = sanitize_review_artifact(record["review"]["correction_history"])
+        if isinstance(record.get("review"), dict) and record["review"].get(
+            "correction_history"
+        ):
+            entry["correction_history"] = sanitize_review_artifact(
+                record["review"]["correction_history"]
+            )
         if a is None or b is None or comparison is None or decision is None:
             entry["legacy"] = True
             entry["evidence_status"] = "legacy_review_metadata_only"
@@ -264,17 +317,24 @@ def validate_review_evidence(entries: Iterable[dict]) -> list[str]:
         if isinstance(record_id, str) and isinstance(revision, int):
             key = (record_id, revision)
             if key in seen:
-                errors.append(f"{label}: duplicate record/revision {record_id}/{revision}")
+                errors.append(
+                    f"{label}: duplicate record/revision {record_id}/{revision}"
+                )
             seen.add(key)
         for section in ("review_a", "review_b"):
             value = entry.get(section)
             if isinstance(value, dict) and value.get("artifact_sha256"):
-                payload = {"reviewer_id": value.get("reviewer_id"), "annotation": value.get("annotation")}
+                payload = {
+                    "reviewer_id": value.get("reviewer_id"),
+                    "annotation": value.get("annotation"),
+                }
                 if value["artifact_sha256"] != artifact_sha256(payload):
                     errors.append(f"{label}: {section} artifact hash mismatch")
         comparison = entry.get("comparison")
         if isinstance(comparison, dict) and comparison.get("artifact_sha256"):
-            payload = {key: comparison.get(key) for key in ("dimensions", "disagreement")}
+            payload = {
+                key: comparison.get(key) for key in ("dimensions", "disagreement")
+            }
             if comparison["artifact_sha256"] != artifact_sha256(payload):
                 errors.append(f"{label}: comparison artifact hash mismatch")
         decision = entry.get("decision")
@@ -291,13 +351,17 @@ def validate_review_evidence(entries: Iterable[dict]) -> list[str]:
 
 def _contains_forbidden(value: Any, needle: str) -> bool:
     if isinstance(value, dict):
-        return needle in value or any(_contains_forbidden(child, needle) for child in value.values())
+        return needle in value or any(
+            _contains_forbidden(child, needle) for child in value.values()
+        )
     if isinstance(value, list):
         return any(_contains_forbidden(child, needle) for child in value)
     return False
 
 
-def resolve_record_evidence(record_id: str, records: Iterable[dict], evidence: Iterable[dict]) -> dict:
+def resolve_record_evidence(
+    record_id: str, records: Iterable[dict], evidence: Iterable[dict]
+) -> dict:
     record = next((row for row in records if row.get("id") == record_id), None)
     if record is None:
         raise KeyError(f"unknown canonical record id: {record_id}")
@@ -305,7 +369,11 @@ def resolve_record_evidence(record_id: str, records: Iterable[dict], evidence: I
         (row for row in evidence if row.get("record_id") == record_id),
         key=lambda row: row.get("review_revision", -1),
     )
-    return {"record": sanitize_review_artifact(record), "evidence": history, "review_revisions": len(history)}
+    return {
+        "record": sanitize_review_artifact(record),
+        "evidence": history,
+        "review_revisions": len(history),
+    }
 
 
 def write_review_evidence(path: str | Path, entries: Iterable[dict]) -> None:
@@ -313,7 +381,13 @@ def write_review_evidence(path: str | Path, entries: Iterable[dict]) -> None:
     errors = validate_review_evidence(validated)
     if errors:
         raise ValueError("invalid review evidence: " + "; ".join(errors))
-    write_jsonl(path, sorted(validated, key=lambda row: (row.get("record_id", ""), row.get("review_revision", 0))))
+    write_jsonl(
+        path,
+        sorted(
+            validated,
+            key=lambda row: (row.get("record_id", ""), row.get("review_revision", 0)),
+        ),
+    )
 
 
 __all__ = [

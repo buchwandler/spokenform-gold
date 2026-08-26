@@ -50,11 +50,19 @@ class CorrectionTests(unittest.TestCase):
         proposed["units"][0]["semantic"] = {"hour": 9, "minute": 5}
         proposed["units"][0]["canonical"] = "nine oh five"
         proposed["units"][0]["accepted"] = ["nine oh five"]
-        proposed["oracle"] = {"canonical_output": "Alarm at nine oh five.", "accepted_outputs": ["Alarm at nine oh five."], "rejected_outputs": [], "variant_mode": "explicit", "comparison_profile": "sentence-exact-v1"}
+        proposed["oracle"] = {
+            "canonical_output": "Alarm at nine oh five.",
+            "accepted_outputs": ["Alarm at nine oh five."],
+            "rejected_outputs": [],
+            "variant_mode": "explicit",
+            "comparison_profile": "sentence-exact-v1",
+        }
         proposed["expected_output"] = proposed["oracle"]["canonical_output"]
         updated, history = apply_correction(self.record, self.correction(proposed))
         self.assertEqual(updated["id"], self.record["id"])
-        self.assertNotEqual(history["previous_sentence_oracle_id"], history["sentence_oracle_id"])
+        self.assertNotEqual(
+            history["previous_sentence_oracle_id"], history["sentence_oracle_id"]
+        )
         self.assertEqual(history["sentence_oracle_id"], sentence_oracle_id(updated))
 
     def test_record_id_change_is_rejected(self):
@@ -65,7 +73,9 @@ class CorrectionTests(unittest.TestCase):
 
     def test_prepare_context_has_human_artifacts(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            paths = prepare_correction_context(self.record, [], Path(tmpdir) / "correction", template="# <RECORD_ID>")
+            paths = prepare_correction_context(
+                self.record, [], Path(tmpdir) / "correction", template="# <RECORD_ID>"
+            )
             self.assertEqual(set(paths), {"context", "decision", "task", "report"})
             self.assertIn(self.record["id"], paths["task"].read_text())
             self.assertTrue(paths["report"].exists())

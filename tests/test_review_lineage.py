@@ -37,7 +37,10 @@ class ReviewLineageTests(unittest.TestCase):
         return rows[:1], rows[1:]
 
     def test_forbidden_fields_are_removed_and_hash_is_deterministic(self):
-        value = {"upstream_expected": "hidden", "nested": {"current_output": "hidden", "ok": 1}}
+        value = {
+            "upstream_expected": "hidden",
+            "nested": {"current_output": "hidden", "ok": 1},
+        }
         self.assertEqual(sanitize_review_artifact(value), {"nested": {"ok": 1}})
         self.assertEqual(artifact_sha256(value), artifact_sha256(value))
 
@@ -46,8 +49,22 @@ class ReviewLineageTests(unittest.TestCase):
         comparison = compare_review_batches(review_a, review_b)
         candidate = copy.deepcopy(self.record)
         candidate["id"] = "candidate-alias"
-        decisions = [{"candidate_id": candidate["id"], "record_id": self.record["id"], "decision": "promote_curated", "adjudicator": "adj"}]
-        entries = build_review_evidence([candidate], review_a, review_b, comparison, decisions, records=[self.record])
+        decisions = [
+            {
+                "candidate_id": candidate["id"],
+                "record_id": self.record["id"],
+                "decision": "promote_curated",
+                "adjudicator": "adj",
+            }
+        ]
+        entries = build_review_evidence(
+            [candidate],
+            review_a,
+            review_b,
+            comparison,
+            decisions,
+            records=[self.record],
+        )
         self.assertEqual(entries[0]["record_id"], self.record["id"])
         self.assertEqual(entries[0]["candidate_ids"], [candidate["id"]])
         self.assertEqual(validate_review_evidence(entries), [])

@@ -4,21 +4,37 @@
   "title": "Spokenform Gold v2 canonical sentence record",
   "type": "object",
   "additionalProperties": true,
-  "required": ["schema_version", "taxonomy_version", "policy_version", "id", "language", "locale", "family_id", "status", "input", "oracle", "units", "negative_for", "source_observations"],
+  "required": [
+    "schema_version",
+    "taxonomy_version",
+    "policy_version",
+    "id",
+    "language",
+    "locale",
+    "family_id",
+    "status",
+    "input",
+    "oracle",
+    "units",
+    "negative_for",
+    "source_observations"
+  ],
   "properties": {
-    "schema_version": {"const": "2.0.0"},
-    "taxonomy_version": {"type": "string", "minLength": 1},
-    "policy_version": {"type": "string", "minLength": 1},
-    "id": {"type": "string", "minLength": 1},
-    "language": {"type": "string", "minLength": 2},
-    "locale": {"type": "string", "minLength": 2},
-    "family_id": {"type": "string", "minLength": 1},
-    "status": {"enum": ["gold", "multi_valid", "policy_choice", "ambiguous", "no_change"]},
-    "input": {"type": "string"},
-    "oracle": {"$ref": "oracle.schema.json"},
-    "oracle_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
-    "units": {"type": "array", "items": {"type": "object"}},
-    "negative_for": {"type": "array", "items": {"type": "string"}},
+    "schema_version": { "const": "2.0.0" },
+    "taxonomy_version": { "type": "string", "minLength": 1 },
+    "policy_version": { "type": "string", "minLength": 1 },
+    "id": { "type": "string", "minLength": 1 },
+    "language": { "type": "string", "minLength": 2 },
+    "locale": { "type": "string", "minLength": 2 },
+    "family_id": { "type": "string", "minLength": 1 },
+    "status": {
+      "enum": ["gold", "multi_valid", "policy_choice", "ambiguous", "no_change"]
+    },
+    "input": { "type": "string" },
+    "oracle": { "$ref": "oracle.schema.json" },
+    "oracle_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "units": { "type": "array", "items": { "type": "object" } },
+    "negative_for": { "type": "array", "items": { "type": "string" } },
     "source_observations": {
       "type": "array",
       "minItems": 1,
@@ -26,16 +42,16 @@
         "type": "object",
         "required": ["benchmark", "source_id", "source_version"],
         "properties": {
-          "benchmark": {"type": "string", "minLength": 1},
-          "source_id": {"type": "string", "minLength": 1},
-          "source_version": {"type": "string", "minLength": 1},
-          "upstream_expected": {"type": ["string", "null"]},
-          "materialization": {"enum": ["embedded", "external_ref"]}
+          "benchmark": { "type": "string", "minLength": 1 },
+          "source_id": { "type": "string", "minLength": 1 },
+          "source_version": { "type": "string", "minLength": 1 },
+          "upstream_expected": { "type": ["string", "null"] },
+          "materialization": { "enum": ["embedded", "external_ref"] }
         }
       }
     },
-    "review": {"type": "object"},
-    "notes": {"type": "string"}
+    "review": { "type": "object" },
+    "notes": { "type": "string" }
   },
-  "not": {"required": ["split"]}
+  "not": { "required": ["split"] }
 }

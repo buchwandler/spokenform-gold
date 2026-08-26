@@ -201,7 +201,7 @@ class CliReviewWorkflowTests(unittest.TestCase):
         self.assertIn("source_cache:", output.getvalue())
         report = json.loads((self.work / "doctor.json").read_text())
         self.assertIn("work_root", report)
-        self.assertEqual(len(report["canonical_records"]), 3)
+        self.assertIn("corpus", report)
 
     def test_collect_parser_defaults_to_1000_cases(self):
         args = build_parser().parse_args(

@@ -5,13 +5,13 @@ import shutil
 from collections import Counter
 from pathlib import Path
 
-from .conflicts import find_conflicts
+from .conflicts import find_conflicts, unresolved_adjudicated_conflicts
 from .control_validation import validate_control_records
 from .coverage import build_control_coverage, build_coverage, load_targets
 from .evaluation_profiles import load_registry, registry_hash
 from .gold_audit import audit_records
 from .html_report import render_release_html
-from .io import expand_jsonl_paths, read_records, sha256_file, write_jsonl
+from .io import expand_jsonl_paths, read_json, read_records, sha256_file, write_jsonl
 from .review_lineage import backfill_legacy_evidence, write_review_evidence
 from .source_manifest import (
     load_and_validate_source_manifest,
@@ -130,9 +130,13 @@ def _enforce_source_materialization(records: list[dict], source_manifest: dict) 
             if benchmark not in source_map:
                 continue
             policy = normalize_materialization_policy(source_map[benchmark])
-            materialization = source.get("materialization", record.get("materialization", "embedded"))
+            materialization = source.get(
+                "materialization", record.get("materialization", "embedded")
+            )
             if materialization not in {"embedded", "external_ref"}:
-                errors.append(f"record {record.get('id', '?')} has invalid materialization {materialization!r}")
+                errors.append(
+                    f"record {record.get('id', '?')} has invalid materialization {materialization!r}"
+                )
                 continue
         if materialization == "embedded" and policy != "embedded_public":
             errors.append(
@@ -301,7 +305,8 @@ def build_corpus_release(
     source_manifest_path: str | Path | None = None,
     coverage_profile: str = "none",
     control_paths: list[str] | None = None,
-    ) -> dict:
+    conflict_adjudication_path: str | Path | None = None,
+) -> dict:
     """Build a v2 release from one unsplit corpus.jsonl."""
     _profile(maturity)
     root = repo_root()
@@ -318,26 +323,58 @@ def build_corpus_release(
         raise ValueError("release validation failed: " + "; ".join(validation_errors))
     oracle_audit = audit_records(records, strict=maturity == "stable")
     if oracle_audit["errors"]:
-        raise ValueError("release oracle audit failed: " + "; ".join(oracle_audit["errors"]))
-    control_files = _repository_local_jsonl_files(root, control_paths, label="release controls")
+        raise ValueError(
+            "release oracle audit failed: " + "; ".join(oracle_audit["errors"])
+        )
+    control_files = _repository_local_jsonl_files(
+        root, control_paths, label="release controls"
+    )
     control_records = read_records(control_files)
-    control_errors = validate_control_records(control_records) if control_records else []
+    control_errors = (
+        validate_control_records(control_records) if control_records else []
+    )
     if control_errors:
         raise ValueError("control validation failed: " + "; ".join(control_errors))
     targets = load_targets(root / "taxonomy" / "coverage_targets.json")
     control_coverage = build_control_coverage(control_records, targets)
-    forbidden = sorted(record.get("id") for record in records if record.get("status") == "quarantine")
+    forbidden = sorted(
+        record.get("id") for record in records if record.get("status") == "quarantine"
+    )
     if forbidden:
         raise ValueError(f"release data contains non-release records: {forbidden}")
-    conflicts = find_conflicts(records, mode="unit")
+    raw_conflicts = find_conflicts(records, mode="unit")
+    conflict_adjudication = (
+        read_json(conflict_adjudication_path) if conflict_adjudication_path else None
+    )
+    conflicts = (
+        unresolved_adjudicated_conflicts(raw_conflicts, conflict_adjudication)
+        if conflict_adjudication
+        else raw_conflicts
+    )
     if conflicts:
         raise ValueError("release data has unresolved conflicts")
-    manifest_path = Path(source_manifest_path) if source_manifest_path else root / "sources" / "manifest.json"
+    manifest_path = (
+        Path(source_manifest_path)
+        if source_manifest_path
+        else root / "sources" / "manifest.json"
+    )
     referenced = referenced_source_names(records)
-    source_manifest = load_and_validate_source_manifest(manifest_path, repo_root=root, require_release_ready=maturity == "stable", source_names=referenced, filter_to_source_names=True)
+    source_manifest = load_and_validate_source_manifest(
+        manifest_path,
+        repo_root=root,
+        require_release_ready=maturity == "stable",
+        source_names=referenced,
+        filter_to_source_names=True,
+    )
     _enforce_source_materialization(records, source_manifest)
     coverage = build_coverage(records, targets)
-    _enforce_maturity(profile_name=maturity, records=records, coverage=coverage, source_manifest=source_manifest, control_coverage=control_coverage)
+    _enforce_maturity(
+        profile_name=maturity,
+        records=records,
+        coverage=coverage,
+        source_manifest=source_manifest,
+        control_coverage=control_coverage,
+    )
     for relative in ("taxonomy", "schemas"):
         shutil.copytree(root / relative, output_root / relative)
     (output_root / "sources").mkdir(parents=True, exist_ok=True)
@@ -348,34 +385,93 @@ def build_corpus_release(
     _write_json(output_root / "coverage.json", coverage)
     _write_json(output_root / "control_coverage.json", control_coverage)
     _write_json(output_root / "conflicts.json", conflicts)
+    if conflict_adjudication is not None:
+        adjudication_output = dict(conflict_adjudication)
+        adjudication_output["raw_conflicts"] = raw_conflicts
+        adjudication_output["unresolved_conflicts"] = conflicts
+        _write_json(output_root / "conflict_adjudication.json", adjudication_output)
     _write_json(output_root / "oracle_audit.json", oracle_audit)
     counts = {
         "records": len(records),
         "families": len({record.get("family_id") for record in records}),
-        "languages": dict(sorted(Counter(record.get("language") for record in records).items())),
-        "locales": dict(sorted(Counter(record.get("locale") for record in records).items())),
-        "statuses": dict(sorted(Counter(record.get("status") for record in records).items())),
-        "sources": dict(sorted(Counter(source.get("benchmark") for record in records for source in record.get("source_observations", []) if isinstance(source, dict)).items())),
+        "languages": dict(
+            sorted(Counter(record.get("language") for record in records).items())
+        ),
+        "locales": dict(
+            sorted(Counter(record.get("locale") for record in records).items())
+        ),
+        "statuses": dict(
+            sorted(Counter(record.get("status") for record in records).items())
+        ),
+        "sources": dict(
+            sorted(
+                Counter(
+                    source.get("benchmark")
+                    for record in records
+                    for source in record.get("source_observations", [])
+                    if isinstance(source, dict)
+                ).items()
+            )
+        ),
     }
-    render_release_html(output_root / "records.html", version=version, maturity=maturity, records=records, coverage=coverage, control_coverage=control_coverage, counts=counts)
-    (output_root / "RELEASE_NOTES.md").write_text(_build_release_notes(version=version, maturity=maturity, counts=counts, source_manifest=source_manifest), encoding="utf-8")
+    render_release_html(
+        output_root / "records.html",
+        version=version,
+        maturity=maturity,
+        records=records,
+        coverage=coverage,
+        control_coverage=control_coverage,
+        counts=counts,
+    )
+    (output_root / "RELEASE_NOTES.md").write_text(
+        _build_release_notes(
+            version=version,
+            maturity=maturity,
+            counts=counts,
+            source_manifest=source_manifest,
+        ),
+        encoding="utf-8",
+    )
     manifest = {
-        "benchmark_version": version, "format": "v2", "maturity": maturity,
-        "schema_version": "2.0.0", "taxonomy_version": taxonomy_version(), "policy_version": policy_version(),
-        "coverage_profile": coverage_profile, "source_manifest_version": source_manifest.get("version"),
-        "counts": counts, "record_files": ["corpus.jsonl"], "control_files": [str(path.relative_to(root)) for path in control_files],
-        "corpus_file": "corpus.jsonl", "split_registry": None, "source_manifest": "sources/manifest.json",
-        "record_browser": "records.html", "maturity_profile": _profile(maturity), "scoring_modes": ["canonical", "accepted"],
-        "oracle_audit": "oracle_audit.json", "oracle_complete": oracle_audit["oracle_complete"],
+        "benchmark_version": version,
+        "format": "v2",
+        "maturity": maturity,
+        "schema_version": "2.0.0",
+        "taxonomy_version": taxonomy_version(),
+        "policy_version": policy_version(),
+        "coverage_profile": coverage_profile,
+        "source_manifest_version": source_manifest.get("version"),
+        "counts": counts,
+        "record_files": ["corpus.jsonl"],
+        "control_files": [str(path.relative_to(root)) for path in control_files],
+        "corpus_file": "corpus.jsonl",
+        "split_registry": None,
+        "source_manifest": "sources/manifest.json",
+        "record_browser": "records.html",
+        "maturity_profile": _profile(maturity),
+        "scoring_modes": ["canonical", "accepted"],
+        "oracle_audit": "oracle_audit.json",
+        "oracle_complete": oracle_audit["oracle_complete"],
+        "conflict_adjudication": "conflict_adjudication.json"
+        if conflict_adjudication is not None
+        else None,
         "file_hashes": {},
     }
     manifest_path = output_root / "manifest.json"
     for _ in range(2):
-        manifest["file_hashes"] = {relative: sha256_file(path) for relative, path in _tracked_release_files(output_root)}
+        manifest["file_hashes"] = {
+            relative: sha256_file(path)
+            for relative, path in _tracked_release_files(output_root)
+        }
         _write_json(manifest_path, manifest)
-    checksums = [f"{sha256_file(path)}  {relative}" for relative, path in _tracked_release_files(output_root)]
+    checksums = [
+        f"{sha256_file(path)}  {relative}"
+        for relative, path in _tracked_release_files(output_root)
+    ]
     checksums.append(f"{sha256_file(manifest_path)}  manifest.json")
-    (output_root / "SHA256SUMS").write_text("\n".join(checksums) + "\n", encoding="utf-8")
+    (output_root / "SHA256SUMS").write_text(
+        "\n".join(checksums) + "\n", encoding="utf-8"
+    )
     return manifest
 
 
@@ -389,10 +485,15 @@ def build_release(
     source_manifest_path: str | Path | None = None,
     coverage_profile: str = "none",
     control_paths: list[str] | None = None,
+    conflict_adjudication_path: str | Path | None = None,
 ) -> dict:
     _profile(maturity)
     candidate_files = expand_jsonl_paths(data_paths)
-    if not registry_path and candidate_files and all("split" not in row for row in read_records(candidate_files)):
+    if (
+        not registry_path
+        and candidate_files
+        and all("split" not in row for row in read_records(candidate_files))
+    ):
         return build_corpus_release(
             version=version,
             data_paths=data_paths,
@@ -401,6 +502,7 @@ def build_release(
             source_manifest_path=source_manifest_path,
             coverage_profile=coverage_profile,
             control_paths=control_paths,
+            conflict_adjudication_path=conflict_adjudication_path,
         )
 
     root = repo_root()
@@ -525,11 +627,11 @@ def build_release(
         review_evidence.extend(read_records([evidence_path]))
     known_evidence_ids = {row.get("record_id") for row in review_evidence}
     review_evidence.extend(
-        row for row in backfill_legacy_evidence(records)
+        row
+        for row in backfill_legacy_evidence(records)
         if row.get("record_id") not in known_evidence_ids
     )
     write_review_evidence(output_root / "review-evidence.jsonl", review_evidence)
-
 
     render_release_html(
         output_root / "records.html",
@@ -540,7 +642,7 @@ def build_release(
         control_coverage=control_coverage,
         counts=counts,
         review_evidence=review_evidence,
-)
+    )
     notes = _build_release_notes(
         version=version,
         maturity=maturity,

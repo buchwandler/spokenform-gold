@@ -88,7 +88,20 @@ def _validate_promotable(decision: dict, *, index: int) -> list[dict[str, Any]]:
     if decision.get("decision") not in PROMOTABLE_DECISIONS:
         return []
     label = str(decision.get("candidate_id", f"decision-{index}"))
-    required = ("record_id", "family_id", "status", "input", "language", "locale", "expected_output", "units", "negative_for", "notes", "oracle", "license_disposition")
+    required = (
+        "record_id",
+        "family_id",
+        "status",
+        "input",
+        "language",
+        "locale",
+        "expected_output",
+        "units",
+        "negative_for",
+        "notes",
+        "oracle",
+        "license_disposition",
+    )
     return [
         _issue(
             "incomplete_promotable_decision",
@@ -115,23 +128,34 @@ def validate_adjudication_batch(
     candidate_ids = [row.get("id") for row in candidate_rows]
     issues: list[dict[str, Any]] = []
     if any(not _non_empty(value) for value in candidate_ids):
-        issues.append(_issue("invalid_candidate_id", "every candidate requires a non-empty id"))
+        issues.append(
+            _issue("invalid_candidate_id", "every candidate requires a non-empty id")
+        )
     duplicate_candidates = sorted(
         key for key, count in Counter(candidate_ids).items() if key and count > 1
     )
     if duplicate_candidates:
         issues.append(
-            _issue("duplicate_candidates", f"duplicate candidate IDs: {duplicate_candidates}")
+            _issue(
+                "duplicate_candidates",
+                f"duplicate candidate IDs: {duplicate_candidates}",
+            )
         )
     candidate_set = {value for value in candidate_ids if isinstance(value, str)}
 
-    decision_ids = [row.get("candidate_id") if isinstance(row, dict) else None for row in decision_rows]
+    decision_ids = [
+        row.get("candidate_id") if isinstance(row, dict) else None
+        for row in decision_rows
+    ]
     duplicate_decisions = sorted(
         key for key, count in Counter(decision_ids).items() if key and count > 1
     )
     if duplicate_decisions:
         issues.append(
-            _issue("duplicate_decisions", f"duplicate decision candidate IDs: {duplicate_decisions}")
+            _issue(
+                "duplicate_decisions",
+                f"duplicate decision candidate IDs: {duplicate_decisions}",
+            )
         )
     decision_set = {value for value in decision_ids if isinstance(value, str)}
     if len(candidate_rows) != len(decision_rows):
@@ -158,17 +182,25 @@ def validate_adjudication_batch(
     reviewer_a = report_a.get("reviewer_id")
     reviewer_b = report_b.get("reviewer_id")
     if reviewer_a and reviewer_b and reviewer_a == reviewer_b:
-        issues.append(_issue("shared_reviewer", "reviewer A and B identities must be distinct"))
+        issues.append(
+            _issue("shared_reviewer", "reviewer A and B identities must be distinct")
+        )
 
     comparison_rows = list(comparison)
-    comparison_map = {row.get("sentence_oracle_id"): row for row in comparison_rows if isinstance(row, dict)}
+    comparison_map = {
+        row.get("sentence_oracle_id"): row
+        for row in comparison_rows
+        if isinstance(row, dict)
+    }
     record_ids: list[str] = []
     counts: Counter[str] = Counter()
     blocker_counts: Counter[str] = Counter()
     critic_counts: Counter[str] = Counter()
     for index, decision in enumerate(decision_rows):
         if not isinstance(decision, dict):
-            issues.append(_issue("invalid_decision", f"decision {index} is not an object"))
+            issues.append(
+                _issue("invalid_decision", f"decision {index} is not an object")
+            )
             continue
         disposition = decision.get("decision")
         counts[str(disposition)] += 1
@@ -182,36 +214,92 @@ def validate_adjudication_batch(
             critic_counts[critic] += 1
         adjudicator = decision.get("adjudicator")
         if not _non_empty(adjudicator):
-            issues.append(_issue("missing_adjudicator", f"decision {index} requires adjudicator"))
+            issues.append(
+                _issue("missing_adjudicator", f"decision {index} requires adjudicator")
+            )
         reviewers = decision.get("reviewers")
-        if not isinstance(reviewers, list) or len({item for item in reviewers if _non_empty(item)}) < 2:
-            issues.append(_issue("invalid_reviewers", f"decision {index} requires two distinct reviewers"))
-        elif reviewer_a and reviewer_b and not {reviewer_a, reviewer_b}.issubset(set(reviewers)):
-            issues.append(_issue("reviewer_identity_mismatch", f"decision {index} reviewers do not match A/B evidence"))
+        if (
+            not isinstance(reviewers, list)
+            or len({item for item in reviewers if _non_empty(item)}) < 2
+        ):
+            issues.append(
+                _issue(
+                    "invalid_reviewers",
+                    f"decision {index} requires two distinct reviewers",
+                )
+            )
+        elif (
+            reviewer_a
+            and reviewer_b
+            and not {reviewer_a, reviewer_b}.issubset(set(reviewers))
+        ):
+            issues.append(
+                _issue(
+                    "reviewer_identity_mismatch",
+                    f"decision {index} reviewers do not match A/B evidence",
+                )
+            )
         record_id = decision.get("record_id")
         if record_id is not None:
             if not _non_empty(record_id):
-                issues.append(_issue("invalid_record_id", f"decision {index} has an invalid record_id"))
+                issues.append(
+                    _issue(
+                        "invalid_record_id",
+                        f"decision {index} has an invalid record_id",
+                    )
+                )
             else:
                 record_ids.append(record_id)
-        if disposition == "promote_upstream" and not _non_empty(decision.get("license_disposition")):
-            issues.append(_issue("invalid_license_disposition", f"decision {index} requires license_disposition"))
+        if disposition == "promote_upstream" and not _non_empty(
+            decision.get("license_disposition")
+        ):
+            issues.append(
+                _issue(
+                    "invalid_license_disposition",
+                    f"decision {index} requires license_disposition",
+                )
+            )
         if "source_duplicate" in (decision.get("source_error_codes") or []):
             if disposition != "reject":
-                issues.append(_issue("source_duplicate_disposition", f"decision {index} source_duplicate must be rejected"))
+                issues.append(
+                    _issue(
+                        "source_duplicate_disposition",
+                        f"decision {index} source_duplicate must be rejected",
+                    )
+                )
             if not _non_empty(decision.get("represented_by_record_id")):
-                issues.append(_issue("source_duplicate_link", f"decision {index} source_duplicate requires represented_by_record_id"))
+                issues.append(
+                    _issue(
+                        "source_duplicate_link",
+                        f"decision {index} source_duplicate requires represented_by_record_id",
+                    )
+                )
         oracle_id = decision.get("sentence_oracle_id")
         if oracle_id and oracle_id not in comparison_map:
-            issues.append(_issue("missing_comparison", f"decision {index} references missing comparison {oracle_id}"))
+            issues.append(
+                _issue(
+                    "missing_comparison",
+                    f"decision {index} references missing comparison {oracle_id}",
+                )
+            )
 
-    duplicate_record_ids = sorted(key for key, count in Counter(record_ids).items() if count > 1)
+    duplicate_record_ids = sorted(
+        key for key, count in Counter(record_ids).items() if count > 1
+    )
     if duplicate_record_ids:
-        issues.append(_issue("duplicate_record_ids", f"duplicate final record IDs: {duplicate_record_ids}"))
+        issues.append(
+            _issue(
+                "duplicate_record_ids",
+                f"duplicate final record IDs: {duplicate_record_ids}",
+            )
+        )
     unresolved = counts.get("needs_review", 0) + counts.get("quarantine", 0)
     total = len(candidate_rows)
     unresolved_percent = (100.0 * unresolved / total) if total else 0.0
-    if max_unresolved_percent is not None and unresolved_percent > max_unresolved_percent:
+    if (
+        max_unresolved_percent is not None
+        and unresolved_percent > max_unresolved_percent
+    ):
         issues.append(
             _issue(
                 "mass_deferral",
@@ -231,7 +319,9 @@ def validate_adjudication_batch(
         "unresolved_percentage": unresolved_percent,
         "reviewer_a": reviewer_a,
         "reviewer_b": reviewer_b,
-        "issues": sorted(issues, key=lambda item: (item.get("code", ""), item.get("message", ""))),
+        "issues": sorted(
+            issues, key=lambda item: (item.get("code", ""), item.get("message", ""))
+        ),
     }
 
 

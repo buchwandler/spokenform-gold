@@ -47,6 +47,14 @@ from .judge_calibration import build_judge_calibration, load_judge_predictions
 from .merge import merge_candidate_files
 from .migration import migrate_jsonl
 from .oracle_diff import diff_records
+from .packets import (
+    adjudication_packet_rows,
+    finalize_adjudication,
+    merge_adjudication_rows,
+    merge_review_rows,
+    review_packet_rows,
+    serialized_row_bytes,
+)
 from .pool import build_candidate_pool_summary
 from .promotion import build_promoted_records
 from .ranking import build_candidate_ranking, export_review_batch
@@ -67,6 +75,12 @@ from .review_lineage import (
     build_review_evidence,
     resolve_record_evidence,
     write_review_evidence,
+)
+from .safe_search import (
+    DEFAULT_MAX_CHARS_PER_LINE,
+    DEFAULT_MAX_MATCHES,
+    DEFAULT_MAX_OUTPUT,
+    search_text,
 )
 from .scoring import load_predictions, score_records
 from .source_lock import build_source_lock
@@ -305,11 +319,13 @@ def cmd_validate_review(args):
             "reviewer_ids": [],
             "completed": 0,
             "unreviewed": 0,
-            "issues": [{
-                "scope": f"review {args.slot.lower()}",
-                "code": "mixed_review_contract",
-                "message": message,
-            }],
+            "issues": [
+                {
+                    "scope": f"review {args.slot.lower()}",
+                    "code": "mixed_review_contract",
+                    "message": message,
+                }
+            ],
             "ready": False,
             "_indexed": {},
         }
@@ -727,6 +743,7 @@ def cmd_release_check(args):
         source_manifest_path=args.source_manifest,
         coverage_profile=args.coverage_profile,
         control_paths=args.controls,
+        conflict_adjudication_path=args.conflict_adjudication,
     )
     print(
         "release={version} records={records} families={families}".format(
@@ -793,6 +810,28 @@ def cmd_judge_calibrate(args):
     return 0
 
 
+def cmd_agent_search(args):
+    config_path = args.config if args.config is not None else default_config_path()
+    config = load_config(config_path, explicit=args.config is not None)
+    runtime = resolve_runtime_paths(config=config, source_cache=None, work_root=None)
+    output = search_text(
+        args.pattern,
+        root=args.root,
+        include_data=args.include_data,
+        literal=args.literal,
+        max_matches=args.max_matches,
+        max_chars_per_line=args.max_chars_per_line,
+        max_output=args.max_output,
+        excluded_roots=[
+            path
+            for path in (runtime.work_root, runtime.source_cache)
+            if path is not None
+        ],
+    )
+    sys.stdout.write(output)
+    return 0
+
+
 def _path_info(path: Path | None) -> dict:
     if path is None:
         return {"path": None, "exists": False, "writable": False}
@@ -811,31 +850,134 @@ def cmd_doctor(args):
     repo_root = (config.path.parent if config.path else Path.cwd()).resolve()
     paths = resolve_runtime_paths(config=config, source_cache=None, work_root=None)
     source_lock = repo_root / "sources" / "source-lock.json"
-    canonical = [repo_root / "data" / name for name in ("train", "dev", "test")]
-    review_root = paths.work_root / "reviews" / "canonical" if paths.work_root else None
+    corpus = repo_root / "data" / "corpus.jsonl"
+    batches_root = paths.work_root / "batches" if paths.work_root else None
+    reports_root = paths.work_root / "reports" if paths.work_root else None
     report = {
         "config": _path_info(config.path or config_path.resolve()),
         "repo_root": str(repo_root),
+        "corpus": _path_info(corpus),
         "source_cache": _path_info(paths.source_cache),
         "work_root": _path_info(paths.work_root),
+        "batches_root": _path_info(batches_root),
+        "reports_root": _path_info(reports_root),
         "source_lock": _path_info(source_lock),
-        "canonical_records": [str(path) for path in canonical],
-        "canonical_record_roots": [_path_info(path) for path in canonical],
-        "canonical_review_root": _path_info(review_root),
     }
     if args.json:
         write_json(args.json, report)
-    print(f"config: {report['config']['path']}")
-    print(f"repo_root: {report['repo_root']}")
-    for key in ("source_cache", "work_root", "source_lock"):
+    print(f"repo_root: {repo_root}")
+    print(f"corpus: {corpus}")
+    for key in (
+        "source_cache",
+        "work_root",
+        "batches_root",
+        "reports_root",
+        "source_lock",
+    ):
         item = report[key]
         print(f"{key}: {item['path']}")
         print(f"{key}_exists: {'yes' if item['exists'] else 'no'}")
-        print(f"{key}_writable: {'yes' if item['writable'] else 'no'}")
-    print("canonical_records:")
-    for path in report["canonical_records"]:
-        print(f"  {path}")
     return 0
+
+
+def _resolve_batch_root(args) -> tuple[Path, Path | None]:
+    config_path = args.config if args.config is not None else default_config_path()
+    config = load_config(config_path, explicit=args.config is not None)
+    runtime = resolve_runtime_paths(
+        config=config,
+        source_cache=None,
+        work_root=getattr(args, "work_root", None),
+    )
+    requested = Path(args.batch).expanduser()
+    if requested.exists():
+        root = requested.resolve()
+    elif runtime.work_root is not None:
+        root = (runtime.work_root / "batches" / str(args.batch)).resolve()
+    else:
+        raise ConfigError(
+            "batch path is not configured; use a batch root or configure the work root"
+        )
+    if not root.is_dir():
+        raise ValueError(f"batch root not found: {root}")
+    return root, runtime.work_root
+
+
+def _jsonl_count(path: Path) -> int:
+    return len(read_jsonl(path)) if path.is_file() else 0
+
+
+def cmd_batch_status(args):
+    root, work_root = _resolve_batch_root(args)
+    batch_path = root / "batch.json"
+    metadata = read_json(batch_path) if batch_path.is_file() else {}
+    batch_id = metadata.get("batch_id") or root.name
+    review_check_path = root / "review-check.json"
+    review_check = read_json(review_check_path) if review_check_path.is_file() else {}
+    decisions_path = root / "adjudicated.jsonl"
+    decisions = read_jsonl(decisions_path) if decisions_path.is_file() else []
+    decision_counts = {decision: 0 for decision in ("accept", "exclude", "unresolved")}
+    for row in decisions:
+        decision = row.get("decision")
+        if decision in decision_counts:
+            decision_counts[decision] += 1
+    handoff_candidates = [root / "handoff.md"]
+    if work_root is not None:
+        handoff_candidates.append(work_root / f"{batch_id}-handoff.md")
+    handoff = next((path for path in handoff_candidates if path.is_file()), None)
+    integration = root / "integration.json"
+    status = {
+        "batch_id": batch_id,
+        "root": str(root),
+        "cases": _jsonl_count(root / "cases.jsonl"),
+        "review_a": _jsonl_count(root / "a.complete.jsonl"),
+        "review_b": _jsonl_count(root / "b.complete.jsonl"),
+        "review_ready": bool(review_check.get("ready")),
+        "review_issues": len(review_check.get("issues", []))
+        if isinstance(review_check.get("issues", []), list)
+        else 0,
+        "adjudicated": len(decisions),
+        **decision_counts,
+        "integrated": bool(
+            integration.is_file()
+            and read_json(integration).get("state") == "integrated"
+        ),
+        "handoff": str(handoff) if handoff else None,
+    }
+    if args.json:
+        write_json(args.json, status)
+    for key, value in status.items():
+        if key == "review_ready" or key == "integrated":
+            value = "yes" if value else "no"
+        print(f"{key}={value}")
+    return 0
+
+
+def cmd_trace_case(args):
+    root, _work_root = _resolve_batch_root(args)
+    cases_path = root / "cases.jsonl"
+    for case in read_jsonl(cases_path):
+        if case.get("case_id") == args.case_id:
+            result = {
+                "batch_id": root.name,
+                "batch_root": str(root),
+                "case_id": case.get("case_id"),
+                "language": case.get("language"),
+                "locale": case.get("locale"),
+                "input": case.get("input"),
+                "source_observation_count": len(case.get("source_observations", [])),
+            }
+            if args.json:
+                write_json(args.json, case)
+            print("case_id={case_id}".format(**result))
+            print("batch_id={batch_id}".format(**result))
+            print("language={language}".format(**result))
+            print("locale={locale}".format(**result))
+            print("input={input}".format(**result))
+            print(
+                "source_observation_count={source_observation_count}".format(**result)
+            )
+            return 0
+    raise ValueError(f"case_id not found in {root}: {args.case_id}")
 
 
 def _default_review_evidence_paths(
@@ -887,7 +1029,6 @@ def cmd_trace_record(args):
     decision = latest.get("decision", {}) if isinstance(latest, dict) else {}
     comparison = latest.get("comparison", {}) if isinstance(latest, dict) else {}
     print(f"record_id: {args.record_id}")
-    print(f"split: {record.get('split', '')}")
     print(f"family_id: {record.get('family_id', '')}")
     print(f"input: {record.get('input', '')}")
     print(
@@ -899,25 +1040,19 @@ def cmd_trace_record(args):
     print(f"review revisions: {result['review_revisions']}")
     if latest:
         print("latest review:")
-        print(f"  sentence_oracle_id: {latest.get('sentence_oracle_id', '')}")
         print(
-            f"  reviewer A: {(latest.get('review_a') or {}).get('reviewer_id', 'missing')}"
+            f"  reviewer_a: {(latest.get('review_a') or {}).get('reviewer_id', 'missing')}"
         )
         print(
-            f"  reviewer B: {(latest.get('review_b') or {}).get('reviewer_id', 'missing')}"
+            f"  reviewer_b: {(latest.get('review_b') or {}).get('reviewer_id', 'missing')}"
         )
         print(f"  adjudicator: {decision.get('adjudicator', 'missing')}")
         print(
             f"  A/B: {'disagreement' if comparison.get('disagreement') else 'agreement'}"
         )
         print(f"  decision: {decision.get('disposition', 'legacy')}")
-    print("candidate lineage:")
-    for candidate_id in latest.get("candidate_ids", []):
-        print(f"  {candidate_id}")
-    print("source refs:")
-    for source in latest.get("source_refs", []):
-        print(f"  {source.get('benchmark')}:{source.get('source_id')}")
-    print(f"evidence: {', '.join(result['evidence_paths']) or 'legacy backfill'}")
+    print(f"source_refs: {len(latest.get('source_refs', [])) if latest else 0}")
+    print(f"evidence_files: {len(result['evidence_paths'])}")
     return 0
 
 
@@ -988,6 +1123,105 @@ def cmd_apply_correction(args):
     return 0
 
 
+def _packet_output_summary(path: Path, rows: list[dict]) -> None:
+    size = sum(serialized_row_bytes(row) for row in rows)
+    print(f"packet={path} cases={len(rows)} bytes={size}")
+
+
+def cmd_review_packet(args):
+    root, _work_root = _resolve_batch_root(args)
+    blind_path = root / f"{'a' if args.slot == 'A' else 'b'}.blind.jsonl"
+    completed = (
+        read_records([args.completed])
+        if args.completed and Path(args.completed).is_file()
+        else []
+    )
+    rows = review_packet_rows(
+        read_records([blind_path]),
+        completed,
+        max_cases=args.max_cases,
+        max_bytes=args.max_bytes,
+    )
+    output = Path(args.out)
+    write_jsonl(output, rows)
+    _packet_output_summary(output, rows)
+    return 0
+
+
+def cmd_review_merge(args):
+    root, _work_root = _resolve_batch_root(args)
+    blind_path = root / f"{'a' if args.slot == 'A' else 'b'}.blind.jsonl"
+    existing_path = (
+        Path(args.completed)
+        if args.completed
+        else root / f"{args.slot.lower()}.complete.jsonl"
+    )
+    existing = read_records([existing_path]) if existing_path.is_file() else []
+    rows = merge_review_rows(
+        read_records([blind_path]),
+        existing,
+        read_records([args.packet_result]),
+        slot=args.slot,
+        output=args.out,
+    )
+    print(
+        f"merged={args.out} completed={len(rows)} remaining={len(read_records([blind_path])) - len(rows)}"
+    )
+    return 0
+
+
+def cmd_adjudication_packet(args):
+    root, _work_root = _resolve_batch_root(args)
+    cases = read_records([root / "cases.jsonl"])
+    review_a = read_records([args.review_a])
+    review_b = read_records([args.review_b])
+    review_report = check_reviews(cases, review_a, review_b)
+    if not review_report["ready"]:
+        raise ValueError("review-check failed: " + "; ".join(review_report["issues"]))
+    context_path = root / "context.jsonl"
+    contexts = read_records([context_path]) if context_path.is_file() else cases
+    decisions = (
+        read_records([args.decisions])
+        if args.decisions and Path(args.decisions).is_file()
+        else []
+    )
+    rows = adjudication_packet_rows(
+        cases,
+        contexts,
+        review_a,
+        review_b,
+        decisions,
+        max_cases=args.max_cases,
+        max_bytes=args.max_bytes,
+    )
+    output = Path(args.out)
+    write_jsonl(output, rows)
+    _packet_output_summary(output, rows)
+    return 0
+
+
+def cmd_adjudication_merge(args):
+    root, _work_root = _resolve_batch_root(args)
+    existing_path = (
+        Path(args.decisions) if args.decisions else root / "adjudicated.partial.jsonl"
+    )
+    existing = read_records([existing_path]) if existing_path.is_file() else []
+    merged = merge_adjudication_rows(existing, read_records([args.packet_result]))
+    if args.finalize:
+        merged = finalize_adjudication(
+            read_records([root / "cases.jsonl"]),
+            merged,
+        )
+    write_jsonl(args.out, merged)
+    if args.finalize:
+        finalized = finalize_adjudication(
+            read_records([root / "cases.jsonl"]), merged, output=args.out
+        )
+        merged = finalized
+    print(f"merged={args.out} decisions={len(merged)}")
+    return 0
+
+
 def cmd_collect(args):
     observations = args.observations or sorted(Path("data/candidates").glob("*.jsonl"))
     reviewed = args.reviewed or (
@@ -1014,22 +1248,31 @@ def cmd_review_check(args):
     )
     if args.json:
         write_json(args.json, result)
-    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+    if result["ready"]:
+        print(
+            f"ready=yes cases={result['cases']} "
+            f"a_rows={result['review_a']['rows']} "
+            f"b_rows={result['review_b']['rows']} issues=0"
+        )
+        print(f"reviewer_a={result['review_a']['reviewer_id']}")
+        print(f"reviewer_b={result['review_b']['reviewer_id']}")
+    else:
+        issues = result["issues"]
+        print(f"ready=no issues={len(issues)}")
+        print("first_issues:")
+        for issue in issues[:20]:
+            print(f"  {issue}")
+        if args.json:
+            print(f"details={args.json}")
     return 0 if result["ready"] else 2
 
 
 def cmd_integrate(args):
     result = integrate_batch(args.batch, args.corpus, write=args.write)
     print(
-        json.dumps(
-            {
-                key: value
-                for key, value in result.items()
-                if key != "synthetic_candidates"
-            },
-            ensure_ascii=False,
-            sort_keys=True,
-        )
+        f"ready=yes records={result['records']} "
+        f"excluded={len(result['excluded'])} "
+        f"synthetic_candidates={len(result['synthetic_candidates'])}"
     )
     return 0
 
@@ -1376,6 +1619,7 @@ def build_parser():
     release.add_argument("--source-manifest")
     release.add_argument("--coverage-profile", default="none")
     release.add_argument("--controls", nargs="+")
+    release.add_argument("--conflict-adjudication")
     release.set_defaults(func=cmd_release_check)
 
     promote = sub.add_parser("promote-reviewed")
@@ -1402,6 +1646,28 @@ def build_parser():
     judge_calibrate.add_argument("--predictions", required=True)
     judge_calibrate.add_argument("--json")
     judge_calibrate.set_defaults(func=cmd_judge_calibrate)
+    agent_search = sub.add_parser("agent-search")
+    agent_search.add_argument("pattern")
+    agent_search.add_argument("--root", type=Path, default=Path.cwd())
+    agent_search.add_argument("--include-data", action="store_true")
+    agent_search.add_argument("--literal", action="store_true")
+    agent_search.add_argument("--max-matches", type=int, default=DEFAULT_MAX_MATCHES)
+    agent_search.add_argument(
+        "--max-chars-per-line", type=int, default=DEFAULT_MAX_CHARS_PER_LINE
+    )
+    agent_search.add_argument("--max-output", type=int, default=DEFAULT_MAX_OUTPUT)
+    agent_search.set_defaults(func=cmd_agent_search)
+    batch_status = sub.add_parser("batch-status")
+    batch_status.add_argument("--batch", required=True)
+    batch_status.add_argument("--work-root", type=Path)
+    batch_status.add_argument("--json")
+    batch_status.set_defaults(func=cmd_batch_status)
+    trace_case = sub.add_parser("trace-case")
+    trace_case.add_argument("case_id")
+    trace_case.add_argument("--batch", required=True)
+    trace_case.add_argument("--work-root", type=Path)
+    trace_case.add_argument("--json")
+    trace_case.set_defaults(func=cmd_trace_case)
     doctor = sub.add_parser("doctor", aliases=["paths"])
     doctor.add_argument("--json")
     doctor.set_defaults(func=cmd_doctor)
@@ -1436,6 +1702,43 @@ def build_parser():
     collect.add_argument("--out-root", type=Path, required=True)
     collect.add_argument("--source-lock-hash")
     collect.set_defaults(func=cmd_collect)
+    review_packet = sub.add_parser("review-packet")
+    review_packet.add_argument("--batch", required=True)
+    review_packet.add_argument("--slot", choices=["A", "B"], required=True)
+    review_packet.add_argument("--completed", type=Path)
+    review_packet.add_argument("--max-cases", type=int, default=200)
+    review_packet.add_argument("--max-bytes", type=int, default=98304)
+    review_packet.add_argument("--out", type=Path, required=True)
+    review_packet.add_argument("--work-root", type=Path)
+    review_packet.set_defaults(func=cmd_review_packet)
+    review_merge = sub.add_parser("review-merge")
+    review_merge.add_argument("--batch", required=True)
+    review_merge.add_argument("--slot", choices=["A", "B"], required=True)
+    review_merge.add_argument("--packet-result", type=Path, required=True)
+    review_merge.add_argument("--completed", type=Path)
+    review_merge.add_argument("--out", type=Path, required=True)
+    review_merge.add_argument("--work-root", type=Path)
+    review_merge.set_defaults(func=cmd_review_merge)
+    adjudication_packet = sub.add_parser("adjudication-packet")
+    adjudication_packet.add_argument("--batch", required=True)
+    adjudication_packet.add_argument("--review-a", type=Path, required=True)
+    adjudication_packet.add_argument("--review-b", type=Path, required=True)
+    adjudication_packet.add_argument("--decisions", type=Path)
+    adjudication_packet.add_argument("--max-cases", type=int, default=100)
+    adjudication_packet.add_argument("--max-bytes", type=int, default=98304)
+    adjudication_packet.add_argument("--out", type=Path, required=True)
+    adjudication_packet.add_argument("--work-root", type=Path)
+    adjudication_packet.set_defaults(func=cmd_adjudication_packet)
+    adjudication_merge = sub.add_parser(
+        "adjudication-merge", aliases=["adjudication-finalize"]
+    )
+    adjudication_merge.add_argument("--batch", required=True)
+    adjudication_merge.add_argument("--packet-result", type=Path, required=True)
+    adjudication_merge.add_argument("--decisions", type=Path)
+    adjudication_merge.add_argument("--out", type=Path, required=True)
+    adjudication_merge.add_argument("--finalize", action="store_true")
+    adjudication_merge.add_argument("--work-root", type=Path)
+    adjudication_merge.set_defaults(func=cmd_adjudication_merge)
     review_check = sub.add_parser("review-check")
     review_check.add_argument("--batch", type=Path, required=True)
     review_check.add_argument("--review-a", type=Path, required=True)
@@ -1474,6 +1777,7 @@ def build_parser():
     release_v2.add_argument("--source-manifest")
     release_v2.add_argument("--coverage-profile", default="none")
     release_v2.add_argument("--controls", nargs="+")
+    release_v2.add_argument("--conflict-adjudication")
     release_v2.set_defaults(func=cmd_release_check)
     benchmark = sub.add_parser("benchmark")
     benchmark.add_argument("--gold-root", required=True)

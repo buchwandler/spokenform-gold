@@ -94,6 +94,7 @@ def assert_record_identity_preserved(
             "source identity changes require an explicit migration/supersession operation"
         )
 
+
 def _sentence_oracle_id(record: dict) -> str:
     """Backward-compatible private alias for the public identity helper."""
     return sentence_oracle_id(record)
@@ -386,9 +387,8 @@ def _annotation_issues(row: dict, *, oracle_id: str, scope: str) -> list[dict]:
         )
     return issues
 
-def detect_review_contract(
-    rows: Iterable[dict], *, requested: str = "auto"
-) -> str:
+
+def detect_review_contract(rows: Iterable[dict], *, requested: str = "auto") -> str:
     """Detect the review artifact contract without silently mixing identities."""
     if requested not in {"auto", "v2", "canonical"}:
         raise ValueError("review contract must be auto, v2, or canonical")
@@ -458,56 +458,162 @@ def validate_v2_review_rows(rows: Iterable[dict], *, slot: str) -> dict:
         scope = f"review {slot}"
         if not isinstance(row, dict):
             incomplete += 1
-            issues.append(_v2_issue(scope, "invalid_row", f"row {index} is not an object"))
+            issues.append(
+                _v2_issue(scope, "invalid_row", f"row {index} is not an object")
+            )
             continue
         case_id = row.get("case_id")
         label = case_id if isinstance(case_id, str) and case_id else f"row-{index}"
         if row.get("review_schema_version") != "2.0.0":
-            issues.append(_v2_issue(scope, "invalid_review_schema_version", f"row {label} requires review_schema_version 2.0.0", label))
+            issues.append(
+                _v2_issue(
+                    scope,
+                    "invalid_review_schema_version",
+                    f"row {label} requires review_schema_version 2.0.0",
+                    label,
+                )
+            )
         if not isinstance(case_id, str) or not case_id.strip():
-            issues.append(_v2_issue(scope, "missing_case_id", "review row requires case_id", label))
+            issues.append(
+                _v2_issue(
+                    scope, "missing_case_id", "review row requires case_id", label
+                )
+            )
         elif case_id in indexed:
             duplicate_case_ids.add(case_id)
-            issues.append(_v2_issue(scope, "duplicate_case_id", f"duplicate review row {case_id}", case_id))
+            issues.append(
+                _v2_issue(
+                    scope,
+                    "duplicate_case_id",
+                    f"duplicate review row {case_id}",
+                    case_id,
+                )
+            )
         else:
             indexed[case_id] = row
         if row.get("reviewer_slot") != slot:
-            issues.append(_v2_issue(scope, "slot_mismatch", f"row {label} is not reviewer slot {slot}", label))
+            issues.append(
+                _v2_issue(
+                    scope,
+                    "slot_mismatch",
+                    f"row {label} is not reviewer slot {slot}",
+                    label,
+                )
+            )
         reviewer_id = _reviewer_id(row)
         if reviewer_id is not None:
             reviewer_ids.add(reviewer_id)
         else:
-            issues.append(_v2_issue(scope, "missing_reviewer_id", f"review {slot} has no reviewer_id for {label}", label))
-        if not isinstance(row.get("language"), str) or not row.get("language", "").strip():
-            issues.append(_v2_issue(scope, "missing_language", f"row {label} requires language", label))
+            issues.append(
+                _v2_issue(
+                    scope,
+                    "missing_reviewer_id",
+                    f"review {slot} has no reviewer_id for {label}",
+                    label,
+                )
+            )
+        if (
+            not isinstance(row.get("language"), str)
+            or not row.get("language", "").strip()
+        ):
+            issues.append(
+                _v2_issue(
+                    scope, "missing_language", f"row {label} requires language", label
+                )
+            )
         if not isinstance(row.get("locale"), str) or not row.get("locale", "").strip():
-            issues.append(_v2_issue(scope, "missing_locale", f"row {label} requires locale", label))
+            issues.append(
+                _v2_issue(
+                    scope, "missing_locale", f"row {label} requires locale", label
+                )
+            )
         if not isinstance(row.get("input"), str):
-            issues.append(_v2_issue(scope, "invalid_input", f"row {label} requires string input", label))
+            issues.append(
+                _v2_issue(
+                    scope, "invalid_input", f"row {label} requires string input", label
+                )
+            )
         for path in _collect_blind_issues(row):
-            issues.append(_v2_issue(scope, "forbidden_blind_field", f"blind review contains forbidden field at {path}", label))
+            issues.append(
+                _v2_issue(
+                    scope,
+                    "forbidden_blind_field",
+                    f"blind review contains forbidden field at {path}",
+                    label,
+                )
+            )
         lifecycle = row.get("review")
-        lifecycle_status = lifecycle.get("status") if isinstance(lifecycle, dict) else None
+        lifecycle_status = (
+            lifecycle.get("status") if isinstance(lifecycle, dict) else None
+        )
         if lifecycle_status == "unreviewed":
             unreviewed += 1
         elif lifecycle_status != expected_status:
-            issues.append(_v2_issue(scope, "invalid_lifecycle", f"row {label} lifecycle must be {expected_status}", label))
-        if not isinstance(lifecycle, dict) or lifecycle.get("protocol_version") != "2.0.0":
-            issues.append(_v2_issue(scope, "invalid_review_protocol", f"row {label} review.protocol_version must be 2.0.0", label))
+            issues.append(
+                _v2_issue(
+                    scope,
+                    "invalid_lifecycle",
+                    f"row {label} lifecycle must be {expected_status}",
+                    label,
+                )
+            )
+        if (
+            not isinstance(lifecycle, dict)
+            or lifecycle.get("protocol_version") != "2.0.0"
+        ):
+            issues.append(
+                _v2_issue(
+                    scope,
+                    "invalid_review_protocol",
+                    f"row {label} review.protocol_version must be 2.0.0",
+                    label,
+                )
+            )
         annotation = row.get("annotation")
         if not isinstance(annotation, dict):
             incomplete += 1
-            issues.append(_v2_issue(scope, "incomplete_annotation", f"row {label} annotation must be an object", label))
+            issues.append(
+                _v2_issue(
+                    scope,
+                    "incomplete_annotation",
+                    f"row {label} annotation must be an object",
+                    label,
+                )
+            )
         else:
             issues.extend(_v2_annotation_issues(row, case_id=label, scope=scope))
     if not reviewer_ids:
-        issues.append(_v2_issue(f"review {slot}", "missing_reviewer_id", f"review {slot} has no stable reviewer_id"))
+        issues.append(
+            _v2_issue(
+                f"review {slot}",
+                "missing_reviewer_id",
+                f"review {slot} has no stable reviewer_id",
+            )
+        )
     elif len(reviewer_ids) != 1:
-        issues.append(_v2_issue(f"review {slot}", "unstable_reviewer_id", f"review {slot} must contain one stable reviewer_id"))
+        issues.append(
+            _v2_issue(
+                f"review {slot}",
+                "unstable_reviewer_id",
+                f"review {slot} must contain one stable reviewer_id",
+            )
+        )
     if incomplete:
-        issues.append(_v2_issue(f"review {slot}", "incomplete_annotations", f"review {slot} has {incomplete} incomplete annotations"))
+        issues.append(
+            _v2_issue(
+                f"review {slot}",
+                "incomplete_annotations",
+                f"review {slot} has {incomplete} incomplete annotations",
+            )
+        )
     if unreviewed:
-        issues.append(_v2_issue(f"review {slot}", "unreviewed_rows", f"review {slot} has {unreviewed} rows in unreviewed lifecycle state"))
+        issues.append(
+            _v2_issue(
+                f"review {slot}",
+                "unreviewed_rows",
+                f"review {slot} has {unreviewed} rows in unreviewed lifecycle state",
+            )
+        )
     reviewer_id = next(iter(reviewer_ids)) if len(reviewer_ids) == 1 else None
     completed = sum(
         1
@@ -533,7 +639,6 @@ def validate_v2_review_rows(rows: Iterable[dict], *, slot: str) -> dict:
         "ready": not issues,
         "_indexed": indexed,
     }
-
 
 
 def validate_review_rows(rows: Iterable[dict], *, slot: str) -> dict:

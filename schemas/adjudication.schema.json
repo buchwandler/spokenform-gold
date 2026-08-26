@@ -4,11 +4,11 @@
   "type": "object",
   "required": ["case_id", "adjudicator_id", "decision"],
   "properties": {
-    "case_id": {"type": "string", "minLength": 1},
-    "adjudicator_id": {"type": "string", "minLength": 1},
-    "decision": {"enum": ["accept", "exclude", "unresolved"]},
-    "final_record": {"type": "object"},
-    "rationale": {"type": "string"},
-    "synthetic_requests": {"type": "array"}
+    "case_id": { "type": "string", "minLength": 1 },
+    "adjudicator_id": { "type": "string", "minLength": 1 },
+    "decision": { "enum": ["accept", "exclude", "unresolved"] },
+    "final_record": { "type": "object" },
+    "rationale": { "type": "string" },
+    "synthetic_requests": { "type": "array" }
   }
 }

@@ -86,6 +86,7 @@ class SentenceCentricTests(unittest.TestCase):
                     "protocol_version": "2.0.0",
                 },
             }
+
         self.assertTrue(
             check_reviews([case], [row("A", "a")], [row("B", "b")])["ready"]
         )

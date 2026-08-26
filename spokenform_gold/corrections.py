@@ -66,14 +66,22 @@ def validate_correction(original: dict, correction: dict) -> dict:
         raise ValueError("new_oracle_hash does not match corrected semantic oracle")
     revision = correction.get("review_revision")
     previous_revision = max(
-        [int(item.get("review_revision", 0)) for item in _history(original) if isinstance(item, dict)] or [0]
+        [
+            int(item.get("review_revision", 0))
+            for item in _history(original)
+            if isinstance(item, dict)
+        ]
+        or [0]
     )
     if not isinstance(revision, int) or revision <= previous_revision:
         raise ValueError(f"review_revision must be greater than {previous_revision}")
     for field in ("reason", "adjudicator"):
         if not isinstance(correction.get(field), str) or not correction[field].strip():
             raise ValueError(f"correction requires {field}")
-    if not isinstance(correction.get("reviewed_by"), list) or not correction["reviewed_by"]:
+    if (
+        not isinstance(correction.get("reviewed_by"), list)
+        or not correction["reviewed_by"]
+    ):
         raise ValueError("correction requires reviewed_by")
     errors = validate_records([updated])
     if errors:
@@ -117,7 +125,10 @@ def prepare_correction_context(
         raise ValueError(f"correction output root must be new or empty: {root}")
     root.mkdir(parents=True, exist_ok=True)
     record_id = record.get("id")
-    history = sorted((row for row in evidence if row.get("record_id") == record_id), key=lambda row: row.get("review_revision", -1))
+    history = sorted(
+        (row for row in evidence if row.get("record_id") == record_id),
+        key=lambda row: row.get("review_revision", -1),
+    )
     context = {
         "record_id": record_id,
         "family_id": record.get("family_id"),
@@ -125,8 +136,20 @@ def prepare_correction_context(
         "current_oracle_hash": _current_hash(record),
         "sentence_oracle_id": sentence_oracle_id(record),
         "review_history": sanitize_review_artifact(history),
-        "taxonomy": sorted({unit.get("category") for unit in record.get("units", []) if isinstance(unit, dict) and unit.get("category")}),
-        "policies": sorted({unit.get("policy") for unit in record.get("units", []) if isinstance(unit, dict) and unit.get("policy")}),
+        "taxonomy": sorted(
+            {
+                unit.get("category")
+                for unit in record.get("units", [])
+                if isinstance(unit, dict) and unit.get("category")
+            }
+        ),
+        "policies": sorted(
+            {
+                unit.get("policy")
+                for unit in record.get("units", [])
+                if isinstance(unit, dict) and unit.get("policy")
+            }
+        ),
         "correction_schema": "schemas/oracle-correction.schema.json",
     }
     context_path = root / "context.json"
@@ -138,8 +161,18 @@ def prepare_correction_context(
         "reason": "",
         "reviewed_by": [],
         "adjudicator": "",
-        "review_revision": max([row.get("review_revision", 0) for row in history if isinstance(row.get("review_revision"), int)] or [0]) + 1,
-        "previous_review_evidence_hash": artifact_sha256(history[-1]) if history else "legacy-none",
+        "review_revision": max(
+            [
+                row.get("review_revision", 0)
+                for row in history
+                if isinstance(row.get("review_revision"), int)
+            ]
+            or [0]
+        )
+        + 1,
+        "previous_review_evidence_hash": artifact_sha256(history[-1])
+        if history
+        else "legacy-none",
         "new_review_evidence_hash": "",
         "new_record": sanitize_review_artifact(record),
         "changed_fields": [],
@@ -147,7 +180,9 @@ def prepare_correction_context(
     decision_path = root / "decision.json"
     write_json(decision_path, decision)
     task_path = root / "correction-task.md"
-    task_path.write_text(template.replace("<RECORD_ID>", str(record_id)), encoding="utf-8")
+    task_path.write_text(
+        template.replace("<RECORD_ID>", str(record_id)), encoding="utf-8"
+    )
     report_path = root / "report.html"
     render_release_html(
         report_path,
@@ -159,18 +194,42 @@ def prepare_correction_context(
         counts={"families": 1},
         review_evidence=history,
     )
-    return {"context": context_path, "decision": decision_path, "task": task_path, "report": report_path}
+    return {
+        "context": context_path,
+        "decision": decision_path,
+        "task": task_path,
+        "report": report_path,
+    }
 
 
-def write_correction_application(out_root: str | Path, records: list[dict], updated: dict, history_item: dict, evidence: list[dict]) -> dict[str, Path]:
+def write_correction_application(
+    out_root: str | Path,
+    records: list[dict],
+    updated: dict,
+    history_item: dict,
+    evidence: list[dict],
+) -> dict[str, Path]:
     root = Path(out_root)
     if root.exists() and any(root.iterdir()):
-        raise ValueError(f"correction application output root must be new or empty: {root}")
+        raise ValueError(
+            f"correction application output root must be new or empty: {root}"
+        )
     root.mkdir(parents=True, exist_ok=True)
-    output_records = [updated if row.get("id") == updated.get("id") else row for row in records]
+    output_records = [
+        updated if row.get("id") == updated.get("id") else row for row in records
+    ]
     write_jsonl(root / "records.jsonl", output_records)
-    new_evidence = [row for row in evidence if row.get("record_id") != updated.get("id")]
-    previous = next((row for row in reversed(evidence) if row.get("record_id") == updated.get("id")), None)
+    new_evidence = [
+        row for row in evidence if row.get("record_id") != updated.get("id")
+    ]
+    previous = next(
+        (
+            row
+            for row in reversed(evidence)
+            if row.get("record_id") == updated.get("id")
+        ),
+        None,
+    )
     entry = {
         "record_id": updated["id"],
         "review_revision": history_item["review_revision"],
@@ -180,7 +239,9 @@ def write_correction_application(out_root: str | Path, records: list[dict], upda
         "review_a": previous.get("review_a") if previous else None,
         "review_b": previous.get("review_b") if previous else None,
         "comparison": previous.get("comparison") if previous else None,
-        "decision": previous.get("decision", {"data": None, "artifact_sha256": None}) if previous else {"data": None, "artifact_sha256": None},
+        "decision": previous.get("decision", {"data": None, "artifact_sha256": None})
+        if previous
+        else {"data": None, "artifact_sha256": None},
         "final_oracle_hash": updated["oracle_hash"],
         "correction": history_item,
         "correction_history": updated.get("review", {}).get("correction_history", []),
@@ -203,7 +264,17 @@ def write_correction_application(out_root: str | Path, records: list[dict], upda
         counts={"families": len({row.get("family_id") for row in output_records})},
         review_evidence=new_evidence,
     )
-    return {"records": root / "records.jsonl", "evidence": root / "review-evidence.jsonl", "correction": root / "correction.json", "report": root / "report.html"}
+    return {
+        "records": root / "records.jsonl",
+        "evidence": root / "review-evidence.jsonl",
+        "correction": root / "correction.json",
+        "report": root / "report.html",
+    }
 
 
-__all__ = ["apply_correction", "prepare_correction_context", "validate_correction", "write_correction_application"]
+__all__ = [
+    "apply_correction",
+    "prepare_correction_context",
+    "validate_correction",
+    "write_correction_application",
+]

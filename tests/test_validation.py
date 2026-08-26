@@ -40,7 +40,9 @@ class ValidationTests(unittest.TestCase):
     def test_invalid_semantic_is_rejected(self):
         records = read_records([ROOT / "data/test/sample.jsonl"])
         broken = copy.deepcopy(
-            next(record for record in records if record["units"][0]["category"] == "time")
+            next(
+                record for record in records if record["units"][0]["category"] == "time"
+            )
         )
         broken["units"][0]["semantic"] = {"hour": 28, "minute": 0}
         errors = validate_records([broken])
