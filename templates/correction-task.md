@@ -11,7 +11,7 @@ edit JSONL, identify artifact paths, or enumerate review rows.
 
 ## Scope
 
-The canonical authoring source is `data/corpus.jsonl`. This is a v2 correction,
+The canonical authoring source is the `data/corpus/` directory, with one language shard per `data/corpus/<language>.jsonl`. This is a v2 correction,
 not a split-based authoring operation. Preserve the permanent `record.id`,
 family identity, and source identity unless an explicit supersession decision
 proves one is wrong. Do not adapt Gold to current Spokenform output.

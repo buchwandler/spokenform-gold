@@ -6,8 +6,10 @@ from pathlib import Path
 
 from .corpus import (
     corpus_identity_map,
+    read_corpus,
     sentence_key,
     stable_record_id,
+    write_corpus_atomic,
     write_records_atomic,
 )
 from .io import read_records, write_json, write_jsonl
@@ -171,7 +173,14 @@ def integrate_batch(
     missing = sorted({case.get("case_id") for case in cases} - set(by_case))
     if missing:
         raise ValueError(f"missing adjudication for {missing}")
-    existing = read_records([corpus_path]) if Path(corpus_path).exists() else []
+    corpus_target = Path(corpus_path)
+    existing = (
+        read_corpus(corpus_target)
+        if corpus_target.is_dir()
+        else read_records([corpus_target])
+        if corpus_target.exists()
+        else []
+    )
     existing_map = corpus_identity_map(existing)
     final_records: list[dict] = []
     synthetic: list[dict] = []
@@ -228,7 +237,10 @@ def integrate_batch(
     if errors:
         raise ValueError("integrated corpus is invalid: " + "; ".join(errors))
     if write:
-        write_records_atomic(corpus_path, combined.values())
+        if corpus_target.suffix == ".jsonl":
+            write_records_atomic(corpus_target, combined.values())
+        else:
+            write_corpus_atomic(corpus_target, combined.values())
         write_jsonl(root / "synthetic-candidates.jsonl", synthetic)
         write_jsonl(root / "exclusions.jsonl", excluded)
         metadata = {

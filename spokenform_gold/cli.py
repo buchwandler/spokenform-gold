@@ -20,6 +20,7 @@ from .config import (
 from .conflicts import find_conflicts
 from .control_benchmark import load_control_predictions, score_control_records
 from .control_validation import validate_control_records
+from .corpus import canonical_corpus_path, shard_corpus
 from .corrections import (
     apply_correction,
     prepare_correction_context,
@@ -96,7 +97,7 @@ from .translation import (
     translation_packet_rows,
     validate_target_locale,
 )
-from .validation import load_categories, validate_records
+from .validation import load_categories, validate_corpus, validate_records
 from .workflow import check_reviews, integrate_batch
 
 
@@ -123,16 +124,30 @@ def cmd_migrate_oracle(args):
     return 0
 
 
+def cmd_shard_corpus(args):
+    count = shard_corpus(args.input, args.out)
+    print(f"sharded {count} records into {args.out}")
+    return 0
+
+
 def cmd_validate(args):
     if not args.paths:
+        canonical = canonical_corpus_path()
+        legacy = canonical.with_suffix(".jsonl")
         args.paths = (
-            [Path("data/corpus.jsonl")]
-            if Path("data/corpus.jsonl").exists()
+            [canonical]
+            if canonical.exists()
+            else [legacy]
+            if legacy.exists()
             else [Path("data/train"), Path("data/dev"), Path("data/test")]
         )
-    records = read_records(args.paths)
     categories = load_categories(args.categories) if args.categories else None
-    errors = validate_records(records, judge=args.judge, categories=categories)
+    if len(args.paths) == 1 and Path(args.paths[0]).is_dir():
+        errors = validate_corpus(args.paths[0], judge=args.judge, categories=categories)
+        records = read_records([args.paths[0]])
+    else:
+        records = read_records(args.paths)
+        errors = validate_records(records, judge=args.judge, categories=categories)
     if errors:
         print(f"INVALID: {len(errors)} error(s)")
         for error in errors:
@@ -986,7 +1001,7 @@ def cmd_doctor(args):
     repo_root = (config.path.parent if config.path else Path.cwd()).resolve()
     paths = resolve_runtime_paths(config=config, source_cache=None, work_root=None)
     source_lock = repo_root / "sources" / "source-lock.json"
-    corpus = repo_root / "data" / "corpus.jsonl"
+    corpus = canonical_corpus_path(repo_root)
     batches_root = paths.work_root / "batches" if paths.work_root else None
     reports_root = paths.work_root / "reports" if paths.work_root else None
     report = {
@@ -1130,9 +1145,12 @@ def _default_review_evidence_paths(
 
 
 def _default_canonical_paths(repo_root: Path) -> list[Path]:
-    corpus = repo_root / "data" / "corpus.jsonl"
+    corpus = canonical_corpus_path(repo_root)
     if corpus.exists():
         return [corpus]
+    legacy = corpus.with_suffix(".jsonl")
+    if legacy.exists():
+        return [legacy]
     return [repo_root / "data" / name for name in ("train", "dev", "test")]
 
 
@@ -1366,9 +1384,7 @@ def cmd_adjudication_merge(args):
 
 def cmd_collect(args):
     observations = args.observations or sorted(Path("data/candidates").glob("*.jsonl"))
-    reviewed = args.reviewed or (
-        ["data/corpus.jsonl"] if Path("data/corpus.jsonl").exists() else []
-    )
+    reviewed = args.reviewed or [canonical_corpus_path()]
     result = collect_batch(
         observations,
         reviewed_paths=reviewed,
@@ -1420,11 +1436,13 @@ def cmd_integrate(args):
 
 
 def cmd_report(args):
-    records = read_records(
-        args.records
-        or (["data/corpus.jsonl"] if Path("data/corpus.jsonl").exists() else [])
+    record_paths = args.records or [canonical_corpus_path()]
+    records = read_records(record_paths)
+    errors = (
+        validate_corpus(record_paths[0])
+        if len(record_paths) == 1 and Path(record_paths[0]).is_dir()
+        else validate_records(records)
     )
-    errors = validate_records(records)
     if errors:
         raise ValueError("cannot report invalid corpus: " + "; ".join(errors))
     targets = (
@@ -1451,7 +1469,7 @@ def cmd_report(args):
 
 
 def cmd_export(args):
-    records = read_records(args.records or ["data/corpus.jsonl"])
+    records = read_records(args.records or [canonical_corpus_path()])
     result = export_family_safe_splits(
         records,
         out_root=args.out_root,
@@ -1509,6 +1527,11 @@ def build_parser():
     migrate.add_argument("input")
     migrate.add_argument("--out", required=True)
     migrate.set_defaults(func=cmd_migrate_oracle)
+
+    shard = sub.add_parser("shard-corpus")
+    shard.add_argument("--input", type=Path, required=True)
+    shard.add_argument("--out", type=Path, required=True)
+    shard.set_defaults(func=cmd_shard_corpus)
 
     validate = sub.add_parser("validate")
     validate.add_argument("paths", nargs="*")
@@ -1959,7 +1982,7 @@ def build_parser():
     review_check.set_defaults(func=cmd_review_check)
     integrate = sub.add_parser("integrate")
     integrate.add_argument("--batch", type=Path, required=True)
-    integrate.add_argument("--corpus", type=Path, default=Path("data/corpus.jsonl"))
+    integrate.add_argument("--corpus", type=Path, default=canonical_corpus_path())
     integrate.add_argument("--write", action="store_true")
     integrate.set_defaults(func=cmd_integrate)
     report = sub.add_parser("report")
@@ -1978,7 +2001,7 @@ def build_parser():
     export.set_defaults(func=cmd_export)
     release_v2 = sub.add_parser("release")
     release_v2.add_argument("--version", required=True)
-    release_v2.add_argument("--data", nargs="+", default=["data/corpus.jsonl"])
+    release_v2.add_argument("--data", nargs="+", default=[str(canonical_corpus_path())])
     release_v2.add_argument("--out", required=True)
     release_v2.add_argument(
         "--maturity",

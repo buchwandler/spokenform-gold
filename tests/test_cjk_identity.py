@@ -6,9 +6,9 @@ from spokenform_gold.corpus import (
     exact_surface_hash,
     find_identity_collisions,
     migrate_record,
+    read_corpus,
     stable_record_id,
 )
-from spokenform_gold.io import read_records
 
 
 class CjkIdentityTests(unittest.TestCase):
@@ -50,7 +50,7 @@ class CjkIdentityTests(unittest.TestCase):
         self.assertNotEqual(exact_surface_hash("１"), exact_surface_hash("1"))
 
     def test_existing_record_id_algorithm_remains_legacy_stable(self):
-        record = read_records(["data/corpus.jsonl"])[0]
+        record = read_corpus("data/corpus")[0]
         self.assertEqual(migrate_record(record)["id"], record["id"])
         self.assertEqual(
             stable_record_id({"language": "ja", "locale": "ja-JP", "input": "１"}),

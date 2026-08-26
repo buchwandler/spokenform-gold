@@ -11,7 +11,7 @@ from spokenform_gold.collection import (
     collect_batch,
     select_cases,
 )
-from spokenform_gold.corpus import migrate_record, sentence_key
+from spokenform_gold.corpus import migrate_record, read_corpus, sentence_key
 from spokenform_gold.io import read_records, write_jsonl
 from spokenform_gold.workflow import check_reviews, integrate_batch
 
@@ -95,7 +95,7 @@ class SentenceCentricTests(unittest.TestCase):
         )
 
     def test_integration_is_atomic_on_invalid_adjudication(self):
-        original = read_records([ROOT / "data/corpus.jsonl"])[0]
+        original = read_corpus(ROOT / "data/corpus")[0]
         case = {
             "case_id": "case-1",
             "language": original["language"],

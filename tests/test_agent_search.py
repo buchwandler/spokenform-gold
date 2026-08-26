@@ -17,7 +17,9 @@ class AgentSearchTests(unittest.TestCase):
             )
             data = root / "data"
             data.mkdir()
-            (data / "corpus.jsonl").write_text('{"input":"needle"}\n', encoding="utf-8")
+            corpus = data / "corpus"
+            corpus.mkdir()
+            (corpus / "en.jsonl").write_text('{"input":"needle"}\n', encoding="utf-8")
 
             result = search_text("needle", root=root)
             self.assertLessEqual(len(result), 20_000)
@@ -28,7 +30,7 @@ class AgentSearchTests(unittest.TestCase):
             self.assertLessEqual(len(content), 500)
 
             included = search_text("needle", root=root, include_data=True)
-            self.assertIn("data/corpus.jsonl", included)
+            self.assertIn("data/corpus/en.jsonl", included)
             self.assertLessEqual(len(included), 20_000)
 
     def test_match_and_output_limits_are_deterministic(self):

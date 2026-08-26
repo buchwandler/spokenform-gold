@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import shutil
 import tempfile
 import unicodedata
 from collections.abc import Iterable
@@ -192,6 +193,224 @@ def write_records_atomic(path: str | Path, records: Iterable[dict]) -> None:
         except FileNotFoundError:
             pass
         raise
+
+
+def canonical_corpus_path(repo_root: str | Path = Path(".")) -> Path:
+    """Return the repository's canonical authoring corpus directory."""
+    return Path(repo_root) / "data" / "corpus"
+
+
+def _language_filename(language: object) -> str:
+    if not isinstance(language, str) or not language.isascii():
+        raise ValueError(f"invalid language identifier: {language!r}")
+    normalized = language.strip().lower()
+    if (
+        normalized != language
+        or not normalized.isalpha()
+        or len(normalized) not in {2, 3}
+    ):
+        raise ValueError(f"invalid language identifier: {language!r}")
+    return normalized
+
+
+def shard_records_by_language(records: Iterable[dict]) -> dict[str, list[dict]]:
+    """Group records by their validated ISO 639 language identifier."""
+    shards: dict[str, list[dict]] = {}
+    for record in records:
+        language = _language_filename(record.get("language"))
+        shards.setdefault(language, []).append(deepcopy(record))
+    for language, shard in shards.items():
+        shard.sort(key=lambda row: row.get("id", ""))
+    return dict(sorted(shards.items()))
+
+
+def _corpus_jsonl_files(root: Path) -> list[Path]:
+    return sorted(
+        path for path in root.iterdir() if path.is_file() and path.suffix == ".jsonl"
+    )
+
+
+def validate_corpus_layout(root: str | Path) -> list[str]:
+    """Validate shard filenames and global layout invariants."""
+    corpus_root = Path(root)
+    if not corpus_root.exists():
+        return [f"corpus directory does not exist: {corpus_root}"]
+    if not corpus_root.is_dir():
+        return [f"corpus path must be a directory: {corpus_root}"]
+    errors: list[str] = []
+    files = _corpus_jsonl_files(corpus_root)
+    for path in sorted(corpus_root.iterdir()):
+        if path.is_file() and path.suffix != ".jsonl":
+            errors.append(f"corpus directory contains non-JSONL file: {path.name}")
+        elif path.is_dir():
+            errors.append(f"corpus directory contains nested path: {path.name}")
+    for path in files:
+        try:
+            language = _language_filename(path.stem)
+        except ValueError as exc:
+            errors.append(f"invalid corpus shard filename {path.name}: {exc}")
+            continue
+        try:
+            records = read_records([path])
+        except (OSError, TypeError, ValueError) as exc:
+            errors.append(str(exc))
+            continue
+        for record in records:
+            if record.get("language") != language:
+                errors.append(
+                    f"{path}: record {record.get('id', '?')} language "
+                    f"{record.get('language')!r} does not match shard {language!r}"
+                )
+    try:
+        records = read_records(files)
+    except (OSError, TypeError, ValueError):
+        return sorted(set(errors))
+    ids: dict[str, Path] = {}
+    identities: dict[tuple[str, str, str], str] = {}
+    for record in records:
+        record_id = record.get("id")
+        if isinstance(record_id, str) and record_id:
+            previous = ids.get(record_id)
+            if previous is not None:
+                errors.append(
+                    f"duplicate id: {record_id} ({previous} and corpus shard)"
+                )
+            else:
+                ids[record_id] = Path(record.get("_source_file", "?"))
+        if isinstance(record.get("input"), str):
+            identity = sentence_key(
+                record.get("language", ""),
+                record.get("locale", ""),
+                record["input"],
+            )
+            previous_id = identities.get(identity)
+            if previous_id is not None and previous_id != record.get("id"):
+                errors.append(
+                    f"duplicate sentence identity: {identity!r} "
+                    f"({previous_id} and {record.get('id', '?')})"
+                )
+            else:
+                identities[identity] = record.get("id", "")
+    return sorted(set(errors))
+
+
+def read_corpus(root: str | Path) -> list[dict]:
+    """Read and layout-check the complete canonical corpus directory."""
+    corpus_root = Path(root)
+    if corpus_root.is_file():
+        return read_records([corpus_root])
+    errors = validate_corpus_layout(corpus_root)
+    if errors:
+        raise ValueError("invalid corpus layout: " + "; ".join(errors))
+    return read_records(_corpus_jsonl_files(corpus_root))
+
+
+def _fsync_directory(path: Path) -> None:
+    try:
+        descriptor = os.open(path, os.O_RDONLY)
+    except OSError:
+        return
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def write_corpus_atomic(root: str | Path, records: Iterable[dict]) -> None:
+    """Replace the complete canonical corpus with deterministic language shards."""
+    corpus_root = Path(root)
+    if corpus_root.exists() and not corpus_root.is_dir():
+        raise ValueError(f"corpus path must be a directory: {corpus_root}")
+    corpus_root.parent.mkdir(parents=True, exist_ok=True)
+    staging = Path(
+        tempfile.mkdtemp(prefix=f".{corpus_root.name}.next-", dir=corpus_root.parent)
+    )
+    backup: Path | None = None
+    try:
+        shards = shard_records_by_language(records)
+        for language, shard in shards.items():
+            write_records_atomic(staging / f"{language}.jsonl", shard)
+        layout_errors = validate_corpus_layout(staging)
+        if layout_errors:
+            raise ValueError(
+                "invalid staged corpus layout: " + "; ".join(layout_errors)
+            )
+        _fsync_directory(staging)
+        if corpus_root.exists():
+            backup = Path(
+                tempfile.mkdtemp(
+                    prefix=f".{corpus_root.name}.previous-", dir=corpus_root.parent
+                )
+            )
+            backup.rmdir()
+            os.replace(corpus_root, backup)
+        try:
+            os.replace(staging, corpus_root)
+        except BaseException:
+            if backup is not None and not corpus_root.exists():
+                os.replace(backup, corpus_root)
+            raise
+        _fsync_directory(corpus_root.parent)
+    finally:
+        if staging.exists():
+            shutil.rmtree(staging)
+        if backup is not None and backup.exists():
+            shutil.rmtree(backup)
+
+
+def shard_corpus(input_path: str | Path, output_root: str | Path) -> int:
+    """Migrate one legacy corpus JSONL file into language shards."""
+    source = Path(input_path)
+    destination = Path(output_root)
+    if not source.is_file():
+        raise ValueError(f"legacy corpus file not found: {source}")
+    if destination.exists():
+        raise ValueError(f"corpus output already exists: {destination}")
+    original = read_records([source])
+    from .validation import validate_records
+
+    validation_errors = validate_records(original)
+    if validation_errors:
+        raise ValueError(
+            "legacy corpus validation failed: " + "; ".join(validation_errors)
+        )
+    original_by_id = {row.get("id"): row for row in original}
+    original_hashes = {row.get("id"): row.get("oracle_hash") for row in original}
+    original_semantic = {
+        row.get("id"): json.dumps(
+            {key: value for key, value in row.items() if not key.startswith("_")},
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+        for row in original
+    }
+    try:
+        write_corpus_atomic(destination, original)
+        migrated = read_corpus(destination)
+        migrated_by_id = {row.get("id"): row for row in migrated}
+        migrated_hashes = {row.get("id"): row.get("oracle_hash") for row in migrated}
+        migrated_semantic = {
+            row.get("id"): json.dumps(
+                {key: value for key, value in row.items() if not key.startswith("_")},
+                ensure_ascii=False,
+                sort_keys=True,
+            )
+            for row in migrated
+        }
+        if len(original) != len(migrated):
+            raise ValueError("shard migration changed record count")
+        if set(original_by_id) != set(migrated_by_id):
+            raise ValueError("shard migration changed record ids")
+        if original_hashes != migrated_hashes:
+            raise ValueError("shard migration changed oracle hashes")
+        if original_semantic != migrated_semantic:
+            raise ValueError("shard migration changed semantic records")
+    except BaseException:
+        if destination.exists():
+            shutil.rmtree(destination)
+        raise
+    source.unlink()
+    return len(migrated)
 
 
 def attach_source_observations(

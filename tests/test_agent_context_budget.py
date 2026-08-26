@@ -15,7 +15,7 @@ class AgentContextBudgetTests(unittest.TestCase):
         text = (ROOT / "AGENTS.md").read_text()
         for phrase in (
             "Never recursively grep or search `.`",
-            "Never `cat`, generic-grep, or full-read `data/corpus.jsonl`",
+            "Never cat, recursively grep, or full-read `data/corpus/`",
             "20,000 output characters",
             "bounded by case count and serialized",
             "Do not preload repository documentation",

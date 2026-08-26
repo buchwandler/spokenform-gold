@@ -6,7 +6,7 @@ and commit.
 
 ## Authoring and export boundary
 
-The authoring source is `data/corpus.jsonl`. A family-safe split layout, when a
+The authoring source is the `data/corpus/` directory, with one language shard per `data/corpus/<language>.jsonl`. A family-safe split layout, when a
 consumer requires it, is a generated export artifact. It is not editable
 canonical Gold state. Do not alter annotations, provenance, taxonomy, policy, or
 family assignments during publication.
@@ -17,8 +17,8 @@ family assignments during publication.
 git status --short
 git rev-parse HEAD
 make check
-spokenform-gold validate data/corpus.jsonl
-spokenform-gold release-check --version <VERSION> --data data/corpus.jsonl \
+spokenform-gold validate data/corpus/
+spokenform-gold release-check --version <VERSION> --data data/corpus/ \
   --out <WORK>/releases/<VERSION>
 ```
 

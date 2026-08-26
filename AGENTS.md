@@ -9,7 +9,7 @@ majority.
 
 ## Canonical v2 authoring contract
 
-The canonical authoring file is `data/corpus.jsonl`. New sentence cases follow:
+The canonical authoring source is the `data/corpus/` directory. Each language shard is `data/corpus/<language>.jsonl`. New sentence cases follow:
 
 ```text
 prepare observations -> collect -> review-check -> adjudicate -> integrate -> validate -> report
@@ -53,7 +53,7 @@ Treat tool output as part of the model context budget.
 1. Start from user-named artifacts and configured paths.
 2. Run `spokenform-gold doctor` before filesystem hunting for work or cache paths.
 3. Never recursively grep or search `.` for normal task discovery.
-4. Never `cat`, generic-grep, or full-read `data/corpus.jsonl`.
+4. Never cat, recursively grep, or full-read `data/corpus/`. For language-scoped work, use only the required shard or an exact record lookup.
 5. Never expose `context_spokenform_gold*`, Codecrate indexes or packs,
    external source caches, or the whole work root to the model.
 6. Do not read all policy or documentation files up front.
@@ -88,7 +88,7 @@ whose state is required.
 
 ```bash
 spokenform-gold doctor
-spokenform-gold collect --observations <OBSERVATIONS> --reviewed data/corpus.jsonl \
+spokenform-gold collect --observations <OBSERVATIONS> --reviewed data/corpus/ \
   --limit 1000 --batch <BATCH_ID> --out-root <WORK>/batches/<BATCH_ID>
 spokenform-gold review-packet --batch <BATCH_ROOT> --slot A --max-cases 200 \
   --max-bytes 98304 --out <PACKET>
@@ -97,9 +97,10 @@ spokenform-gold review-check --batch <BATCH_ROOT> --review-a <A_COMPLETE> \
 spokenform-gold adjudication-packet --batch <BATCH_ROOT> --review-a <A_COMPLETE> \
   --review-b <B_COMPLETE> --max-cases 100 --max-bytes 98304 --out <PACKET>
 spokenform-gold integrate --batch <BATCH_ROOT>
-spokenform-gold validate data/corpus.jsonl
-spokenform-gold report --records data/corpus.jsonl --out <REPORT.html>
+spokenform-gold validate data/corpus/
+spokenform-gold report --records data/corpus/ --out <REPORT.html>
 ```
+
 
 Use `batch-status --batch <BATCH_ID>` to resolve configured paths and counts.
 Use `agent-search` for bounded source search and `trace-case` or `trace-record`

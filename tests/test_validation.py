@@ -2,6 +2,7 @@ import copy
 import unittest
 from pathlib import Path
 
+from spokenform_gold.corpus import read_corpus
 from spokenform_gold.io import read_records
 from spokenform_gold.source_manifest import validate_source_manifest
 from spokenform_gold.validation import validate_records
@@ -91,7 +92,7 @@ class ValidationTests(unittest.TestCase):
         self.assertTrue(any("ambiguity_family" in error for error in errors))
 
     def test_ambiguous_date_units_require_candidate_semantics(self):
-        records = read_records([ROOT / "data/corpus.jsonl"])
+        records = read_corpus(ROOT / "data/corpus")
         record = copy.deepcopy(
             next(item for item in records if item["id"] == "sfg-000ec27c2adaddabdea0")
         )

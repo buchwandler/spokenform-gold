@@ -53,7 +53,7 @@ class DocumentationContractTests(unittest.TestCase):
             "prepare observations -> collect -> review-check -> adjudicate -> integrate -> validate -> report",
             combined,
         )
-        self.assertIn("data/corpus.jsonl", combined)
+        self.assertIn("data/corpus/", combined)
         self.assertIn("--limit 1000", combined)
         self.assertIn('review_schema_version: "2.0.0"', combined)
         for obsolete_command in (

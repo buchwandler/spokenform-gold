@@ -6,7 +6,7 @@ semantic evidence, not by current implementation output or source majority vote.
 
 ## Canonical authoring workflow
 
-The canonical authoring source is `data/corpus.jsonl`. New sentence cases follow:
+The canonical authoring source is the `data/corpus/` directory, with one `data/corpus/<language>.jsonl` shard per language. New sentence cases follow:
 
 ```text
 prepare observations -> collect -> review-check -> adjudicate -> integrate -> validate -> report
@@ -26,7 +26,7 @@ pip install -e ".[dev]"
 spokenform-gold doctor
 spokenform-gold collect \
   --observations <OBSERVATIONS> \
-  --reviewed data/corpus.jsonl \
+  --reviewed data/corpus/ \
   --limit 1000 --batch batch-0001 \
   --out-root <WORK>/batches/batch-0001
 ```
@@ -58,21 +58,21 @@ Read only the focused policy or schema needed for a decision:
 Validate the canonical corpus and create reports without dumping its contents:
 
 ```bash
-spokenform-gold validate data/corpus.jsonl
-spokenform-gold coverage data/corpus.jsonl \
+spokenform-gold validate data/corpus/
+spokenform-gold coverage data/corpus/ \
   --targets taxonomy/coverage_targets.json \
   --json <WORK>/reports/coverage.json
-spokenform-gold conflicts data/corpus.jsonl --mode unit \
+spokenform-gold conflicts data/corpus/ --mode unit \
   --json <WORK>/reports/conflicts.json
-spokenform-gold report --records data/corpus.jsonl \
+spokenform-gold report --records data/corpus/ \
   --out <WORK>/reports/corpus.html
 ```
 
 Integration is mechanical and requires complete reviewed decisions:
 
 ```bash
-spokenform-gold integrate --batch <BATCH_ROOT> --corpus data/corpus.jsonl
-spokenform-gold integrate --batch <BATCH_ROOT> --corpus data/corpus.jsonl --write
+spokenform-gold integrate --batch <BATCH_ROOT> --corpus data/corpus/
+spokenform-gold integrate --batch <BATCH_ROOT> --corpus data/corpus/ --write
 ```
 
 If a consumer requires family-safe exports, generate them from the immutable

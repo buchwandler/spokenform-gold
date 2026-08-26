@@ -1,9 +1,10 @@
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
 
-from spokenform_gold.benchmark import verify_release
+from spokenform_gold.benchmark import load_release_records, verify_release
 from spokenform_gold.coverage import build_coverage, load_targets
 from spokenform_gold.io import expand_jsonl_paths, read_json, read_records
 from spokenform_gold.release import _enforce_maturity, build_release
@@ -60,6 +61,26 @@ class ReleaseTests(unittest.TestCase):
                 [source["name"] for source in source_manifest["sources"]],
                 ["spokenform_curated"],
             )
+
+    def test_v2_release_flattens_corpus_shards(self):
+        with tempfile.TemporaryDirectory(dir=ROOT) as tmpdir:
+            tmp_root = Path(tmpdir)
+            input_root = tmp_root / "corpus"
+            input_root.mkdir()
+            for name in ("es.jsonl", "fr.jsonl", "it.jsonl", "pt.jsonl"):
+                shutil.copy2(ROOT / "data/corpus" / name, input_root / name)
+            output_root = tmp_root / "release"
+            manifest = build_release(
+                version="0.2.0-sharded",
+                data_paths=[str(input_root)],
+                out_root=output_root,
+                maturity="experimental",
+            )
+            self.assertTrue((output_root / "corpus.jsonl").is_file())
+            self.assertEqual(manifest["record_files"], ["corpus.jsonl"])
+            self.assertEqual(manifest["corpus_file"], "corpus.jsonl")
+            _, records = load_release_records(output_root, language="es")
+            self.assertGreater(len(records), 0)
 
     def test_release_copies_and_records_control_coverage(self):
         with tempfile.TemporaryDirectory() as tmpdir:

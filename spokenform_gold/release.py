@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .conflicts import find_conflicts, unresolved_adjudicated_conflicts
 from .control_validation import validate_control_records
+from .corpus import validate_corpus_layout
 from .coverage import build_control_coverage, build_coverage, load_targets
 from .evaluation_profiles import load_registry, registry_hash
 from .gold_audit import audit_records
@@ -59,6 +60,18 @@ def _repository_local_jsonl_files(
                 f"{label} must be repository-local canonical data; got {file_path}"
             ) from exc
     return files
+
+
+def _validate_corpus_directory_inputs(paths: list[str]) -> None:
+    for raw_path in paths:
+        path = Path(raw_path)
+        if not path.is_dir() or not any(path.iterdir()):
+            continue
+        if not any(child.is_file() for child in path.iterdir()):
+            continue
+        errors = validate_corpus_layout(path)
+        if errors:
+            raise ValueError("release corpus layout failed: " + "; ".join(errors))
 
 
 def validate_release_split_registry(records: list[dict], registry: dict) -> list[str]:
@@ -307,15 +320,16 @@ def build_corpus_release(
     control_paths: list[str] | None = None,
     conflict_adjudication_path: str | Path | None = None,
 ) -> dict:
-    """Build a v2 release from one unsplit corpus.jsonl."""
+    """Build a v2 release from the unsplit canonical corpus shards."""
     _profile(maturity)
     root = repo_root()
     output_root = Path(out_root)
     if output_root.exists():
         shutil.rmtree(output_root)
     output_root.mkdir(parents=True)
+    _validate_corpus_directory_inputs(data_paths)
     record_files = _repository_local_jsonl_files(root, data_paths, label="release data")
-    records = read_records(record_files)
+    records = sorted(read_records(record_files), key=lambda row: row["id"])
     if any("split" in record for record in records):
         raise ValueError("v2 corpus release input must not contain split")
     validation_errors = validate_records(records)
@@ -524,7 +538,7 @@ def build_release(
     profile_registry_source = root / "taxonomy" / "evaluation_profiles.json"
     profile_registry = load_registry(profile_registry_source)
     record_files = _repository_local_jsonl_files(root, data_paths, label="release data")
-    records = read_records(record_files)
+    records = sorted(read_records(record_files), key=lambda row: row["id"])
     validation_errors = validate_records(records)
     if validation_errors:
         raise ValueError("release validation failed: " + "; ".join(validation_errors))

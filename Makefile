@@ -56,4 +56,4 @@ release-check:
 	PYTHONPATH=. python -m spokenform_gold.cli release-check --version 0.1.0-exp --data data/train data/dev data/test --controls data/controls --registry splits/family_assignments.json --maturity experimental --out dist/spokenform-gold-v0.1.0-exp
 
 validate-corpus:
-	PYTHONPATH=. python -m spokenform_gold.cli validate data/corpus.jsonl
+	PYTHONPATH=. python -m spokenform_gold.cli validate data/corpus/

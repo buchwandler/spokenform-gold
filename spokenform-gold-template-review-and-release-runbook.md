@@ -1,6 +1,6 @@
 # Spokenform Gold v2 production runbook
 
-The canonical authoring source is `data/corpus.jsonl`. New data follows:
+The canonical authoring source is the `data/corpus/` directory, with one language shard per `data/corpus/<language>.jsonl`. New data follows:
 
 ```text
 prepare observations -> collect -> review-check -> adjudicate -> integrate -> validate -> report

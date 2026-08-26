@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from spokenform_gold.corpus import read_corpus
 from spokenform_gold.io import read_records
 from spokenform_gold.packets import PacketError
 from spokenform_gold.translation import (
@@ -22,7 +23,7 @@ from spokenform_gold.translation import (
 class TranslationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.record = read_records(["data/corpus.jsonl"])[1]
+        cls.record = read_corpus("data/corpus")[1]
 
     def _task(self):
         return build_translation_tasks(

@@ -79,6 +79,6 @@ completion.
 
 ## Sentence-centric workflow implemented
 
-The v2 migration provides `data/corpus.jsonl`, compatibility loading for old split releases, deterministic family-safe export, source-observation clustering, independent A/B review checks, direct atomic integration, and HTML corpus reporting. The former split, promotion, ranking, and maturity machinery remains available only where compatibility or optional release policy requires it.
+The v2 migration provides the sharded `data/corpus/` authoring source, compatibility loading for old split releases, deterministic family-safe export, source-observation clustering, independent A/B review checks, direct atomic integration, and HTML corpus reporting. The former split, promotion, ranking, and maturity machinery remains available only where compatibility or optional release policy requires it.
 
 Remaining data growth is still review work. The code does not fabricate a 100-case review batch, adjudication, or synthetic Gold records.

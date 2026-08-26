@@ -19,15 +19,15 @@ spokenform-gold review-check \
 
 spokenform-gold integrate \
   --batch <BATCH_ROOT> \
-  --corpus data/corpus.jsonl
+  --corpus data/corpus/
 
 spokenform-gold integrate \
   --batch <BATCH_ROOT> \
-  --corpus data/corpus.jsonl \
+  --corpus data/corpus/ \
   --write
 
-spokenform-gold validate data/corpus.jsonl
-spokenform-gold report --records data/corpus.jsonl --out <REPORT.html>
+spokenform-gold validate data/corpus/
+spokenform-gold report --records data/corpus/ --out <REPORT.html>
 ```
 
 The dry run must pass before `--write`. Preserve v2 identity, source

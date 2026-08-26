@@ -5,7 +5,7 @@ semantic review, adjudication, integration, or release publication.
 
 ## Contract
 
-The canonical source is `data/corpus.jsonl`:
+The canonical source is the `data/corpus/` directory, with one language shard per `data/corpus/<language>.jsonl`:
 
 ```text
 prepare observations -> collect -> review-check -> adjudicate -> integrate -> validate -> report
@@ -36,7 +36,7 @@ change policy, or manufacture reviewer identities or evidence.
 spokenform-gold doctor
 spokenform-gold collect \
   --observations <OBSERVATIONS> \
-  --reviewed data/corpus.jsonl \
+  --reviewed data/corpus/ \
   --limit 1000 \
   --batch <BATCH_ID> \
   --out-root <WORK>/batches/<BATCH_ID>

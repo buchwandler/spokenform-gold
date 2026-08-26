@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 
+from .corpus import read_corpus, validate_corpus_layout
 from .oracle import (
     COMPARISON_PROFILE,
     canonical_unit_reconstruction,
@@ -706,3 +707,26 @@ def validate_v2_records(
                 check_surface=True,
             )
     return errors
+
+
+def validate_corpus(
+    root,
+    *,
+    judge: bool = False,
+    categories=None,
+    policies=None,
+    ambiguities=None,
+    source_manifests=None,
+) -> list[str]:
+    """Validate canonical shard layout and the complete logical corpus."""
+    layout_errors = validate_corpus_layout(root)
+    if layout_errors:
+        return layout_errors
+    return validate_records(
+        read_corpus(root),
+        judge=judge,
+        categories=categories,
+        policies=policies,
+        ambiguities=ambiguities,
+        source_manifests=source_manifests,
+    )

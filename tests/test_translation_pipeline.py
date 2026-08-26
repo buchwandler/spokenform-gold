@@ -3,6 +3,7 @@ import unittest
 from pathlib import Path
 
 from spokenform_gold.collection import blind_case, collect_batch
+from spokenform_gold.corpus import read_corpus
 from spokenform_gold.io import read_records, write_jsonl
 from spokenform_gold.review import validate_v2_review_rows
 from spokenform_gold.translation import (
@@ -50,7 +51,7 @@ class TranslationPipelineTests(unittest.TestCase):
         return row
 
     def test_finalized_candidate_uses_ordinary_v2_pipeline(self):
-        source = read_records(["data/corpus.jsonl"])[1]
+        source = read_corpus("data/corpus")[1]
         task = build_translation_tasks(
             [source], target_language="ja", target_locale="ja-JP"
         )[0]

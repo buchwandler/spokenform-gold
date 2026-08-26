@@ -3,7 +3,7 @@ output = "context_spokenform_gold.md"
 keep_docstrings = true
 dedupe = true
 respect_gitignore = true
-exclude = ["*/.venv/*", "context_spokenform_gold.*", "data/corpus.jsonl"]
+exclude = ["*/.venv/*", "context_spokenform_gold.*", "data/corpus/**"]
 include = [
   "**/*.py",
   "**/*.toml",
