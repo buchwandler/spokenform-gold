@@ -122,6 +122,11 @@ class TranslationPipelineTests(unittest.TestCase):
             target = root / "corpus.jsonl"
             result = integrate_batch(batch_root, target, write=True)
             self.assertEqual(result["records"], 1)
+            self.assertTrue((batch_root / "integration" / "summary.json").is_file())
+            self.assertTrue((batch_root / "integration" / "exclusions.jsonl").is_file())
+            self.assertTrue(
+                (batch_root / "integration" / "synthetic-candidates.jsonl").is_file()
+            )
             self.assertEqual(validate_records(read_records([target])), [])
             integrated = read_records([target])[0]
             self.assertEqual(

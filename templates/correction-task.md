@@ -1,5 +1,7 @@
 # Spokenform Gold v2 correction: `<RECORD_ID>`
 
+This targeted maintainer correction is addressed by the permanent record ID. The tool computes hashes, revision, changed fields, and evidence metadata; do not fabricate independent A/B reviewer roles.
+
 Prepare a targeted correction for exactly the canonical record identified by
 `record.id`.
 
@@ -21,10 +23,10 @@ proves one is wrong. Do not adapt Gold to current Spokenform output.
 1. Resolve the current record and latest review lineage from `record.id`.
 2. Determine the policy-valid semantic/oracle correction, including explicit
    accepted and rejected variants.
-3. Write a complete artifact conforming to
-   `schemas/oracle-correction.schema.json` with `record_id`, old and new oracle
-   hashes, reason, reviewers, adjudicator, review lineage hashes, and
-   `new_record`.
+3. Write a semantic decision artifact conforming to
+   `schemas/oracle-correction.schema.json` with `record_id`, `actor`, `basis`,
+   `reason`, and `new_record`. Hashes, revision, changed fields, and lineage
+   evidence metadata are computed by the tool.
 4. Validate the proposed record before changing the corpus.
 5. Preserve prior evidence, append a correction revision, and regenerate the
    HTML report.

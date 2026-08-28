@@ -86,6 +86,11 @@ whose state is required.
 
 ## Active operational path
 
+For new data, use `spokenform-gold batch-create --batch <BATCH_ID> --limit 1000`.
+For one existing Gold defect, start with the permanent `record.id`; use `trace-record`, `prepare-correction`, and `apply-correction --write`.
+Canonical review lineage is `data/lineage/review-evidence.jsonl`. Work-root snapshots, archive files, reports, and packets are never default evidence inputs.
+Do not recursively inspect the work root or ask a human to locate JSONL rows or evidence files.
+
 ```bash
 spokenform-gold doctor
 spokenform-gold collect --observations <OBSERVATIONS> --reviewed data/corpus/ \

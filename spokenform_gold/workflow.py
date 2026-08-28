@@ -15,6 +15,7 @@ from .corpus import (
 from .io import read_records, write_json, write_jsonl
 from .review import validate_v2_review_rows
 from .validation import validate_records
+from .work_layout import BatchLayout
 
 FINAL_DECISIONS = {"accept", "exclude", "unresolved"}
 
@@ -148,22 +149,27 @@ def integrate_batch(
     batch_root: str | Path, corpus_path: str | Path, *, write: bool = False
 ) -> dict:
     root = Path(batch_root)
-    cases = read_records([root / "cases.jsonl"])
-    review_a = (
-        read_records([root / "a.complete.jsonl"])
-        if (root / "a.complete.jsonl").exists()
-        else []
+    layout = BatchLayout(root)
+    cases_path = layout.cases if layout.cases.is_file() else root / "cases.jsonl"
+    review_a_path = (
+        layout.review_complete("A")
+        if layout.review_complete("A").is_file()
+        else root / "a.complete.jsonl"
     )
-    review_b = (
-        read_records([root / "b.complete.jsonl"])
-        if (root / "b.complete.jsonl").exists()
-        else []
+    review_b_path = (
+        layout.review_complete("B")
+        if layout.review_complete("B").is_file()
+        else root / "b.complete.jsonl"
     )
-    adjudicated = (
-        read_records([root / "adjudicated.jsonl"])
-        if (root / "adjudicated.jsonl").exists()
-        else []
+    adjudicated_path = (
+        layout.adjudication_decisions
+        if layout.adjudication_decisions.is_file()
+        else root / "adjudicated.jsonl"
     )
+    cases = read_records([cases_path])
+    review_a = read_records([review_a_path]) if review_a_path.exists() else []
+    review_b = read_records([review_b_path]) if review_b_path.exists() else []
+    adjudicated = read_records([adjudicated_path]) if adjudicated_path.exists() else []
     review_report = check_reviews(cases, review_a, review_b)
     if not review_report["ready"]:
         raise ValueError("review-check failed: " + "; ".join(review_report["issues"]))
@@ -241,15 +247,15 @@ def integrate_batch(
             write_records_atomic(corpus_target, combined.values())
         else:
             write_corpus_atomic(corpus_target, combined.values())
-        write_jsonl(root / "synthetic-candidates.jsonl", synthetic)
-        write_jsonl(root / "exclusions.jsonl", excluded)
+        write_jsonl(layout.integration_dir / "synthetic-candidates.jsonl", synthetic)
+        write_jsonl(layout.integration_dir / "exclusions.jsonl", excluded)
         metadata = {
             "state": "integrated",
             "records_added": len(final_records),
             "synthetic_candidates": len(synthetic),
             "excluded": len(excluded),
         }
-        write_json(root / "integration.json", metadata)
+        write_json(layout.integration_summary, metadata)
     return {
         "ready": True,
         "records": len(final_records),

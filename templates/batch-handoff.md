@@ -1,5 +1,7 @@
 # v2 Batch Handoff
 
+Batch artifacts belong under `batches/<batch-id>/`; source staging, reviews, adjudication, integration, reports, and handoff files must not be loose global work-root artifacts.
+
 Use this compact handoff for one logical batch. Put detailed artifacts in files,
 not in this document. Use `NONE`, `NOT_RUN`, or `NOT_PUBLISHED` explicitly.
 

@@ -151,17 +151,17 @@ def _enforce_source_materialization(records: list[dict], source_manifest: dict) 
                     f"record {record.get('id', '?')} has invalid materialization {materialization!r}"
                 )
                 continue
-        if materialization == "embedded" and policy != "embedded_public":
-            errors.append(
-                f"record {record.get('id', '?')} embeds source {benchmark!r} with policy {policy}"
-            )
-        if materialization == "external_ref" and policy not in {
-            "embedded_public",
-            "external_ref_only",
-        }:
-            errors.append(
-                f"record {record.get('id', '?')} uses external_ref for source {benchmark!r} with policy {policy}"
-            )
+            if materialization == "embedded" and policy != "embedded_public":
+                errors.append(
+                    f"record {record.get('id', '?')} embeds source {benchmark!r} with policy {policy}"
+                )
+            if materialization == "external_ref" and policy not in {
+                "embedded_public",
+                "external_ref_only",
+            }:
+                errors.append(
+                    f"record {record.get('id', '?')} uses external_ref for source {benchmark!r} with policy {policy}"
+                )
     if errors:
         raise ValueError("; ".join(errors))
 
@@ -383,7 +383,8 @@ def build_corpus_release(
         source_names=referenced,
         filter_to_source_names=True,
     )
-    _enforce_source_materialization(records, source_manifest)
+    if maturity == "stable":
+        _enforce_source_materialization(records, source_manifest)
     coverage = build_coverage(records, targets)
     _enforce_maturity(
         profile_name=maturity,

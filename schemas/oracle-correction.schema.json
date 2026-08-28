@@ -1,24 +1,19 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Spokenform Gold oracle correction",
+  "title": "Spokenform Gold targeted oracle correction",
   "type": "object",
-  "required": [
-    "record_id",
-    "old_oracle_hash",
-    "new_oracle_hash",
-    "reason",
-    "reviewed_by",
-    "adjudicator"
-  ],
+  "required": ["record_id", "actor", "reason", "new_record"],
   "properties": {
     "record_id": { "type": "string", "minLength": 1 },
+    "actor": { "type": "string", "minLength": 1 },
+    "basis": { "type": "string", "minLength": 1 },
+    "reason": { "type": "string", "minLength": 1 },
+    "new_record": { "type": "object" },
     "old_oracle_hash": { "type": "string", "minLength": 1 },
     "new_oracle_hash": { "type": "string", "minLength": 1 },
-    "reason": { "type": "string", "minLength": 1 },
     "reviewed_by": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 },
-      "minItems": 1
+      "items": { "type": "string", "minLength": 1 }
     },
     "adjudicator": { "type": "string", "minLength": 1 },
     "review_revision": { "type": "integer", "minimum": 1 },

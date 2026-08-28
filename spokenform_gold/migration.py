@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import shutil
 from collections.abc import Iterable
 from copy import deepcopy
 from pathlib import Path
@@ -114,3 +116,142 @@ def migrate_jsonl(input_path: str | Path, output_path: str | Path) -> int:
             for record in output
         )
     return len(output)
+
+
+_LEGACY_MOVES = {
+    "cases.jsonl": "cases/cases.jsonl",
+    "context.jsonl": "cases/context.jsonl",
+    "a.blind.jsonl": "reviews/a/blind.jsonl",
+    "b.blind.jsonl": "reviews/b/blind.jsonl",
+    "a.complete.jsonl": "reviews/a/complete.jsonl",
+    "b.complete.jsonl": "reviews/b/complete.jsonl",
+    "review-check.json": "reviews/check.json",
+    "adjudicated.jsonl": "adjudication/decisions.jsonl",
+    "adjudicated.partial.jsonl": "adjudication/decisions.partial.jsonl",
+    "integration.json": "integration/summary.json",
+}
+
+
+def _file_hash(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def classify_work_root(root: str | Path) -> dict:
+    """Classify known legacy batch artifacts without reading JSONL payloads."""
+    work = Path(root)
+    batches = []
+    batch_root = work / "batches"
+    if batch_root.is_dir():
+        for path in sorted(item for item in batch_root.iterdir() if item.is_dir()):
+            metadata = path / "batch.json"
+            payload = (
+                json.loads(metadata.read_text(encoding="utf-8"))
+                if metadata.is_file()
+                else {}
+            )
+            batches.append(
+                {
+                    "batch_id": payload.get("batch_id", path.name),
+                    "state": payload.get("state", "unknown"),
+                    "cases": payload.get("case_count"),
+                    "root": str(path),
+                }
+            )
+    corrections = []
+    correction_root = work / "corrections"
+    if correction_root.is_dir():
+        for record_root in sorted(
+            item for item in correction_root.iterdir() if item.is_dir()
+        ):
+            revisions = sorted(
+                item.name for item in record_root.iterdir() if item.is_dir()
+            )
+            corrections.append({"record_id": record_root.name, "revisions": revisions})
+    legacy = [
+        {"path": str(work / name), "classification": "legacy"}
+        for name in ("candidates", "exclusions", "reports", "review_batches")
+        if (work / name).exists()
+    ]
+    known = {
+        "batches",
+        "corrections",
+        "archive",
+        "state",
+        *(item["path"].split("/")[-1] for item in legacy),
+    }
+    loose = (
+        sorted(
+            str(path.relative_to(work))
+            for path in work.iterdir()
+            if path.name not in known
+        )
+        if work.is_dir()
+        else []
+    )
+    return {
+        "batches": batches,
+        "corrections": corrections,
+        "legacy": legacy,
+        "loose_artifacts": loose,
+    }
+
+
+def work_migration_plan(root: str | Path) -> list[dict]:
+    work = Path(root)
+    actions = []
+    if not work.is_dir():
+        return actions
+    for batch in (
+        sorted((work / "batches").iterdir()) if (work / "batches").is_dir() else []
+    ):
+        if not batch.is_dir():
+            continue
+        for old, new in sorted(_LEGACY_MOVES.items()):
+            source = batch / old
+            target = batch / new
+            if not source.is_file():
+                continue
+            if target.exists():
+                actions.append(
+                    {
+                        "source": str(source),
+                        "target": str(target),
+                        "action": "conflict"
+                        if _file_hash(source) != _file_hash(target)
+                        else "already_present",
+                        "source_hash": _file_hash(source),
+                        "target_hash": _file_hash(target),
+                    }
+                )
+            else:
+                actions.append(
+                    {
+                        "source": str(source),
+                        "target": str(target),
+                        "action": "move",
+                        "source_hash": _file_hash(source),
+                    }
+                )
+    return actions
+
+
+def migrate_work_root(root: str | Path, *, apply: bool = False) -> list[dict]:
+    actions = work_migration_plan(root)
+    if not apply:
+        return actions
+    conflicts = [action for action in actions if action["action"] == "conflict"]
+    if conflicts:
+        raise ValueError(
+            f"migration would overwrite distinct artifact: {conflicts[0]['target']}"
+        )
+    for action in actions:
+        if action["action"] == "conflict":
+            raise ValueError(
+                f"migration would overwrite distinct artifact: {action['target']}"
+            )
+        if action["action"] == "move":
+            target = Path(action["target"])
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(action["source"], action["target"])
+            action["action"] = "moved"
+    return actions

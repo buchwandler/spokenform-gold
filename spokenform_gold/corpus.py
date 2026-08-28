@@ -358,6 +358,28 @@ def write_corpus_atomic(root: str | Path, records: Iterable[dict]) -> None:
             shutil.rmtree(backup)
 
 
+def replace_corpus_record_atomic(
+    root: str | Path, record_id: str, replacement: dict
+) -> list[dict]:
+    """Replace one permanent ID after validating the complete proposed corpus."""
+    records = read_corpus(root)
+    matches = [row for row in records if row.get("id") == record_id]
+    if len(matches) != 1:
+        raise ValueError(
+            f"expected one canonical record for {record_id}, found {len(matches)}"
+        )
+    updated = [
+        deepcopy(replacement) if row.get("id") == record_id else row for row in records
+    ]
+    from .validation import validate_records
+
+    errors = validate_records(updated)
+    if errors:
+        raise ValueError("updated corpus is invalid: " + "; ".join(errors))
+    write_corpus_atomic(root, updated)
+    return updated
+
+
 def shard_corpus(input_path: str | Path, output_root: str | Path) -> int:
     """Migrate one legacy corpus JSONL file into language shards."""
     source = Path(input_path)

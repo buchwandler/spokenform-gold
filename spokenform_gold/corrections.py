@@ -5,6 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 from pathlib import Path
 
+from .corpus import read_corpus, replace_corpus_record_atomic
 from .html_report import render_release_html
 from .io import write_json, write_jsonl
 from .oracle import oracle_hash
@@ -42,15 +43,38 @@ def _history(record: dict) -> list[dict]:
     return list(value) if isinstance(value, list) else []
 
 
-def validate_correction(original: dict, correction: dict) -> dict:
-    """Validate correction metadata and return the proposed canonical record."""
+def _previous_revision(record: dict, evidence: list[dict]) -> int:
+    record_id = record.get("id")
+    revisions = [
+        int(item.get("review_revision", 0))
+        for item in _history(record) + list(evidence)
+        if (
+            isinstance(item, dict)
+            and item.get("record_id") == record_id
+            and isinstance(item.get("review_revision"), int)
+        )
+    ]
+    return max(revisions, default=0)
+
+
+def _changed_fields(original: dict, updated: dict) -> list[str]:
+    return sorted(
+        field for field in _ALLOWED_FIELDS if original.get(field) != updated.get(field)
+    )
+
+
+def validate_correction(
+    original: dict, correction: dict, *, evidence: list[dict] | None = None
+) -> dict:
+    """Validate a semantic correction and return its proposed canonical record."""
     if not isinstance(correction, dict):
         raise TypeError("correction artifact must be an object")
     record_id = original.get("id")
-    if correction.get("record_id") != record_id:
+    if correction.get("record_id", record_id) != record_id:
         raise ValueError("correction record_id must match the canonical record")
     old_hash = _current_hash(original)
-    if correction.get("old_oracle_hash") != old_hash:
+    supplied_old_hash = correction.get("old_oracle_hash")
+    if supplied_old_hash is not None and supplied_old_hash != old_hash:
         raise ValueError(f"old_oracle_hash does not match canonical record {record_id}")
     proposed = correction.get("new_record") or correction.get("record")
     if not isinstance(proposed, dict):
@@ -63,51 +87,74 @@ def validate_correction(original: dict, correction: dict) -> dict:
         updated["id"] = proposed["id"]
     assert_record_identity_preserved(original, updated)
     updated["oracle_hash"] = oracle_hash(updated)
-    if correction.get("new_oracle_hash") != updated["oracle_hash"]:
-        raise ValueError("new_oracle_hash does not match corrected semantic oracle")
-    revision = correction.get("review_revision")
-    previous_revision = max(
-        [
-            int(item.get("review_revision", 0))
-            for item in _history(original)
-            if isinstance(item, dict)
-        ]
-        or [0]
-    )
-    if not isinstance(revision, int) or revision <= previous_revision:
-        raise ValueError(f"review_revision must be greater than {previous_revision}")
-    for field in ("reason", "adjudicator"):
-        if not isinstance(correction.get(field), str) or not correction[field].strip():
-            raise ValueError(f"correction requires {field}")
+    supplied_new_hash = correction.get("new_oracle_hash")
     if (
-        not isinstance(correction.get("reviewed_by"), list)
-        or not correction["reviewed_by"]
+        supplied_new_hash is not None
+        and supplied_new_hash not in {"", "pending"}
+        and supplied_new_hash != updated["oracle_hash"]
     ):
-        raise ValueError("correction requires reviewed_by")
+        raise ValueError("new_oracle_hash does not match corrected semantic oracle")
     errors = validate_records([updated])
     if errors:
         raise ValueError("corrected record is invalid: " + "; ".join(errors))
     return updated
 
 
-def apply_correction(original: dict, correction: dict) -> tuple[dict, dict]:
-    """Return a validated corrected record and its durable correction history item."""
-    updated = validate_correction(original, correction)
+def apply_correction(
+    original: dict, correction: dict, *, evidence: list[dict] | None = None
+) -> tuple[dict, dict]:
+    """Return a validated corrected record and mechanically derived history item."""
+    evidence_rows = list(evidence or [])
+    updated = validate_correction(original, correction, evidence=evidence_rows)
+    previous_history = _history(original)
+    revision = _previous_revision(original, evidence_rows) + 1
+    supplied_revision = correction.get("review_revision")
+    if supplied_revision is not None and supplied_revision not in {revision, 0}:
+        raise ValueError(f"review_revision must be {revision}")
+    reason = correction.get("reason")
+    if not isinstance(reason, str) or not reason.strip():
+        raise ValueError("correction requires reason")
+    actor = correction.get("actor") or correction.get("adjudicator")
+    reviewed_by = correction.get("reviewed_by", [])
+    if not isinstance(actor, str) or not actor.strip():
+        raise ValueError("correction requires actor")
+    if not isinstance(reviewed_by, list):
+        reviewed_by = []
+    changed_fields = _changed_fields(original, updated)
+    if not changed_fields:
+        raise ValueError("correction has no semantic changes or is already applied")
+    previous_evidence = record_evidence_history(original["id"], evidence_rows)
+    previous_evidence_hash = (
+        artifact_sha256(previous_evidence[-1]) if previous_evidence else "legacy-none"
+    )
+    evidence_basis = {
+        "record_id": updated["id"],
+        "review_revision": revision,
+        "final_oracle_hash": updated["oracle_hash"],
+        "changed_fields": changed_fields,
+        "reason": reason,
+        "actor": actor,
+    }
     history_item = {
-        "review_revision": correction["review_revision"],
+        "review_revision": revision,
         "old_oracle_hash": _current_hash(original),
         "new_oracle_hash": updated["oracle_hash"],
-        "reason": correction["reason"],
-        "reviewed_by": list(correction["reviewed_by"]),
-        "adjudicator": correction["adjudicator"],
+        "reason": reason,
+        "basis": correction.get("basis", "targeted_maintainer_correction"),
+        "actor": actor,
+        "reviewed_by": list(reviewed_by),
+        "adjudicator": correction.get("adjudicator"),
+        "changed_fields": changed_fields,
+        "previous_review_evidence_hash": previous_evidence_hash,
+        "new_review_evidence_hash": artifact_sha256(evidence_basis),
         "previous_sentence_oracle_id": sentence_oracle_id(original),
         "sentence_oracle_id": sentence_oracle_id(updated),
-        "artifact_sha256": artifact_sha256(correction),
     }
+    history_item["artifact_sha256"] = artifact_sha256(history_item)
     review = deepcopy(updated.get("review") or {})
     review["corrected"] = True
     review["status"] = review.get("status", "adjudicated")
-    review["correction_history"] = _history(original) + [history_item]
+    review["correction_history"] = previous_history + [history_item]
     updated["review"] = review
     updated["oracle_hash"] = oracle_hash(updated)
     return updated, history_item
@@ -154,24 +201,11 @@ def prepare_correction_context(
     write_json(context_path, context)
     decision = {
         "record_id": record_id,
+        "basis": "targeted_maintainer_correction",
+        "actor": "",
         "old_oracle_hash": _current_hash(record),
         "new_oracle_hash": "",
         "reason": "",
-        "reviewed_by": [],
-        "adjudicator": "",
-        "review_revision": max(
-            [
-                row.get("review_revision", 0)
-                for row in history
-                if isinstance(row.get("review_revision"), int)
-            ]
-            or [0]
-        )
-        + 1,
-        "previous_review_evidence_hash": artifact_sha256(history[-1])
-        if history
-        else "legacy-none",
-        "new_review_evidence_hash": "",
         "new_record": sanitize_review_artifact(record),
         "changed_fields": [],
     }
@@ -200,32 +234,11 @@ def prepare_correction_context(
     }
 
 
-def write_correction_application(
-    out_root: str | Path,
-    records: list[dict],
-    updated: dict,
-    history_item: dict,
-    evidence: list[dict],
-) -> dict[str, Path]:
-    root = Path(out_root)
-    if root.exists() and any(root.iterdir()):
-        raise ValueError(
-            f"correction application output root must be new or empty: {root}"
-        )
-    root.mkdir(parents=True, exist_ok=True)
-    output_records = [
-        updated if row.get("id") == updated.get("id") else row for row in records
-    ]
-    write_jsonl(root / "records.jsonl", output_records)
-    new_evidence = [
-        row for row in evidence if row.get("record_id") != updated.get("id")
-    ]
+def _correction_evidence_entry(
+    updated: dict, history_item: dict, evidence: list[dict]
+) -> list[dict]:
     previous = next(
-        (
-            row
-            for row in reversed(evidence)
-            if row.get("record_id") == updated.get("id")
-        ),
+        (row for row in reversed(evidence) if row.get("record_id") == updated["id"]),
         None,
     )
     entry = {
@@ -246,32 +259,119 @@ def write_correction_application(
         "legacy": False,
         "evidence_status": "corrected",
     }
-    new_evidence.append(entry)
+    return [row for row in evidence if row.get("record_id") != updated["id"]] + [entry]
+
+
+def write_correction_application(
+    out_root: str | Path,
+    records: list[dict],
+    updated: dict,
+    history_item: dict,
+    evidence: list[dict],
+    *,
+    include_records: bool = True,
+) -> dict[str, Path]:
+    """Write a preview receipt and evidence artifact for compatibility callers."""
+    root = Path(out_root)
+    if root.exists() and any(root.iterdir()):
+        raise ValueError(
+            f"correction application output root must be new or empty: {root}"
+        )
+    root.mkdir(parents=True, exist_ok=True)
+    output_records = [
+        updated if row.get("id") == updated.get("id") else row for row in records
+    ]
+    new_evidence = _correction_evidence_entry(updated, history_item, evidence)
     errors = validate_review_evidence(new_evidence)
     if errors:
         raise ValueError("corrected review evidence is invalid: " + "; ".join(errors))
-    write_jsonl(root / "review-evidence.jsonl", new_evidence)
-    write_json(root / "correction.json", history_item)
+    records_path = root / "records.jsonl"
+    evidence_path = root / "review-evidence.jsonl"
+    correction_path = root / "correction.json"
+    result_path = root / "result.json"
+    receipt_path = root / "receipt.json"
+    if include_records:
+        write_jsonl(records_path, output_records)
+    write_jsonl(evidence_path, new_evidence)
+    write_json(correction_path, history_item)
+    write_json(
+        result_path,
+        {
+            "record_id": updated["id"],
+            "review_revision": history_item["review_revision"],
+            "old_oracle_hash": history_item["old_oracle_hash"],
+            "new_oracle_hash": history_item["new_oracle_hash"],
+            "changed_fields": history_item["changed_fields"],
+        },
+    )
+    write_json(
+        receipt_path,
+        {
+            "record_id": updated["id"],
+            "review_revision": history_item["review_revision"],
+            "old_oracle_hash": history_item["old_oracle_hash"],
+            "new_oracle_hash": history_item["new_oracle_hash"],
+            "changed_fields": history_item["changed_fields"],
+        },
+    )
+    report_records = output_records if include_records else [updated]
     render_release_html(
         root / "report.html",
         version=f"correction-{updated['id']}",
         maturity="correction-preview",
-        records=output_records,
+        records=report_records,
         coverage={"gaps": []},
         control_coverage={"gaps": []},
-        counts={"families": len({row.get("family_id") for row in output_records})},
+        counts={"families": len({row.get("family_id") for row in report_records})},
         review_evidence=new_evidence,
     )
-    return {
-        "records": root / "records.jsonl",
-        "evidence": root / "review-evidence.jsonl",
-        "correction": root / "correction.json",
+    paths = {
+        "evidence": evidence_path,
+        "correction": correction_path,
+        "result": result_path,
+        "receipt": receipt_path,
         "report": root / "report.html",
     }
+    if include_records:
+        paths["records"] = records_path
+    return paths
+
+
+def apply_correction_to_corpus(
+    corpus_root: str | Path,
+    lineage_path: str | Path,
+    original: dict,
+    correction: dict,
+    evidence: list[dict],
+    output_root: str | Path,
+) -> dict[str, Path]:
+    """Apply one correction directly to the canonical sharded corpus."""
+    updated, history_item = apply_correction(original, correction, evidence=evidence)
+    current = read_corpus(corpus_root)
+    current_record = next(
+        (row for row in current if row.get("id") == original["id"]), None
+    )
+    if current_record is None:
+        raise ValueError(f"unknown canonical record id: {original['id']}")
+    if _current_hash(current_record) != history_item["old_oracle_hash"]:
+        raise ValueError("canonical record changed since correction was prepared")
+    combined_evidence = _correction_evidence_entry(updated, history_item, evidence)
+    errors = validate_review_evidence(combined_evidence)
+    if errors:
+        raise ValueError("corrected review evidence is invalid: " + "; ".join(errors))
+    lineage = Path(lineage_path)
+    lineage.parent.mkdir(parents=True, exist_ok=True)
+    replacement = replace_corpus_record_atomic(corpus_root, original["id"], updated)
+    write_jsonl(lineage, combined_evidence)
+    paths = write_correction_application(
+        output_root, replacement, updated, history_item, evidence, include_records=False
+    )
+    return paths
 
 
 __all__ = [
     "apply_correction",
+    "apply_correction_to_corpus",
     "prepare_correction_context",
     "validate_correction",
     "write_correction_application",

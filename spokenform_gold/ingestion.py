@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import subprocess
+import tempfile
 from collections.abc import Iterable
 from pathlib import Path
 
@@ -13,7 +14,7 @@ from .exclusions import build_exclusion_analysis, infer_surface_shape
 from .families import suggest_families
 from .importers import import_async, import_polynorm, import_proteno
 from .importers.common import ImportResult, build_import_diagnostics
-from .io import read_records, write_json, write_jsonl
+from .io import read_json, read_records, write_json, write_jsonl
 from .merge import merge_candidates
 from .pool import build_candidate_pool_summary
 from .ranking import build_candidate_ranking, export_review_batch
@@ -158,7 +159,7 @@ def run_upstream_ingestion(
 ) -> dict:
     source_cache = Path(source_cache)
     work_root = Path(work_root)
-    if not re.fullmatch(r"batch-[0-9]{4}", batch_name):
+    if not re.fullmatch(r"batch-(?:[0-9]{4}|[a-z][a-z0-9-]*)", batch_name):
         raise ValueError("batch_name must match batch-NNNN")
     requested_sources = set(sources)
     selected_sources = tuple(
@@ -356,3 +357,49 @@ def run_upstream_ingestion(
     }
     write_json(report_root / "ingestion-summary.json", summary)
     return summary
+
+
+def prepare_observations(
+    source_cache: str | Path,
+    out_dir: str | Path,
+    *,
+    reviewed_paths: Iterable[str | Path] | None = None,
+    languages: Iterable[str] = DEFAULT_INGEST_LANGUAGES,
+    sources: Iterable[str] = SUPPORTED_SOURCES,
+    targets_path: str | Path | None = None,
+    batch_name: str = "batch-0001",
+) -> dict:
+    """Import pinned upstream data into a batch-owned normalized source area."""
+    destination = Path(out_dir)
+    destination.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="spokenform-gold-import-") as temporary:
+        summary = run_upstream_ingestion(
+            source_cache,
+            temporary,
+            sources=sources,
+            languages=languages,
+            reviewed_paths=reviewed_paths,
+            targets_path=targets_path,
+            batch_name=batch_name,
+        )
+        observations = read_records([Path(temporary) / "candidates" / "all.jsonl"])
+        exclusions = []
+        for path in sorted((Path(temporary) / "exclusions").glob("*.json")):
+            exclusions.extend(read_json(path))
+        write_jsonl(destination / "observations.jsonl", observations)
+        write_json(destination / "exclusions.json", exclusions)
+        write_json(destination / "import-summary.json", summary)
+        accounting = {
+            "input_observations": len(observations) + len(exclusions),
+            "invalid_observations": 0,
+            "excluded_observations": len(exclusions),
+            "candidate_observations": len(observations),
+        }
+        write_json(destination / "accounting.json", accounting)
+    return {
+        "observations": destination / "observations.jsonl",
+        "exclusions": destination / "exclusions.json",
+        "import_summary": destination / "import-summary.json",
+        "accounting": destination / "accounting.json",
+        "summary": summary,
+    }

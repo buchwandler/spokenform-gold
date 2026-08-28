@@ -1,5 +1,7 @@
 # Spokenform Gold
 
+For new data, run `spokenform-gold batch-create --batch <BATCH_ID> --limit 1000`. For an existing defect, start with the permanent `record.id` and use `trace-record`, `prepare-correction`, then `apply-correction --write`. The canonical lineage is `data/lineage/review-evidence.jsonl`; arbitrary work-root snapshots are not evidence inputs.
+
 Spokenform Gold is the benchmark, annotation, validation, coverage, and oracle
 governance layer for Spokenform. Gold is defined by benchmark policy and reviewed
 semantic evidence, not by current implementation output or source majority vote.

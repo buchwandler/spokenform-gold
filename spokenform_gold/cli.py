@@ -23,6 +23,7 @@ from .control_validation import validate_control_records
 from .corpus import canonical_corpus_path, shard_corpus
 from .corrections import (
     apply_correction,
+    apply_correction_to_corpus,
     prepare_correction_context,
     write_correction_application,
 )
@@ -34,7 +35,11 @@ from .families import suggest_families
 from .gold_audit import audit_records
 from .html_report import render_release_html
 from .importers import import_async, import_polynorm, import_proteno
-from .ingestion import DEFAULT_INGEST_LANGUAGES, run_upstream_ingestion
+from .ingestion import (
+    DEFAULT_INGEST_LANGUAGES,
+    prepare_observations,
+    run_upstream_ingestion,
+)
 from .io import (
     expand_jsonl_paths,
     read_json,
@@ -46,7 +51,11 @@ from .io import (
 )
 from .judge_calibration import build_judge_calibration, load_judge_predictions
 from .merge import merge_candidate_files
-from .migration import migrate_jsonl
+from .migration import (
+    classify_work_root,
+    migrate_jsonl,
+    migrate_work_root,
+)
 from .oracle_diff import diff_records
 from .packets import (
     adjudication_packet_rows,
@@ -74,6 +83,7 @@ from .review_html import render_review_html
 from .review_lineage import (
     backfill_legacy_evidence,
     build_review_evidence,
+    find_evidence_conflicts,
     resolve_record_evidence,
     write_review_evidence,
 )
@@ -98,6 +108,7 @@ from .translation import (
     validate_target_locale,
 )
 from .validation import load_categories, validate_corpus, validate_records
+from .work_layout import BatchLayout, WorkLayout
 from .workflow import check_reviews, integrate_batch
 
 
@@ -1004,10 +1015,12 @@ def cmd_doctor(args):
     corpus = canonical_corpus_path(repo_root)
     batches_root = paths.work_root / "batches" if paths.work_root else None
     reports_root = paths.work_root / "reports" if paths.work_root else None
+    lineage = _canonical_lineage_path(repo_root)
     report = {
         "config": _path_info(config.path or config_path.resolve()),
         "repo_root": str(repo_root),
         "corpus": _path_info(corpus),
+        "lineage": _path_info(lineage),
         "source_cache": _path_info(paths.source_cache),
         "work_root": _path_info(paths.work_root),
         "batches_root": _path_info(batches_root),
@@ -1019,6 +1032,7 @@ def cmd_doctor(args):
     print(f"repo_root: {repo_root}")
     print(f"corpus: {corpus}")
     for key in (
+        "lineage",
         "source_cache",
         "work_root",
         "batches_root",
@@ -1057,31 +1071,92 @@ def _jsonl_count(path: Path) -> int:
     return len(read_jsonl(path)) if path.is_file() else 0
 
 
+def _work_root_from_args(args) -> Path:
+    config_path = args.config if args.config is not None else default_config_path()
+    config = load_config(config_path, explicit=args.config is not None)
+    runtime = resolve_runtime_paths(
+        config=config, source_cache=None, work_root=args.work_root
+    )
+    if runtime.work_root is None:
+        raise ConfigError("work root is not configured; use --work-root or config.toml")
+    return runtime.work_root
+
+
+def cmd_work_status(args):
+    report = classify_work_root(_work_root_from_args(args))
+    for section in ("batches", "corrections", "legacy", "loose_artifacts"):
+        print(f"{section}:")
+        for item in report[section]:
+            if isinstance(item, dict):
+                values = " ".join(
+                    f"{key}={value}" for key, value in item.items() if key != "root"
+                )
+                print(f"  {values}")
+            else:
+                print(f"  {item}")
+    return 0
+
+
+def cmd_work_migrate(args):
+    root = _work_root_from_args(args)
+    actions = migrate_work_root(root, apply=args.apply)
+    for action in actions:
+        print(f"{action['action']}: {action['source']} -> {action['target']}")
+    if not actions:
+        print("no migration actions")
+    return 0
+
+
 def cmd_batch_status(args):
     root, work_root = _resolve_batch_root(args)
-    batch_path = root / "batch.json"
-    metadata = read_json(batch_path) if batch_path.is_file() else {}
+    layout = BatchLayout(root)
+    metadata = read_json(layout.metadata) if layout.metadata.is_file() else {}
     batch_id = metadata.get("batch_id") or root.name
-    review_check_path = root / "review-check.json"
+    review_check_path = (
+        layout.review_check
+        if layout.review_check.is_file()
+        else root / "review-check.json"
+    )
     review_check = read_json(review_check_path) if review_check_path.is_file() else {}
-    decisions_path = root / "adjudicated.jsonl"
+    decisions_path = (
+        layout.adjudication_decisions
+        if layout.adjudication_decisions.is_file()
+        else root / "adjudicated.jsonl"
+    )
     decisions = read_jsonl(decisions_path) if decisions_path.is_file() else []
     decision_counts = {decision: 0 for decision in ("accept", "exclude", "unresolved")}
     for row in decisions:
         decision = row.get("decision")
         if decision in decision_counts:
             decision_counts[decision] += 1
-    handoff_candidates = [root / "handoff.md"]
+    handoff_candidates = [layout.handoff]
     if work_root is not None:
         handoff_candidates.append(work_root / f"{batch_id}-handoff.md")
     handoff = next((path for path in handoff_candidates if path.is_file()), None)
-    integration = root / "integration.json"
+    integration = (
+        layout.integration_summary
+        if layout.integration_summary.is_file()
+        else root / "integration.json"
+    )
+    cases_path = layout.cases if layout.cases.is_file() else root / "cases.jsonl"
+    review_a_path = (
+        layout.review_complete("A")
+        if layout.review_complete("A").is_file()
+        else root / "a.complete.jsonl"
+    )
+    review_b_path = (
+        layout.review_complete("B")
+        if layout.review_complete("B").is_file()
+        else root / "b.complete.jsonl"
+    )
+    accounting = metadata.get("accounting", {})
     status = {
         "batch_id": batch_id,
         "root": str(root),
-        "cases": _jsonl_count(root / "cases.jsonl"),
-        "review_a": _jsonl_count(root / "a.complete.jsonl"),
-        "review_b": _jsonl_count(root / "b.complete.jsonl"),
+        "state": metadata.get("state"),
+        "cases": _jsonl_count(cases_path),
+        "review_a": _jsonl_count(review_a_path),
+        "review_b": _jsonl_count(review_b_path),
         "review_ready": bool(review_check.get("ready")),
         "review_issues": len(review_check.get("issues", []))
         if isinstance(review_check.get("issues", []), list)
@@ -1094,10 +1169,27 @@ def cmd_batch_status(args):
         ),
         "handoff": str(handoff) if handoff else None,
     }
+    status.update(
+        {
+            key: accounting[key]
+            for key in (
+                "input_observations",
+                "invalid_observations",
+                "excluded_observations",
+                "already_reviewed_observations",
+                "duplicate_observations",
+                "candidate_observations",
+                "available_cases",
+                "selected_cases",
+                "selected_source_observations",
+            )
+            if key in accounting
+        }
+    )
     if args.json:
         write_json(args.json, status)
     for key, value in status.items():
-        if key == "review_ready" or key == "integrated":
+        if key in {"review_ready", "integrated"}:
             value = "yes" if value else "no"
         print(f"{key}={value}")
     return 0
@@ -1131,17 +1223,16 @@ def cmd_trace_case(args):
     raise ValueError(f"case_id not found in {root}: {args.case_id}")
 
 
+def _canonical_lineage_path(repo_root: Path) -> Path:
+    return repo_root / "data" / "lineage" / "review-evidence.jsonl"
+
+
 def _default_review_evidence_paths(
-    repo_root: Path, work_root: Path | None
+    repo_root: Path, work_root: Path | None = None
 ) -> list[Path]:
-    roots = [repo_root]
-    if work_root is not None:
-        roots.append(work_root)
-    paths: set[Path] = set()
-    for root in roots:
-        if root.exists():
-            paths.update(root.rglob("review-evidence.jsonl"))
-    return sorted(path for path in paths if path.is_file())
+    """Return only the configured canonical lineage, never work-root snapshots."""
+    lineage = _canonical_lineage_path(repo_root)
+    return [lineage] if lineage.is_file() else []
 
 
 def _default_canonical_paths(repo_root: Path) -> list[Path]:
@@ -1171,6 +1262,32 @@ def cmd_trace_record(args):
     evidence = read_records(evidence_paths) if evidence_paths else []
     if not evidence:
         evidence = backfill_legacy_evidence(records)
+    conflicts = find_evidence_conflicts(args.record_id, evidence)
+    if conflicts:
+        diagnostic = {
+            "record_id": args.record_id,
+            "record_status": "found",
+            "lineage_status": "conflict",
+            "conflicts": [item.to_dict() for item in conflicts],
+            "evidence_paths": [str(path) for path in evidence_paths],
+            "authoritative_lineage": str(_canonical_lineage_path(repo_root)),
+        }
+        if args.json:
+            print(json.dumps(diagnostic, ensure_ascii=False, indent=2))
+        else:
+            print(f"record_id={args.record_id}")
+            print("record_status=found")
+            print("lineage_status=conflict")
+            for conflict in conflicts:
+                print(f"conflicting_revision={conflict.revision}")
+                print(f"sources={len(conflict.variants)}")
+                for variant in conflict.variants:
+                    print(f"  path={variant.source}")
+                    print(f"  hash={variant.artifact_hash}")
+                    print(f"  final_record_hash={variant.final_record_hash}")
+            print("hint=These files contain conflicting evidence for one revision.")
+            print(f"authoritative_lineage={_canonical_lineage_path(repo_root)}")
+        return 2
     result = resolve_record_evidence(args.record_id, records, evidence)
     latest = max(
         result["evidence"], key=lambda row: row.get("review_revision", -1), default={}
@@ -1244,7 +1361,7 @@ def cmd_prepare_correction(args):
     if args.out_root:
         out_root = Path(args.out_root)
     elif runtime.work_root is not None:
-        out_root = runtime.work_root / "corrections" / args.record_id
+        out_root = WorkLayout(runtime.work_root).correction(args.record_id).root
     else:
         raise ConfigError(
             "prepare-correction requires --out-root or a configured work root"
@@ -1259,26 +1376,42 @@ def cmd_prepare_correction(args):
 
 
 def cmd_apply_correction(args):
-    _config, runtime, _repo_root, records, evidence = _correction_inputs(args)
+    _config, runtime, repo_root, records, evidence = _correction_inputs(args)
     correction = read_json(args.correction)
     original = next((row for row in records if row.get("id") == args.record_id), None)
     if original is None:
         raise ValueError(f"unknown canonical record id: {args.record_id}")
-    updated, history_item = apply_correction(original, correction)
+    updated, history_item = apply_correction(original, correction, evidence=evidence)
     if args.out_root:
         out_root = Path(args.out_root)
     elif runtime.work_root is not None:
-        out_root = runtime.work_root / "corrections" / args.record_id / "applied"
+        out_root = (
+            WorkLayout(runtime.work_root)
+            .correction(args.record_id, history_item["review_revision"])
+            .root
+        )
     else:
         raise ConfigError(
             "apply-correction requires --out-root or a configured work root"
         )
-    paths = write_correction_application(
-        out_root, records, updated, history_item, evidence
-    )
+    if args.write:
+        corpus_root = canonical_corpus_path(repo_root)
+        paths = apply_correction_to_corpus(
+            corpus_root,
+            _canonical_lineage_path(repo_root),
+            original,
+            correction,
+            evidence,
+            out_root,
+        )
+    else:
+        paths = write_correction_application(
+            out_root, records, updated, history_item, evidence
+        )
     print(f"Corrected {args.record_id}.")
     print(f"Old oracle hash: {history_item['old_oracle_hash']}")
     print(f"New oracle hash: {history_item['new_oracle_hash']}")
+    print(f"Revision: {history_item['review_revision']}")
     print(f"Preview: {paths['report']}#record={args.record_id}")
     return 0
 
@@ -1288,21 +1421,42 @@ def _packet_output_summary(path: Path, rows: list[dict]) -> None:
     print(f"packet={path} cases={len(rows)} bytes={size}")
 
 
+def _next_packet_number(directory: Path) -> int:
+    numbers = []
+    for path in directory.glob("*.input.jsonl") if directory.is_dir() else []:
+        try:
+            numbers.append(int(path.name.split(".", 1)[0]))
+        except ValueError:
+            continue
+    return max(numbers, default=0) + 1
+
+
 def cmd_review_packet(args):
     root, _work_root = _resolve_batch_root(args)
-    blind_path = root / f"{'a' if args.slot == 'A' else 'b'}.blind.jsonl"
-    completed = (
-        read_records([args.completed])
-        if args.completed and Path(args.completed).is_file()
-        else []
+    layout = BatchLayout(root)
+    metadata = read_json(layout.metadata) if layout.metadata.is_file() else {}
+    if metadata.get("state") == "empty":
+        print(
+            f"batch={metadata.get('batch_id', root.name)} state=empty no_review_packet"
+        )
+        return 0
+    blind_path = (
+        layout.review_blind(args.slot)
+        if layout.review_blind(args.slot).is_file()
+        else root / f"{'a' if args.slot == 'A' else 'b'}.blind.jsonl"
     )
+    completed_path = args.completed or layout.review_complete(args.slot)
+    completed = read_records([completed_path]) if Path(completed_path).is_file() else []
     rows = review_packet_rows(
         read_records([blind_path]),
         completed,
         max_cases=args.max_cases,
         max_bytes=args.max_bytes,
     )
-    output = Path(args.out)
+    packet_number = _next_packet_number(layout.review_packet_dir(args.slot))
+    output = (
+        Path(args.out) if args.out else layout.review_packet(args.slot, packet_number)
+    )
     write_jsonl(output, rows)
     _packet_output_summary(output, rows)
     return 0
@@ -1310,10 +1464,17 @@ def cmd_review_packet(args):
 
 def cmd_review_merge(args):
     root, _work_root = _resolve_batch_root(args)
-    blind_path = root / f"{'a' if args.slot == 'A' else 'b'}.blind.jsonl"
+    layout = BatchLayout(root)
+    blind_path = (
+        layout.review_blind(args.slot)
+        if layout.review_blind(args.slot).is_file()
+        else root / f"{'a' if args.slot == 'A' else 'b'}.blind.jsonl"
+    )
     existing_path = (
         Path(args.completed)
         if args.completed
+        else layout.review_complete(args.slot)
+        if layout.review_complete(args.slot).is_file()
         else root / f"{args.slot.lower()}.complete.jsonl"
     )
     existing = read_records([existing_path]) if existing_path.is_file() else []
@@ -1332,13 +1493,17 @@ def cmd_review_merge(args):
 
 def cmd_adjudication_packet(args):
     root, _work_root = _resolve_batch_root(args)
-    cases = read_records([root / "cases.jsonl"])
+    layout = BatchLayout(root)
+    cases_path = layout.cases if layout.cases.is_file() else root / "cases.jsonl"
+    cases = read_records([cases_path])
     review_a = read_records([args.review_a])
     review_b = read_records([args.review_b])
     review_report = check_reviews(cases, review_a, review_b)
     if not review_report["ready"]:
         raise ValueError("review-check failed: " + "; ".join(review_report["issues"]))
-    context_path = root / "context.jsonl"
+    context_path = (
+        layout.context if layout.context.is_file() else root / "context.jsonl"
+    )
     contexts = read_records([context_path]) if context_path.is_file() else cases
     decisions = (
         read_records([args.decisions])
@@ -1354,7 +1519,8 @@ def cmd_adjudication_packet(args):
         max_cases=args.max_cases,
         max_bytes=args.max_bytes,
     )
-    output = Path(args.out)
+    packet_number = _next_packet_number(layout.adjudication_dir / "packets")
+    output = Path(args.out) if args.out else layout.adjudication_packet(packet_number)
     write_jsonl(output, rows)
     _packet_output_summary(output, rows)
     return 0
@@ -1362,31 +1528,96 @@ def cmd_adjudication_packet(args):
 
 def cmd_adjudication_merge(args):
     root, _work_root = _resolve_batch_root(args)
+    layout = BatchLayout(root)
     existing_path = (
-        Path(args.decisions) if args.decisions else root / "adjudicated.partial.jsonl"
+        Path(args.decisions)
+        if args.decisions
+        else layout.adjudication_partial
+        if layout.adjudication_partial.is_file()
+        else root / "adjudicated.partial.jsonl"
     )
     existing = read_records([existing_path]) if existing_path.is_file() else []
     merged = merge_adjudication_rows(existing, read_records([args.packet_result]))
+    cases_path = layout.cases if layout.cases.is_file() else root / "cases.jsonl"
+    if args.finalize:
+        merged = finalize_adjudication(read_records([cases_path]), merged)
+    output = Path(args.out)
+    write_jsonl(output, merged)
     if args.finalize:
         merged = finalize_adjudication(
-            read_records([root / "cases.jsonl"]),
-            merged,
+            read_records([cases_path]), merged, output=output
         )
-    write_jsonl(args.out, merged)
-    if args.finalize:
-        finalized = finalize_adjudication(
-            read_records([root / "cases.jsonl"]), merged, output=args.out
+    print(f"merged={output} decisions={len(merged)}")
+    return 0
+
+
+def cmd_batch_create(args):
+    config_path = args.config if args.config is not None else default_config_path()
+    config = load_config(config_path, explicit=args.config is not None)
+    runtime = require_runtime_paths(
+        resolve_runtime_paths(
+            config=config,
+            source_cache=args.source_cache,
+            work_root=args.work_root,
         )
-        merged = finalized
-    print(f"merged={args.out} decisions={len(merged)}")
+    )
+    layout = WorkLayout(runtime.work_root)
+    batch = layout.batch(args.batch)
+    if batch.root.exists() and any(batch.root.iterdir()):
+        raise ValueError(f"batch output root must be new or empty: {batch.root}")
+    batch.root.mkdir(parents=True, exist_ok=True)
+    prepared = prepare_observations(
+        runtime.source_cache,
+        batch.source_dir,
+        reviewed_paths=args.reviewed,
+        languages=args.languages,
+        sources=args.sources,
+        targets_path=args.targets,
+        batch_name=args.batch,
+    )
+    with __import__("tempfile").TemporaryDirectory(
+        prefix="spokenform-gold-batch-"
+    ) as temporary:
+        result = collect_batch(
+            [prepared["observations"]],
+            reviewed_paths=args.reviewed or [canonical_corpus_path()],
+            exclusion_paths=[prepared["exclusions"]],
+            output_root=temporary,
+            batch_id=args.batch,
+            limit=args.limit,
+            source_lock_hash=args.source_lock_hash,
+        )
+        write_jsonl(batch.cases, read_jsonl(Path(temporary) / "cases.jsonl"))
+        write_jsonl(batch.context, read_jsonl(Path(temporary) / "context.jsonl"))
+        if result["case_count"]:
+            write_jsonl(
+                batch.review_blind("A"), read_jsonl(Path(temporary) / "a.blind.jsonl")
+            )
+            write_jsonl(
+                batch.review_blind("B"), read_jsonl(Path(temporary) / "b.blind.jsonl")
+            )
+        result["source"] = {
+            label: str(path) for label, path in prepared.items() if label != "summary"
+        }
+        write_json(batch.metadata, result)
+    print(
+        f"batch_id={args.batch} state={result['state']} "
+        f"input_observations={result['accounting']['input_observations']} "
+        f"unseen_observations={result['accounting']['candidate_observations']} "
+        f"available_cases={result['accounting']['available_cases']} "
+        f"selected_cases={result['accounting']['selected_cases']}"
+    )
+    if result["state"] == "empty":
+        print("reason=no_unreviewed_cases")
+    else:
+        print(f"next=review-packet --batch {args.batch} --slot A")
     return 0
 
 
 def cmd_collect(args):
-    observations = args.observations or sorted(Path("data/candidates").glob("*.jsonl"))
     reviewed = args.reviewed or [canonical_corpus_path()]
     result = collect_batch(
-        observations,
+        args.observations,
         reviewed_paths=reviewed,
         exclusion_paths=args.exclusions or [],
         output_root=args.out_root,
@@ -1399,8 +1630,10 @@ def cmd_collect(args):
 
 
 def cmd_review_check(args):
+    layout = BatchLayout(args.batch)
+    cases_path = layout.cases if layout.cases.is_file() else args.batch / "cases.jsonl"
     result = check_reviews(
-        read_records([args.batch / "cases.jsonl"]),
+        read_records([cases_path]),
         read_records([args.review_a]),
         read_records([args.review_b]),
     )
@@ -1892,6 +2125,14 @@ def build_parser():
     )
     agent_search.add_argument("--max-output", type=int, default=DEFAULT_MAX_OUTPUT)
     agent_search.set_defaults(func=cmd_agent_search)
+    work_status = sub.add_parser("work-status")
+    work_status.add_argument("--work-root", type=Path)
+    work_status.set_defaults(func=cmd_work_status)
+    work_migrate = sub.add_parser("work-migrate")
+    work_migrate.add_argument("--work-root", type=Path)
+    work_migrate.add_argument("--dry-run", action="store_true")
+    work_migrate.add_argument("--apply", action="store_true")
+    work_migrate.set_defaults(func=cmd_work_migrate)
     batch_status = sub.add_parser("batch-status")
     batch_status.add_argument("--batch", required=True)
     batch_status.add_argument("--work-root", type=Path)
@@ -1927,9 +2168,26 @@ def build_parser():
     apply_correction.add_argument("--evidence", nargs="+")
     apply_correction.add_argument("--work-root", type=Path)
     apply_correction.add_argument("--out-root", type=Path)
+    apply_correction.add_argument("--write", action="store_true")
     apply_correction.set_defaults(func=cmd_apply_correction)
+    batch_create = sub.add_parser("batch-create")
+    batch_create.add_argument("--batch", required=True)
+    batch_create.add_argument("--limit", type=int, default=DEFAULT_V2_COLLECTION_LIMIT)
+    batch_create.add_argument("--source-cache", type=Path, default=None)
+    batch_create.add_argument("--work-root", type=Path, default=None)
+    batch_create.add_argument(
+        "--sources", nargs="+", default=["async_tn", "polynorm", "proteno"]
+    )
+    batch_create.add_argument(
+        "--languages", nargs="+", default=list(DEFAULT_INGEST_LANGUAGES)
+    )
+    batch_create.add_argument("--reviewed", nargs="+")
+    batch_create.add_argument("--targets")
+    batch_create.add_argument("--source-lock-hash")
+    batch_create.set_defaults(func=cmd_batch_create)
+
     collect = sub.add_parser("collect")
-    collect.add_argument("--observations", nargs="+")
+    collect.add_argument("--observations", nargs="+", required=True)
     collect.add_argument("--reviewed", nargs="+")
     collect.add_argument("--exclusions", nargs="+")
     collect.add_argument("--limit", type=int, default=DEFAULT_V2_COLLECTION_LIMIT)
@@ -1943,7 +2201,7 @@ def build_parser():
     review_packet.add_argument("--completed", type=Path)
     review_packet.add_argument("--max-cases", type=int, default=200)
     review_packet.add_argument("--max-bytes", type=int, default=98304)
-    review_packet.add_argument("--out", type=Path, required=True)
+    review_packet.add_argument("--out", type=Path)
     review_packet.add_argument("--work-root", type=Path)
     review_packet.set_defaults(func=cmd_review_packet)
     review_merge = sub.add_parser("review-merge")
@@ -1961,7 +2219,7 @@ def build_parser():
     adjudication_packet.add_argument("--decisions", type=Path)
     adjudication_packet.add_argument("--max-cases", type=int, default=100)
     adjudication_packet.add_argument("--max-bytes", type=int, default=98304)
-    adjudication_packet.add_argument("--out", type=Path, required=True)
+    adjudication_packet.add_argument("--out", type=Path)
     adjudication_packet.add_argument("--work-root", type=Path)
     adjudication_packet.set_defaults(func=cmd_adjudication_packet)
     adjudication_merge = sub.add_parser(

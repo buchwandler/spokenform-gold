@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from spokenform_gold.cli import main
 from spokenform_gold.ingestion import run_upstream_ingestion
 from spokenform_gold.io import read_json, read_records
 
@@ -174,6 +175,39 @@ class IngestionTests(unittest.TestCase):
             self.assertRaisesRegex(ValueError, "missing source checkout"),
         ):
             run_upstream_ingestion(Path(tmpdir) / "missing", Path(tmpdir) / "work")
+
+    def test_batch_create_stages_source_inputs_under_batch_root(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            cache = self._cache(root)
+            config = root / "config.toml"
+            config.write_text(
+                f'[paths]\nsource_cache = "{cache}"\nwork = "{root / "work"}"\n',
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                main(
+                    [
+                        "--config",
+                        str(config),
+                        "batch-create",
+                        "--batch",
+                        "batch-next",
+                        "--limit",
+                        "2",
+                        "--sources",
+                        "polynorm",
+                        "--languages",
+                        "en",
+                    ]
+                ),
+                0,
+            )
+            batch = root / "work" / "batches" / "batch-next"
+            self.assertTrue((batch / "source/observations.jsonl").is_file())
+            self.assertTrue((batch / "source/exclusions.json").is_file())
+            self.assertTrue((batch / "batch.json").is_file())
+            self.assertFalse((root / "work/candidates").exists())
 
 
 if __name__ == "__main__":

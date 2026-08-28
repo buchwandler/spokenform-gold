@@ -1,5 +1,7 @@
 # Data-growth batches 0–2
 
+The supported entry point for a new batch is `batch-create`. It owns source staging under the batch root and reports input, filtering, clustering, and selection counts.
+
 This document is the operational boundary for the first full-dataset production
 cycle. It complements the source, annotation, promotion, and release policies.
 

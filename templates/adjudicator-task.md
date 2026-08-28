@@ -1,5 +1,7 @@
 # Sentence-Centric v2 Adjudicator
 
+Use only the adjudication packet generated for the owning batch. Canonical lineage is maintained separately and is never discovered by recursive work-root search.
+
 Use this role only after two independent blind reviews pass `review-check`.
 Replace placeholders with truthful values.
 

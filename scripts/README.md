@@ -1,5 +1,7 @@
 # Scripts
 
+Source-cache setup feeds `spokenform-gold batch-create`; it does not make global work-root candidate files authoritative.
+
 Operational helper scripts for spokenform-gold production. None of these are
 part of the core Python package — they are standalone tools meant to be run
 directly.

@@ -1,5 +1,7 @@
 # Coding Agent: Sentence-Centric v2 Batch Preparation
 
+Use `batch-create` for new data. For an existing Gold defect, use its permanent record ID and never search the work root recursively for evidence.
+
 Use this role to prepare one reproducible logical batch. It does not perform
 semantic review, adjudication, integration, or release publication.
 

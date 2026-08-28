@@ -1,5 +1,7 @@
 # Independent Reviewer A/B, Sentence-Centric v2
 
+Review packets are generated under the owning batch with deterministic numbered names. Do not locate or enumerate packet JSONL files manually.
+
 Run this template in two distinct fresh contexts, once for slot A and once for
 slot B. Replace placeholders with truthful values.
 

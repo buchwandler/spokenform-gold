@@ -227,11 +227,67 @@ class CliReviewWorkflowTests(unittest.TestCase):
         self.assertNotIn("A/B: agreement", output.getvalue())
         self.assertNotIn("Traceback", errors.getvalue())
 
-    def test_collect_parser_defaults_to_1000_cases(self):
+    def test_collect_requires_explicit_observations(self):
+        with self.assertRaises(SystemExit):
+            build_parser().parse_args(
+                ["collect", "--batch", "batch-1000", "--out-root", "/tmp/batch"],
+            )
         args = build_parser().parse_args(
-            ["collect", "--batch", "batch-1000", "--out-root", "/tmp/batch"],
+            [
+                "collect",
+                "--observations",
+                "data/candidates/async_tn.jsonl",
+                "--batch",
+                "batch-1000",
+                "--out-root",
+                "/tmp/batch",
+            ]
         )
         self.assertEqual(args.limit, 1000)
+
+    def test_trace_record_ignores_historical_work_snapshots_by_default(self):
+        stale = backfill_legacy_evidence([self.records[0]])[0]
+        conflicting = dict(stale)
+        conflicting["final_oracle_hash"] = "sha256:historical"
+        write_jsonl(self.work / "review-evidence.jsonl", [stale, conflicting])
+        output = io.StringIO()
+        errors = io.StringIO()
+        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+            code = main(
+                [
+                    "trace-record",
+                    self.records[0]["id"],
+                    "--records",
+                    str(self.records_path),
+                    "--work-root",
+                    str(self.work),
+                ]
+            )
+        self.assertEqual(code, 0)
+        self.assertIn("review revisions: 1", output.getvalue())
+        self.assertNotIn("Traceback", errors.getvalue())
+
+    def test_trace_record_reports_explicit_evidence_conflict(self):
+        stale = backfill_legacy_evidence([self.records[0]])[0]
+        conflicting = dict(stale)
+        conflicting["final_oracle_hash"] = "sha256:conflict"
+        evidence_path = self.work / "conflicting.jsonl"
+        write_jsonl(evidence_path, [stale, conflicting])
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = main(
+                [
+                    "trace-record",
+                    self.records[0]["id"],
+                    "--records",
+                    str(self.records_path),
+                    "--evidence",
+                    str(evidence_path),
+                ]
+            )
+        self.assertEqual(code, 2)
+        self.assertIn("lineage_status=conflict", output.getvalue())
+        self.assertIn(str(evidence_path), output.getvalue())
 
 
 if __name__ == "__main__":

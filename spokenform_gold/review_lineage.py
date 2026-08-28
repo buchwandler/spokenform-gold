@@ -21,6 +21,36 @@ _FORBIDDEN = {
 }
 _TRANSIENT = {"_source_file", "_source_line"}
 
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class EvidenceVariant:
+    source: str | None
+    artifact_hash: str
+    final_record_hash: str | None
+
+    def to_dict(self) -> dict[str, str | None]:
+        return {
+            "source": self.source,
+            "artifact_sha256": self.artifact_hash,
+            "final_record_hash": self.final_record_hash,
+        }
+
+
+@dataclass(frozen=True)
+class EvidenceConflict:
+    record_id: str
+    revision: int
+    variants: tuple[EvidenceVariant, ...]
+
+    def to_dict(self) -> dict:
+        return {
+            "record_id": self.record_id,
+            "revision": self.revision,
+            "variants": [variant.to_dict() for variant in self.variants],
+        }
+
 
 def sanitize_review_artifact(value: Any) -> Any:
     """Remove blind-review forbidden and local ingestion-only fields recursively."""
@@ -86,6 +116,30 @@ def _revision_for(record_id: str, previous: Iterable[dict]) -> int:
         and isinstance(entry.get("review_revision"), int)
     ]
     return max(revisions, default=0) + 1
+
+
+def find_evidence_conflicts(
+    record_id: str, evidence: Iterable[dict]
+) -> list[EvidenceConflict]:
+    """Describe duplicate revision hashes without selecting a winner."""
+    by_revision: dict[int, dict[str, EvidenceVariant]] = {}
+    for row in evidence:
+        if not isinstance(row, dict) or row.get("record_id") != record_id:
+            continue
+        revision = row.get("review_revision")
+        if not isinstance(revision, int):
+            continue
+        variant = EvidenceVariant(
+            source=row.get("_source_file"),
+            artifact_hash=artifact_sha256(row),
+            final_record_hash=row.get("final_oracle_hash"),
+        )
+        by_revision.setdefault(revision, {})[variant.artifact_hash] = variant
+    return [
+        EvidenceConflict(record_id, revision, tuple(variants.values()))
+        for revision, variants in sorted(by_revision.items())
+        if len(variants) > 1
+    ]
 
 
 def record_evidence_history(record_id: str, evidence: Iterable[dict]) -> list[dict]:
@@ -407,9 +461,12 @@ def write_review_evidence(path: str | Path, entries: Iterable[dict]) -> None:
 
 
 __all__ = [
+    "EvidenceConflict",
+    "EvidenceVariant",
     "artifact_sha256",
     "backfill_legacy_evidence",
     "build_review_evidence",
+    "find_evidence_conflicts",
     "record_evidence_history",
     "resolve_record_evidence",
     "sanitize_review_artifact",
