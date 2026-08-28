@@ -75,6 +75,18 @@
           "observed_sha256": "959320666b996e7c9a658ef814f3f81a3fe67d7d4b412f6dc822c9ab9c2371d7"
         },
         {
+          "path": "tests/fixtures/importers/polynorm_official/ja-JP/ja-JP_groundtruth.jsonl",
+          "role": "official-ja-jp-fixture",
+          "sha256": "a6966cbedb2c3d8d12df14b77ae08cbbff399796ff6da647bb20d9320fd7c239",
+          "observed_sha256": "a6966cbedb2c3d8d12df14b77ae08cbbff399796ff6da647bb20d9320fd7c239"
+        },
+        {
+          "path": "tests/fixtures/importers/polynorm_official/zh-CN/zh-CN_groundtruth.jsonl",
+          "role": "official-zh-cn-fixture",
+          "sha256": "8827e8177227a92cd735451729169dc0fa05b9328955a48643701eba5851ece9",
+          "observed_sha256": "8827e8177227a92cd735451729169dc0fa05b9328955a48643701eba5851ece9"
+        },
+        {
           "path": "tests/fixtures/importers/polynorm_raw.json",
           "role": "neutral-raw-export",
           "sha256": "632a0d19ed1096629da14b7f4cf39bc2f081435abe38e30e5a6bc8a11caa61e8",
@@ -237,8 +249,8 @@
         {
           "path": "data/dev/sample.jsonl",
           "role": "benchmark-dev",
-          "sha256": "3708b7800b96b5ea657ddbd544442ee6cd01baf0e1bb0ce2286ac1485ca914b8",
-          "observed_sha256": "3708b7800b96b5ea657ddbd544442ee6cd01baf0e1bb0ce2286ac1485ca914b8"
+          "sha256": "9ab8f298896e9ca7df9f72f8ad502f47793468c2ddfa27a42477253010e49eb7",
+          "observed_sha256": "9ab8f298896e9ca7df9f72f8ad502f47793468c2ddfa27a42477253010e49eb7"
         },
         {
           "path": "data/judge_gold/sample.jsonl",
@@ -249,8 +261,8 @@
         {
           "path": "data/test/sample.jsonl",
           "role": "benchmark-test",
-          "sha256": "a6dc5acbdb808c19427d9c4f615fb2a092c8a617fa14634c3fecb2511102542e",
-          "observed_sha256": "a6dc5acbdb808c19427d9c4f615fb2a092c8a617fa14634c3fecb2511102542e"
+          "sha256": "469759679dbe1222d1abccd134f48625404bbca884d6f66ad83500b48798f4df",
+          "observed_sha256": "469759679dbe1222d1abccd134f48625404bbca884d6f66ad83500b48798f4df"
         },
         {
           "path": "data/train/sample.jsonl",
@@ -276,6 +288,37 @@
           "role": "candidate-regression-batch",
           "sha256": "3b6ce7df9405305b35528f59653d15fe64d375a7f391bc2330c67808fd118f2e",
           "observed_sha256": "3b6ce7df9405305b35528f59653d15fe64d375a7f391bc2330c67808fd118f2e"
+        }
+      ],
+      "upstream_files": []
+    },
+    {
+      "name": "spokenform_translation",
+      "revision": "translation-protocol-1.0.0",
+      "source_url": "spokenform-gold://translation",
+      "license": "CC-BY-4.0",
+      "license_id": "CC-BY-4.0",
+      "license_scope": "repository:translation-protocol",
+      "redistribution_status": "allowed",
+      "materialization_policy": "embedded_public",
+      "artifacts": [
+        {
+          "path": "docs/TRANSLATION.md",
+          "role": "translation-policy",
+          "sha256": "cc19aa56a3cf4098ee455a411a50f5754496ad95a3c96ae8183e02359f70e4bd",
+          "observed_sha256": "cc19aa56a3cf4098ee455a411a50f5754496ad95a3c96ae8183e02359f70e4bd"
+        },
+        {
+          "path": "templates/translation-adjudicator-task.md",
+          "role": "translation-adjudicator-contract",
+          "sha256": "97ea0186556753f746c7eeec4c047df6839233f14c6a49e30c78965c0ffdda4b",
+          "observed_sha256": "97ea0186556753f746c7eeec4c047df6839233f14c6a49e30c78965c0ffdda4b"
+        },
+        {
+          "path": "templates/translator-ab-task.md",
+          "role": "translator-contract",
+          "sha256": "7db3fab7d228a436858b8a49be68a3f2efbaa0cd48b6a60a6fa99190b0888458",
+          "observed_sha256": "7db3fab7d228a436858b8a49be68a3f2efbaa0cd48b6a60a6fa99190b0888458"
         }
       ],
       "upstream_files": []
