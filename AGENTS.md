@@ -12,7 +12,7 @@ majority.
 The canonical authoring source is the `data/corpus/` directory. Each language shard is `data/corpus/<language>.jsonl`. New sentence cases follow:
 
 ```text
-prepare observations -> collect -> review-check -> adjudicate -> integrate -> validate -> report
+prepare observations -> collect -> review-check -> adjudicate -> batch-finalize -> validate -> report
 ```
 
 A logical batch contains up to 1,000 cases. This is a file and completeness
@@ -101,7 +101,7 @@ spokenform-gold review-check --batch <BATCH_ROOT> --review-a <A_COMPLETE> \
   --review-b <B_COMPLETE>
 spokenform-gold adjudication-packet --batch <BATCH_ROOT> --review-a <A_COMPLETE> \
   --review-b <B_COMPLETE> --max-cases 100 --max-bytes 98304 --out <PACKET>
-spokenform-gold integrate --batch <BATCH_ROOT>
+spokenform-gold batch-finalize --batch <BATCH_ROOT>
 spokenform-gold validate data/corpus/
 spokenform-gold report --records data/corpus/ --out <REPORT.html>
 ```
@@ -109,6 +109,8 @@ spokenform-gold report --records data/corpus/ --out <REPORT.html>
 Use `batch-status --batch <BATCH_ID>` to resolve configured paths and counts.
 Use `agent-search` for bounded source search and `trace-case` or `trace-record`
 for exact lookup. Detailed reports belong in files, not stdout.
+
+Retryable post-adjudication blockers are not terminal exclusions. Finalize mixed batches with `spokenform-gold batch-finalize`; accepted cases may enter Gold while deferred cases remain in the configured retry pool. The retry path is `exclusions-rebuild/status -> rereview-batch-create -> fresh A/B -> review-check -> adjudicate -> batch-finalize`. Preserve stable `case_id`, require changed retry context before re-review, and never expose prior reviews or adjudication to fresh blind reviewers.
 
 ## Validation and definition of done
 

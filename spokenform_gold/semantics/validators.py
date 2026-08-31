@@ -31,14 +31,31 @@ def _validate_date(semantic: dict[str, Any]) -> list[str]:
                 errors.append(f"date candidate[{index}]: {error}")
         return errors
     year = _as_int(semantic, "year")
-    month = _as_int(semantic, "month")
-    day = _as_int(semantic, "day")
-    if None in {year, month, day}:
-        return ["date semantic requires integer year, month, and day"]
-    try:
-        _dt.date(year, month, day)
-    except ValueError as exc:
-        return [f"invalid date semantic: {exc}"]
+    month = semantic.get("month")
+    day = semantic.get("day")
+    precision = semantic.get("precision")
+    if year is None:
+        return ["date semantic requires integer year"]
+    if month is not None and not isinstance(month, int):
+        return ["date semantic month must be an integer when present"]
+    if day is not None and not isinstance(day, int):
+        return ["date semantic day must be an integer when present"]
+    if day is not None and month is None:
+        return ["date semantic day requires month"]
+    expected_precision = (
+        "day" if day is not None else "month" if month is not None else "year"
+    )
+    if precision is not None and precision != expected_precision:
+        return [f"date semantic precision must be {expected_precision!r}"]
+    if month is not None and not 1 <= month <= 12:
+        return [f"date month out of range: {month}"]
+    if day is not None:
+        try:
+            _dt.date(year, month, day)
+        except ValueError as exc:
+            return [f"invalid date semantic: {exc}"]
+    elif not 1 <= year <= 9999:
+        return [f"date year out of range: {year}"]
     return []
 
 
@@ -61,8 +78,22 @@ def _validate_time(semantic: dict[str, Any]) -> list[str]:
 
 def _validate_decimal(semantic: dict[str, Any]) -> list[str]:
     value = semantic.get("value")
-    if not isinstance(value, str) or not DECIMAL_RE.fullmatch(value):
-        return ["decimal semantic requires exact string value"]
+    if isinstance(value, str) and DECIMAL_RE.fullmatch(value):
+        return []
+    integer = semantic.get("integer")
+    nonrepeating = semantic.get("nonrepeating")
+    repeating = semantic.get("repeating")
+    if (
+        not isinstance(integer, str)
+        or not re.fullmatch(r"[+-]?\d+", integer)
+        or not isinstance(nonrepeating, str)
+        or not re.fullmatch(r"\d*", nonrepeating)
+        or not isinstance(repeating, str)
+        or not re.fullmatch(r"\d+", repeating)
+    ):
+        return [
+            "decimal semantic requires exact string value or integer/nonrepeating/repeating digits"
+        ]
     return []
 
 

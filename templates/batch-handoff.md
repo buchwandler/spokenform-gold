@@ -17,13 +17,16 @@ not in this document. Use `NONE`, `NOT_RUN`, or `NOT_PUBLISHED` explicitly.
 - reviewer B artifact hash:
 - review-check: ready/issues count
 - adjudicator identity:
-- accept/exclude/unresolved counts:
+- batch kind / review attempt:
+- accept / terminal exclude / retry deferred counts:
 - integrated record count:
 - corpus count before/after:
 - validation result:
 - coverage summary before/after:
 - report.html path:
 - blockers:
+- retry blocker counts:
+- retry pool changes:
 - next action:
 
 The generated `review-report.html` is the human review surface.

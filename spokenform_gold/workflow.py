@@ -12,7 +12,14 @@ from .corpus import (
     write_corpus_atomic,
     write_records_atomic,
 )
-from .io import read_records, write_json, write_jsonl
+from .io import read_json, read_jsonl, read_records, write_json, write_jsonl
+from .rereview import (
+    _event_from_decision,
+    load_retry_pool,
+    merge_retry_events,
+    retry_context_fingerprint,
+    write_retry_pool_atomic,
+)
 from .review import validate_v2_review_rows
 from .validation import validate_records
 from .work_layout import BatchLayout
@@ -145,9 +152,9 @@ def _canonical_record(case: dict, final: dict, existing: dict | None = None) -> 
     return record
 
 
-def integrate_batch(
-    batch_root: str | Path, corpus_path: str | Path, *, write: bool = False
-) -> dict:
+def _batch_artifacts(
+    batch_root: str | Path,
+) -> tuple[BatchLayout, list[dict], list[dict], list[dict], list[dict], list[dict]]:
     root = Path(batch_root)
     layout = BatchLayout(root)
     cases_path = layout.cases if layout.cases.is_file() else root / "cases.jsonl"
@@ -170,15 +177,43 @@ def integrate_batch(
     review_a = read_records([review_a_path]) if review_a_path.exists() else []
     review_b = read_records([review_b_path]) if review_b_path.exists() else []
     adjudicated = read_records([adjudicated_path]) if adjudicated_path.exists() else []
+    metadata = read_json(layout.metadata) if layout.metadata.is_file() else {}
+    return layout, cases, review_a, review_b, adjudicated, metadata
+
+
+def integrate_batch(
+    batch_root: str | Path, corpus_path: str | Path, *, write: bool = False
+) -> dict:
+    """Integrate accepted decisions while preserving deferred case outcomes."""
+    layout, cases, review_a, review_b, adjudicated, metadata = _batch_artifacts(
+        batch_root
+    )
     review_report = check_reviews(cases, review_a, review_b)
     if not review_report["ready"]:
         raise ValueError("review-check failed: " + "; ".join(review_report["issues"]))
+    case_ids = {case.get("case_id") for case in cases}
     by_case = {row.get("case_id"): row for row in adjudicated}
-    if len(by_case) != len(adjudicated):
-        raise ValueError("duplicate adjudication case_id")
-    missing = sorted({case.get("case_id") for case in cases} - set(by_case))
-    if missing:
-        raise ValueError(f"missing adjudication for {missing}")
+    if len(by_case) != len(adjudicated) or set(by_case) != case_ids:
+        missing = sorted(case_ids - set(by_case))
+        extra = sorted(set(by_case) - case_ids)
+        raise ValueError(
+            f"adjudication case-ID set mismatch: missing={missing} extra={extra}"
+        )
+    require_blocker = metadata.get("batch_kind") == "rereview"
+    for decision in adjudicated:
+        disposition = decision.get("decision")
+        if disposition == "unresolved":
+            blocker = decision.get("blocker")
+            if not isinstance(blocker, dict) or blocker.get("retryable") is not True:
+                raise ValueError(
+                    f"{decision.get('case_id')}: unresolved decision requires "
+                    "retryable structured blocker"
+                )
+        elif disposition == "exclude" and require_blocker:
+            if not isinstance(decision.get("blocker"), dict):
+                raise ValueError(
+                    f"{decision.get('case_id')}: exclude decision requires structured blocker"
+                )
     corpus_target = Path(corpus_path)
     existing = (
         read_corpus(corpus_target)
@@ -191,13 +226,10 @@ def integrate_batch(
     final_records: list[dict] = []
     synthetic: list[dict] = []
     excluded: list[dict] = []
+    retry: list[dict] = []
     for case in cases:
         decision = by_case[case["case_id"]]
-        disposition = decision.get("decision")
-        if disposition not in FINAL_DECISIONS:
-            raise ValueError(
-                f"{case['case_id']}: invalid adjudication decision {disposition!r}"
-            )
+        disposition = decision["decision"]
         if decision.get("synthetic_requests"):
             synthetic.extend(
                 decision["synthetic_requests"]
@@ -209,13 +241,27 @@ def integrate_batch(
                 {
                     "case_id": case["case_id"],
                     "reason": decision.get("rationale", "excluded"),
+                    "blocker": decision.get("blocker"),
                 }
             )
             continue
         if disposition == "unresolved":
-            raise ValueError(
-                f"{case['case_id']}: unresolved adjudication cannot enter Gold"
+            blocker = decision.get("blocker")
+            if not isinstance(blocker, dict) or blocker.get("retryable") is not True:
+                raise ValueError(
+                    f"{case['case_id']}: unresolved decision requires retryable structured blocker"
+                )
+            retry.append(
+                {
+                    "case_id": case["case_id"],
+                    "reason": decision.get(
+                        "rationale", blocker.get("reason", "deferred")
+                    ),
+                    "blocker": blocker,
+                    "decision": decision,
+                }
             )
+            continue
         final = decision.get("final_record")
         if not isinstance(final, dict):
             raise TypeError(f"{case['case_id']}: accept decision requires final_record")
@@ -249,17 +295,103 @@ def integrate_batch(
             write_corpus_atomic(corpus_target, combined.values())
         write_jsonl(layout.integration_dir / "synthetic-candidates.jsonl", synthetic)
         write_jsonl(layout.integration_dir / "exclusions.jsonl", excluded)
-        metadata = {
-            "state": "integrated",
-            "records_added": len(final_records),
-            "synthetic_candidates": len(synthetic),
-            "excluded": len(excluded),
-        }
-        write_json(layout.integration_summary, metadata)
+        write_jsonl(layout.integration_dir / "retry.jsonl", retry)
+        write_json(
+            layout.integration_summary,
+            {
+                "state": "integrated",
+                "records_added": len(final_records),
+                "synthetic_candidates": len(synthetic),
+                "excluded": len(excluded),
+                "terminal_excluded": len(excluded),
+                "retry_deferred": len(retry),
+            },
+        )
     return {
         "ready": True,
         "records": len(final_records),
         "synthetic_candidates": synthetic,
         "excluded": excluded,
+        "retry": retry,
         "review": review_report,
+    }
+
+
+def finalize_batch(
+    batch_root: str | Path,
+    corpus_path: str | Path,
+    retry_pool_path: str | Path | None = None,
+    *,
+    write: bool = False,
+) -> dict:
+    """Finalize a batch and update the durable retry index when writing."""
+    result = integrate_batch(batch_root, corpus_path, write=write)
+    layout, cases, _review_a, _review_b, adjudicated, metadata = _batch_artifacts(
+        batch_root
+    )
+    batch_id = str(metadata.get("batch_id", layout.root.name))
+    context_rows = read_jsonl(layout.context) if layout.context.is_file() else []
+    context_map = {row.get("case_id"): row for row in context_rows}
+    events = []
+    for case in cases:
+        decision = next(
+            row for row in adjudicated if row.get("case_id") == case.get("case_id")
+        )
+        event = _event_from_decision(
+            case,
+            decision,
+            batch_id,
+            layout.root,
+            str(metadata.get("batch_kind", "new_data")),
+        )
+        if event is None:
+            continue
+        rereview = (context_map.get(case.get("case_id")) or {}).get("rereview") or {}
+        resolution = rereview.get("resolution") if isinstance(rereview, dict) else None
+        if isinstance(resolution, dict):
+            event["retry_context_hash"] = retry_context_fingerprint(resolution)
+        event["case"] = {
+            key: value for key, value in case.items() if not key.startswith("_")
+        }
+        if decision.get("decision") == "accept":
+            event["record_id"] = (decision.get("final_record") or {}).get("id")
+        events.append(event)
+    pool_path = (
+        Path(retry_pool_path)
+        if retry_pool_path
+        else layout.root.parent.parent / "state" / "review-exclusions.jsonl"
+    )
+    existing_pool = load_retry_pool(pool_path)
+    existing_ids = {row.get("case_id") for row in existing_pool}
+    pool_events = [
+        event
+        for event in events
+        if event.get("decision") != "accept" or event.get("case_id") in existing_ids
+    ]
+    pool = merge_retry_events(existing_pool, pool_events)
+    counts = {
+        "accepted": result["records"],
+        "terminal_excluded": len(result["excluded"]),
+        "retry_deferred": len(result["retry"]),
+        "records_added": result["records"],
+    }
+    if write:
+        write_retry_pool_atomic(pool_path, pool)
+        metadata = dict(metadata)
+        metadata["state"] = "finalized"
+        metadata["finalization"] = counts
+        write_json(layout.metadata, metadata)
+        write_json(
+            layout.integration_summary,
+            {
+                "state": "finalized",
+                **counts,
+                "synthetic_candidates": len(result["synthetic_candidates"]),
+            },
+        )
+    return {
+        **result,
+        **counts,
+        "pool": str(pool_path),
+        "state": "finalized" if write else "ready_to_finalize",
     }

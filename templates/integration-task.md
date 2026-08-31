@@ -33,3 +33,5 @@ spokenform-gold report --records data/corpus/ --out <REPORT.html>
 The dry run must pass before `--write`. Preserve v2 identity, source
 observations, provenance, and policy. Reject incomplete or unresolved decisions.
 The human receives compact counts and the generated report, not JSONL rows.
+
+For finalization, use `spokenform-gold batch-finalize --batch <BATCH_ID>` (add `--write` only after the dry run). Never materialize unresolved/deferred cases into Gold. Accepted records may finalize while retryable cases move to `integration/retry.jsonl` and the central retry pool; terminal exclusions remain recorded separately.

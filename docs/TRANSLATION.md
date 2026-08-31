@@ -34,5 +34,5 @@ Japanese uses `ja` / `ja-JP`, Korean uses `ko` / `ko-KR`, and Mandarin Chinese u
 translation-prepare -> translation-packet -> translation-merge ->
 translation-check -> translation-adjudication-packet ->
 translation-adjudication-merge -> translation-finalize ->
-collect -> semantic review A/B -> review-check -> adjudicate -> integrate -> validate
+collect -> semantic review A/B -> review-check -> adjudicate -> batch-finalize -> validate
 ```

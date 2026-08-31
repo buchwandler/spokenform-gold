@@ -214,10 +214,10 @@ def select_cases(
     return CollectionResult(selected, unseen, accounting)
 
 
-def blind_case(case: dict, slot: str) -> dict:
+def blind_case(case: dict, slot: str, *, guidance: dict | None = None) -> dict:
     if slot not in {"A", "B"}:
         raise ValueError("reviewer slot must be A or B")
-    return {
+    row = {
         "review_schema_version": "2.0.0",
         "case_id": case["case_id"],
         "reviewer_slot": slot,
@@ -228,6 +228,9 @@ def blind_case(case: dict, slot: str) -> dict:
         "annotation": None,
         "review": {"status": "unreviewed"},
     }
+    if guidance is not None:
+        row["review_guidance"] = guidance
+    return row
 
 
 def build_batch(
@@ -237,13 +240,32 @@ def build_batch(
     batch_id: str,
     source_lock_hash: str | None = None,
     accounting: CollectionAccounting | dict[str, int] | None = None,
+    batch_kind: str = "new_data",
+    context_rows: Iterable[dict] | None = None,
+    review_guidance: dict[str, dict] | None = None,
 ) -> dict:
     root = Path(output_root)
     root.mkdir(parents=True, exist_ok=True)
     write_jsonl(root / "cases.jsonl", cases)
-    write_jsonl(root / "context.jsonl", cases)
-    write_jsonl(root / "a.blind.jsonl", [blind_case(case, "A") for case in cases])
-    write_jsonl(root / "b.blind.jsonl", [blind_case(case, "B") for case in cases])
+    write_jsonl(
+        root / "context.jsonl",
+        list(context_rows) if context_rows is not None else cases,
+    )
+    guidance = review_guidance or {}
+    write_jsonl(
+        root / "a.blind.jsonl",
+        [
+            blind_case(case, "A", guidance=guidance.get(case["case_id"]))
+            for case in cases
+        ],
+    )
+    write_jsonl(
+        root / "b.blind.jsonl",
+        [
+            blind_case(case, "B", guidance=guidance.get(case["case_id"]))
+            for case in cases
+        ],
+    )
     counts = (
         accounting.to_dict()
         if isinstance(accounting, CollectionAccounting)
@@ -257,6 +279,7 @@ def build_batch(
     metadata = {
         "schema_version": "2.0.0",
         "batch_id": batch_id,
+        "batch_kind": batch_kind,
         "source_lock_hash": source_lock_hash,
         "case_count": len(cases),
         "source_observation_count": counts["selected_source_observations"],

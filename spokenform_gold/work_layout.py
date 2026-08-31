@@ -29,6 +29,14 @@ class WorkLayout:
     def state_root(self) -> Path:
         return self.root / "state"
 
+    @property
+    def retry_pool(self) -> Path:
+        return self.state_root / "review-exclusions.jsonl"
+
+    @property
+    def retry_pool_summary(self) -> Path:
+        return self.state_root / "review-exclusions.summary.json"
+
     def batch(self, batch_id: str) -> BatchLayout:
         return BatchLayout(self.batches_root / batch_id)
 

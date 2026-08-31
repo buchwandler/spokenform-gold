@@ -23,6 +23,7 @@ REVIEW_PACKET_FIELDS = (
     "family_id",
     "annotation",
     "review",
+    "review_guidance",
 )
 DECISIONS = {"accept", "exclude", "unresolved"}
 
@@ -212,6 +213,7 @@ def merge_review_rows(
             "locale",
             "input",
             "family_id",
+            "review_guidance",
         ):
             if row.get(field) != expected.get(field):
                 raise PacketError(
@@ -232,7 +234,9 @@ def merge_review_rows(
     return output_rows
 
 
-def _validate_decision(row: Mapping[str, Any]) -> None:
+def _validate_decision(
+    row: Mapping[str, Any], *, require_structured_blocker: bool = False
+) -> None:
     case_id = row.get("case_id")
     if not isinstance(case_id, str) or not case_id:
         raise PacketError("adjudication row is missing case_id")
@@ -241,10 +245,35 @@ def _validate_decision(row: Mapping[str, Any]) -> None:
         or not row["adjudicator_id"].strip()
     ):
         raise PacketError(f"{case_id}: missing adjudicator_id")
-    if row.get("decision") not in DECISIONS:
+    decision = row.get("decision")
+    if decision not in DECISIONS:
         raise PacketError(f"{case_id}: invalid adjudication decision")
-    if row["decision"] == "accept" and not isinstance(row.get("final_record"), dict):
-        raise PacketError(f"{case_id}: accept decision requires final_record")
+    blocker = row.get("blocker")
+    if decision == "accept":
+        if not isinstance(row.get("final_record"), dict):
+            raise PacketError(f"{case_id}: accept decision requires final_record")
+        if blocker is not None:
+            raise PacketError(f"{case_id}: accept decision cannot contain blocker")
+    elif decision == "unresolved":
+        if not isinstance(blocker, dict):
+            raise PacketError(
+                f"{case_id}: unresolved decision requires structured blocker"
+            )
+        required = ("code", "class", "reason", "attempted_resolution")
+        if any(
+            not isinstance(blocker.get(key), str) or not blocker[key].strip()
+            for key in required
+        ):
+            raise PacketError(f"{case_id}: unresolved blocker is incomplete")
+        if blocker.get("retryable") is not True:
+            raise PacketError(f"{case_id}: unresolved blocker must be retryable")
+    elif decision == "exclude":
+        if require_structured_blocker and not isinstance(blocker, dict):
+            raise PacketError(
+                f"{case_id}: exclude decision requires structured blocker"
+            )
+        if blocker is not None and not isinstance(blocker, dict):
+            raise PacketError(f"{case_id}: exclude blocker must be an object")
 
 
 def merge_adjudication_rows(
@@ -252,6 +281,7 @@ def merge_adjudication_rows(
     result_rows: Iterable[Mapping[str, Any]],
     *,
     output: str | Path | None = None,
+    require_structured_blocker: bool = False,
 ) -> list[dict[str, Any]]:
     """Merge adjudication packet results with stable identity and atomic output."""
 
@@ -260,7 +290,7 @@ def merge_adjudication_rows(
     merged = dict(existing)
     adjudicator_ids = {row.get("adjudicator_id") for row in existing.values()}
     for case_id, row in results.items():
-        _validate_decision(row)
+        _validate_decision(row, require_structured_blocker=require_structured_blocker)
         adjudicator_ids.add(row.get("adjudicator_id"))
         previous = merged.get(case_id)
         if previous is not None and previous != row:
@@ -270,7 +300,7 @@ def merge_adjudication_rows(
         raise PacketError("adjudication must use one stable adjudicator identity")
     output_rows = [merged[key] for key in sorted(merged)]
     for row in output_rows:
-        _validate_decision(row)
+        _validate_decision(row, require_structured_blocker=require_structured_blocker)
     if output is not None:
         _atomic_write(output, output_rows)
     return output_rows
@@ -281,6 +311,7 @@ def finalize_adjudication(
     decisions: Iterable[Mapping[str, Any]],
     *,
     output: str | Path | None = None,
+    require_structured_blocker: bool = False,
 ) -> list[dict[str, Any]]:
     """Require an exact case-ID decision set and validate accepted records."""
 
@@ -293,7 +324,7 @@ def finalize_adjudication(
             f"adjudication case-ID set mismatch: missing={missing} extra={extra}"
         )
     for row in indexed.values():
-        _validate_decision(row)
+        _validate_decision(row, require_structured_blocker=require_structured_blocker)
     accepted = [
         row["final_record"] for row in indexed.values() if row["decision"] == "accept"
     ]

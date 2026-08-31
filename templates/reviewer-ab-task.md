@@ -13,6 +13,8 @@ assigned blind packet only. Do not inspect source observations, upstream
 expectations, current Spokenform output, the other review, adjudication files,
 or the full corpus.
 
+For a re-review batch, `review_guidance` may be present. It is neutral benchmark guidance about a newly available capability or policy clarification, not a previous answer. Read it, complete a fresh annotation, and never inspect prior A/B or adjudication artifacts.
+
 A 1,000-case logical batch may require multiple bounded packet invocations.
 Packet inputs contain blind-review fields only. The complete artifact must still
 cover the entire logical batch.

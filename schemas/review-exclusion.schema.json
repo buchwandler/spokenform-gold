@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Spokenform Gold review exclusion retry item",
+  "type": "object",
+  "required": ["schema_version", "case_id", "language", "locale", "input", "state", "retry_attempts", "blocker", "origin_batches", "events"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "1.0.0"},
+    "case_id": {"type": "string", "minLength": 1},
+    "language": {"type": "string"},
+    "locale": {"type": "string"},
+    "input": {"type": "string"},
+    "family_id": {"type": ["string", "null"]},
+    "state": {"enum": ["needs_triage", "blocked", "ready", "in_retry_batch", "resolved", "terminal"]},
+    "retry_attempts": {"type": "integer", "minimum": 0},
+    "blocker": {
+      "type": ["object", "null"],
+      "required": ["code", "class", "retryable", "reason", "attempted_resolution", "requires"],
+      "properties": {
+        "code": {"type": "string", "minLength": 1},
+        "class": {"type": "string", "minLength": 1},
+        "retryable": {"type": "boolean"},
+        "reason": {"type": "string", "minLength": 1},
+        "attempted_resolution": {"type": "string", "minLength": 1},
+        "requires": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "origin_batches": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "events": {"type": "array", "items": {"type": "object"}},
+    "latest_retry_context_hash": {"type": ["string", "null"]},
+    "retry_context_hash": {"type": ["string", "null"]},
+    "active_retry_batch": {"type": ["string", "null"]},
+    "resolved_record_id": {"type": ["string", "null"]}
+  }
+}

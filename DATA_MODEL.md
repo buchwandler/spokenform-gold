@@ -56,4 +56,6 @@ The authoring source of truth is the `data/corpus/` directory, with one language
 
 A case identity is the conservative tuple `(language, locale, normalized input)`. A source identity is `(benchmark, source_version, source_id)`. All observations in one case move together through independent reviewer A, independent reviewer B, and one adjudicator. Synthetic sentences remain candidates until that same review path is completed.
 
+A review case keeps the same `case_id` across retries; the owning batch and retry attempt identify each review cycle. The runtime retry pool lives under `<WORK>/state/review-exclusions.jsonl` and is rebuildable state, not canonical Gold. Re-review `cases.jsonl` contains the current case and merged source observations, while `context.jsonl` contains adjudicator-only retry history and sanitized resolution context.
+
 v2 releases contain `corpus.jsonl`. The loader remains compatible with v1 releases that contain split directories.

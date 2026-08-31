@@ -305,6 +305,7 @@ def render_review_html(
     decisions: Iterable[dict],
     validation: dict | None = None,
     batch_id: str | None = None,
+    retry_summary: dict | None = None,
 ) -> Path:
     candidate_rows = list(candidates)
     rows = _cluster_rows(
@@ -321,7 +322,12 @@ def render_review_html(
         row["decision"] in {"needs_review", "quarantine", "pending"} for row in rows
     )
     validation = validation or {"ready": True}
+    retry_summary = retry_summary or {}
     kpis = [
+        ("Batch kind", retry_summary.get("batch_kind", "new_data")),
+        ("Review attempt", retry_summary.get("attempt", 1)),
+        ("Retry deferred", retry_summary.get("retry_deferred", 0)),
+        ("Terminal excluded", retry_summary.get("terminal_excluded", 0)),
         ("Candidates", len(candidate_rows)),
         ("Sentence clusters", len(rows)),
         ("A/B agreement", agreement),

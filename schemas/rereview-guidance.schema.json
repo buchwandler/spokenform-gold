@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Sanitized re-review guidance",
+  "type": "object",
+  "required": ["resolution_id", "focus", "policy_refs", "instructions"],
+  "properties": {
+    "resolution_id": {"type": "string", "minLength": 1},
+    "focus": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "policy_refs": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "instructions": {"type": "array", "items": {"type": "string", "minLength": 1}}
+  },
+  "additionalProperties": false
+}

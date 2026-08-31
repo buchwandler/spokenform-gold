@@ -43,6 +43,8 @@ preserve v2 identity and provenance, and contain a complete oracle. An
 unresolved decision requires a named blocker, reason, and attempted resolution.
 Synthetic requests remain candidates for an independently reviewed batch.
 
+For a re-review, `context.rereview` contains the attempt, origin batches, prior blocker history, and the resolution/capability that changed. Use that history to test whether the new evidence actually resolves the blocker; do not accept a case merely because it is on a second pass. If it remains blocked, emit a structured retryable blocker. A terminal exclusion must explain why further review will not help.
+
 ## Finalization
 
 Merge packet results atomically. Finalization requires the exact full case-ID

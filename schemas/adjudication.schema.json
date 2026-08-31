@@ -9,6 +9,49 @@
     "decision": { "enum": ["accept", "exclude", "unresolved"] },
     "final_record": { "type": "object" },
     "rationale": { "type": "string" },
-    "synthetic_requests": { "type": "array" }
-  }
+    "synthetic_requests": { "type": "array" },
+    "blocker": {
+      "type": "object",
+      "required": [
+        "code",
+        "class",
+        "retryable",
+        "reason",
+        "attempted_resolution"
+      ],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "class": { "type": "string", "minLength": 1 },
+        "retryable": { "type": "boolean" },
+        "reason": { "type": "string", "minLength": 1 },
+        "attempted_resolution": { "type": "string", "minLength": 1 },
+        "requires": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "decision": { "const": "accept" } } },
+      "then": {
+        "required": ["final_record"],
+        "not": { "required": ["blocker"] }
+      }
+    },
+    {
+      "if": { "properties": { "decision": { "const": "unresolved" } } },
+      "then": {
+        "required": ["blocker"],
+        "properties": {
+          "blocker": { "properties": { "retryable": { "const": true } } }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "decision": { "const": "exclude" } } },
+      "then": { "required": ["blocker"] }
+    }
+  ]
 }

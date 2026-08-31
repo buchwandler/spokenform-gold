@@ -23,6 +23,10 @@ Each reviewer records exact spans, categories, semantic objects, ambiguity, poli
 
 Use structured source error codes such as `source_wrong_semantics`, `source_policy_difference`, `source_ambiguous_context`, `source_span_error`, or `source_duplicate`; free-text notes do not replace these codes. Review states (`unreviewed`, `agreement`, `adjudication_required`, `adjudicated`, `release_ready`, and `legacy_review`) are distinct from semantic record statuses.
 
+## Exact partial-date and repeating-decimal semantics
+
+Date annotations may use precision `year`, `month`, or `day`. A year-only date contains only `year`; a month-year date contains `year` and `month`; neither may invent missing components. Full dates retain `year`, `month`, and `day`. Repeating decimals use the exact structured fields `integer`, `nonrepeating`, and non-empty `repeating` digit strings; never substitute a binary float or rounded approximation.
+
 ## Batch artifact and reviewer identity policy
 
 Ingestion and ranking artifacts are proposals, not annotations. Each reviewer

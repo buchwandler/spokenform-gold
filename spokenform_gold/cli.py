@@ -69,6 +69,15 @@ from .pool import build_candidate_pool_summary
 from .promotion import build_promoted_records
 from .ranking import build_candidate_ranking, export_review_batch
 from .release import build_release
+from .rereview import (
+    REVIEW_BATCH_LIMIT,
+    build_rereview_batch,
+    load_retry_pool,
+    rebuild_retry_pool,
+    retry_pool_summary,
+    select_retry_cases,
+    write_retry_pool_atomic,
+)
 from .review import (
     apply_reviewed_oracles,
     blind_review_batch,
@@ -109,7 +118,7 @@ from .translation import (
 )
 from .validation import load_categories, validate_corpus, validate_records
 from .work_layout import BatchLayout, WorkLayout
-from .workflow import check_reviews, integrate_batch
+from .workflow import check_reviews, finalize_batch, integrate_batch
 
 
 def cmd_stats(args):
@@ -1668,6 +1677,96 @@ def cmd_integrate(args):
     return 0
 
 
+def _print_retry_summary(summary: dict) -> None:
+    for key in (
+        "total_unique",
+        "needs_triage",
+        "blocked",
+        "ready",
+        "in_retry_batch",
+        "resolved",
+        "terminal",
+        "duplicate_failure_events",
+    ):
+        if key in summary:
+            print(f"{key}={summary[key]}")
+    for code, count in sorted((summary.get("blockers") or {}).items()):
+        print(f"blocker.{code}={count}")
+
+
+def cmd_exclusions_rebuild(args):
+    work_root = _work_root_from_args(args)
+    corpus = args.corpus or canonical_corpus_path()
+    summary = rebuild_retry_pool(work_root, corpus)
+    if args.json:
+        write_json(args.json, summary)
+    _print_retry_summary(summary)
+    print(f"pool={summary['pool']}")
+    return 0
+
+
+def cmd_exclusions_status(args):
+    work_root = _work_root_from_args(args)
+    layout = WorkLayout(work_root)
+    rows = load_retry_pool(layout.retry_pool)
+    summary = retry_pool_summary(rows).to_dict()
+    if args.json:
+        write_json(args.json, summary)
+    _print_retry_summary(summary)
+    print(f"pool={layout.retry_pool}")
+    return 0
+
+
+def cmd_rereview_batch_create(args):
+    work_root = _work_root_from_args(args)
+    layout = WorkLayout(work_root)
+    rows = load_retry_pool(args.pool or layout.retry_pool)
+    selected = select_retry_cases(
+        rows,
+        limit=min(args.limit, REVIEW_BATCH_LIMIT),
+        blocker_codes=set(args.blocker or []),
+        languages=set(args.languages or []),
+    )
+    if not selected:
+        raise ValueError("no retry cases are ready for re-review")
+    metadata = build_rereview_batch(
+        selected,
+        work_root=work_root,
+        batch_id=args.batch,
+        corpus_path=args.corpus or canonical_corpus_path(),
+    )
+    selected_ids = {row["case_id"] for row in selected}
+    updated = []
+    for row in rows:
+        item = dict(row)
+        if item.get("case_id") in selected_ids:
+            item["state"] = "in_retry_batch"
+            item["active_retry_batch"] = args.batch
+        updated.append(item)
+    write_retry_pool_atomic(args.pool or layout.retry_pool, updated)
+    print(
+        f"batch={metadata['batch_id']} kind={metadata['batch_kind']} cases={metadata['case_count']} state={metadata['state']}"
+    )
+    print(f"selection_hash={metadata['rereview']['selection_hash']}")
+    return 0
+
+
+def cmd_batch_finalize(args):
+    root, work_root = _resolve_batch_root(args)
+    corpus = args.corpus or canonical_corpus_path()
+    pool = args.retry_pool
+    if pool is None and work_root is not None:
+        pool = WorkLayout(work_root).retry_pool
+    result = finalize_batch(root, corpus, pool, write=args.write)
+    print(
+        f"state={result['state']} accepted={result['accepted']} "
+        f"terminal_excluded={result['terminal_excluded']} "
+        f"retry_deferred={result['retry_deferred']} "
+        f"records_added={result['records_added']}"
+    )
+    return 0
+
+
 def cmd_report(args):
     record_paths = args.records or [canonical_corpus_path()]
     records = read_records(record_paths)
@@ -2128,6 +2227,33 @@ def build_parser():
     work_status = sub.add_parser("work-status")
     work_status.add_argument("--work-root", type=Path)
     work_status.set_defaults(func=cmd_work_status)
+
+    exclusions_rebuild = sub.add_parser("exclusions-rebuild")
+    exclusions_rebuild.add_argument("--work-root", type=Path)
+    exclusions_rebuild.add_argument("--corpus", type=Path)
+    exclusions_rebuild.add_argument("--json", type=Path)
+    exclusions_rebuild.set_defaults(func=cmd_exclusions_rebuild)
+    exclusions_status = sub.add_parser("exclusions-status")
+    exclusions_status.add_argument("--work-root", type=Path)
+    exclusions_status.add_argument("--json", type=Path)
+    exclusions_status.set_defaults(func=cmd_exclusions_status)
+    rereview_create = sub.add_parser("rereview-batch-create")
+    rereview_create.add_argument("--batch", required=True)
+    rereview_create.add_argument("--limit", type=int, default=REVIEW_BATCH_LIMIT)
+    rereview_create.add_argument("--blocker", action="append")
+    rereview_create.add_argument("--languages", nargs="*")
+    rereview_create.add_argument("--include-needs-triage", action="store_true")
+    rereview_create.add_argument("--work-root", type=Path)
+    rereview_create.add_argument("--pool", type=Path)
+    rereview_create.add_argument("--corpus", type=Path)
+    rereview_create.set_defaults(func=cmd_rereview_batch_create)
+    batch_finalize = sub.add_parser("batch-finalize")
+    batch_finalize.add_argument("--batch", required=True)
+    batch_finalize.add_argument("--corpus", type=Path)
+    batch_finalize.add_argument("--retry-pool", type=Path)
+    batch_finalize.add_argument("--write", action="store_true")
+    batch_finalize.add_argument("--work-root", type=Path)
+    batch_finalize.set_defaults(func=cmd_batch_finalize)
     work_migrate = sub.add_parser("work-migrate")
     work_migrate.add_argument("--work-root", type=Path)
     work_migrate.add_argument("--dry-run", action="store_true")
