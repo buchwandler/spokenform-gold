@@ -38,7 +38,7 @@ class IngestionTests(unittest.TestCase):
             root = Path(tmpdir)
             cache = self._cache(root)
             summary = run_upstream_ingestion(cache, root / "work", batch_limit=3)
-            self.assertEqual(summary["records"], 17)
+            self.assertEqual(summary["records"], 19)
             self.assertTrue(
                 all(item["row_accounting_ok"] for item in summary["shards"])
             )
@@ -55,6 +55,7 @@ class IngestionTests(unittest.TestCase):
             ):
                 self.assertTrue(path.exists(), path)
             records = read_records([work / "candidates" / "all.jsonl"])
+            self.assertTrue({"ja", "zh"} <= {record["language"] for record in records})
             self.assertTrue(records)
             self.assertTrue(all(record["status"] == "quarantine" for record in records))
             self.assertEqual(

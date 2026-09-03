@@ -22,9 +22,9 @@ from .taxonomy import repo_root, source_manifest_map
 from .validation import validate_records
 
 SUPPORTED_SOURCES = ("async_tn", "polynorm", "proteno")
-DEFAULT_INGEST_LANGUAGES = ("en", "de", "es", "fr", "it", "pt")
+DEFAULT_INGEST_LANGUAGES = ("en", "de", "es", "fr", "it", "pt", "ja", "zh")
 SOURCE_LANGUAGE_CAPABILITIES = {
-    "async_tn": frozenset(DEFAULT_INGEST_LANGUAGES),
+    "async_tn": frozenset({"en", "de", "es", "fr", "it", "pt"}),
     "polynorm": frozenset({"en", "de", "es", "fr", "it", "lt", "ja", "zh"}),
     "proteno": frozenset({"en", "es"}),
 }
