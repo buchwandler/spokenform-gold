@@ -8,15 +8,19 @@ from pathlib import Path
 from typing import Any
 
 from .adapter import build_prediction_records
+from .corpus import read_corpus
+from .corpus_status import canonical_corpus_hash
 from .evaluation_profiles import (
     load_registry,
     profile_hash,
     registry_hash,
     resolve_profile,
 )
+from .gold_audit import audit_records
 from .io import read_json, read_records, sha256_file, write_json, write_jsonl
 from .scoring import score_records
 from .source_resolver import SourceTextLoader, resolve_release_record
+from .validation import validate_corpus
 
 PrepareCallable = Callable[[str, str, str, dict[str, Any] | None], str]
 
@@ -39,6 +43,76 @@ def load_release_manifest(gold_root: str | Path) -> dict:
     if not manifest_path.exists():
         raise FileNotFoundError(f"missing release manifest: {manifest_path}")
     return read_json(manifest_path)
+
+
+def load_canonical_corpus_records(
+    corpus_root: str | Path,
+    *,
+    language: str | None = None,
+    locale: str | None = None,
+    category: str | None = None,
+    status: str | None = None,
+    case_ids: set[str] | None = None,
+    audit_path: str | Path | None = None,
+    audit_hash: str | None = None,
+) -> tuple[dict, list[dict]]:
+    """Load validated canonical v2 shards for local, non-publishable use."""
+    root = Path(corpus_root)
+    layout_errors = validate_corpus(root)
+    if layout_errors:
+        raise ValueError(
+            "canonical corpus validation failed: " + "; ".join(layout_errors)
+        )
+    records = read_corpus(root)
+    corpus_hash = canonical_corpus_hash(records)
+    if audit_path is not None:
+        audit = read_json(audit_path)
+        expected = audit.get("corpus_hash") or audit.get("canonical_corpus_hash")
+        if expected and expected != corpus_hash:
+            raise ValueError("canonical audit does not match corpus hash")
+        if audit.get("errors") or audit.get("oracle_complete") is False:
+            raise ValueError("canonical strict Gold audit is not clean")
+    else:
+        audit = audit_records(records, strict=True)
+        if audit["errors"]:
+            raise ValueError(
+                "canonical strict Gold audit failed: " + "; ".join(audit["errors"])
+            )
+    if audit_hash is not None and audit_hash != corpus_hash:
+        raise ValueError("provided canonical audit hash does not match corpus hash")
+    filtered = []
+    for record in records:
+        if language and record.get("language") != language:
+            continue
+        if locale and record.get("locale") != locale:
+            continue
+        if status and record.get("status") != status:
+            continue
+        if case_ids and record.get("id") not in case_ids:
+            continue
+        if category and category not in {
+            unit.get("category") for unit in record.get("units", [])
+        }:
+            continue
+        filtered.append(record)
+    filtered.sort(key=lambda record: record.get("id", ""))
+    manifest = {
+        "artifact_kind": "local_canonical_benchmark",
+        "publishable": False,
+        "records": len(filtered),
+        "canonical_records": len(records),
+        "corpus_hash": corpus_hash,
+        "source_policy_enforced": False,
+        "audit": audit,
+        "filters": {
+            "language": language,
+            "locale": locale,
+            "category": category,
+            "status": status,
+            "case_ids": sorted(case_ids) if case_ids else None,
+        },
+    }
+    return manifest, filtered
 
 
 def verify_release(gold_root: str | Path) -> dict:
@@ -210,14 +284,16 @@ def _render_failures_markdown(failures: list[dict[str, Any]]) -> str:
 
 def run_benchmark(
     *,
-    gold_root: str | Path,
-    split: str | None,
     results_dir: str | Path,
+    gold_root: str | Path | None = None,
+    corpus_root: str | Path | None = None,
+    split: str | None = None,
     prepare_module: str | None = None,
     prepare: Callable[..., str] | None = None,
     language: str | None = None,
     locale: str | None = None,
     category: str | None = None,
+    status: str | None = None,
     case_ids: set[str] | None = None,
     mode: str = "canonical",
     profile_name: str = GOLD_PROFILE_V1["name"],
@@ -225,19 +301,38 @@ def run_benchmark(
     spokenform_commit: str = "unknown",
     source_loader: SourceTextLoader | None = None,
 ) -> dict:
-    registry_path = Path(gold_root) / "taxonomy" / "evaluation_profiles.json"
+    if (gold_root is None) == (corpus_root is None):
+        raise ValueError("provide exactly one of gold_root or corpus_root")
+    registry_root = Path(gold_root or corpus_root)
+    registry_path = registry_root / "taxonomy" / "evaluation_profiles.json"
     if not registry_path.exists():
         registry_path = None
     profile = benchmark_profile(profile_name, registry_path)
-    manifest, records = load_release_records(
-        gold_root,
-        split=split,
-        language=language,
-        locale=locale,
-        category=category,
-        case_ids=case_ids,
-        source_loader=source_loader,
-    )
+    if corpus_root is not None:
+        manifest, records = load_canonical_corpus_records(
+            corpus_root,
+            language=language,
+            locale=locale,
+            category=category,
+            status=status,
+            case_ids=case_ids,
+        )
+        manifest = {
+            **manifest,
+            "benchmark_version": "local-canonical",
+            "manifest_hash": manifest["corpus_hash"],
+        }
+    else:
+        manifest, records = load_release_records(
+            gold_root,
+            split=split,
+            language=language,
+            locale=locale,
+            category=category,
+            status=status,
+            case_ids=case_ids,
+            source_loader=source_loader,
+        )
     prepare_fn = _resolve_prepare_callable(
         prepare_module=prepare_module, prepare=prepare
     )
@@ -249,6 +344,8 @@ def run_benchmark(
 
     output_root = Path(results_dir)
     output_root.mkdir(parents=True, exist_ok=True)
+    if manifest.get("artifact_kind") == "local_canonical_benchmark":
+        write_json(output_root / "manifest.json", manifest)
     write_jsonl(output_root / "predictions.jsonl", predictions)
 
     failures: list[dict[str, Any]] = []

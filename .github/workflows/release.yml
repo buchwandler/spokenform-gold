@@ -82,6 +82,14 @@ jobs:
         run: python -m pip install -e ".[dev]"
       - name: Validate repository
         run: make check
+      - name: Release preflight
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          spokenform-gold release-preflight \
+            --data data/corpus/ \
+            --source-decisions release/source-release-decisions.json \
+            --out dist/release-preflight.json
       - name: Build release and downloadable archives
         shell: bash
         env:
@@ -99,7 +107,7 @@ jobs:
             --maturity "${MATURITY}" \
             --coverage-profile "${COVERAGE_PROFILE}" \
             --conflict-adjudication release/conflict-adjudication.json \
-            --release-sources spokenform_curated \
+            --source-decisions release/source-release-decisions.json \
             --out "dist/${name}"
           python - "${name}" <<'PY'
           import shutil

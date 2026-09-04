@@ -21,7 +21,10 @@
     },
     "es": {
       "file": "es/index.html",
-      "parts": ["es/part-001.html", "es/part-002.html"],
+      "parts": [
+        "es/part-001.html",
+        "es/part-002.html"
+      ],
       "records": 4010,
       "routing": "es/routing.json",
       "sha256": "sha256:e32e9092f8686296b7f1bc3bb73c475deb08c9e2bd9485fee868ef66de61f3b9"

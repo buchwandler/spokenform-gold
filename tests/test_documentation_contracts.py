@@ -12,6 +12,8 @@ ACTIVE_TEMPLATES = {
     "batch-handoff.md",
     "translator-ab-task.md",
     "translation-adjudicator-task.md",
+    "source-policy-reviewer-ab-task.md",
+    "source-policy-adjudicator-task.md",
 }
 OBSOLETE_TEMPLATES = {
     "canonical-rereview-adjudicator-task.md",
@@ -80,7 +82,11 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn(
             "--conflict-adjudication release/conflict-adjudication.json", workflow
         )
-        self.assertIn("--release-sources spokenform_curated", workflow)
+        self.assertIn("release-preflight", workflow)
+        self.assertIn(
+            "--source-decisions release/source-release-decisions.json", workflow
+        )
+        self.assertNotIn("--release-sources spokenform_curated", workflow)
         self.assertNotIn("--data data/train data/dev data/test", workflow)
         self.assertNotIn("--registry splits/family_assignments.json", workflow)
         self.assertNotIn('coverage_profile="${MATURITY}"', workflow)

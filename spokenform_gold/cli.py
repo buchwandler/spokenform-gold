@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .adjudication import build_adjudication_queue
 from .adjudication_quality import validate_adjudication_batch
+from .campaign import campaign_finalize, campaign_next, campaign_status, create_campaign
 from .census import build_upstream_census, write_census_artifacts
 from .collection import DEFAULT_V2_COLLECTION_LIMIT, collect_batch
 from .config import (
@@ -22,6 +23,7 @@ from .control_benchmark import load_control_predictions, score_control_records
 from .control_validation import validate_control_records
 from .corpus import canonical_corpus_path, shard_corpus
 from .corpus_site import DEFAULT_ISSUES_URL, generate_corpus_site
+from .corpus_status import build_corpus_status
 from .corrections import (
     apply_correction,
     apply_correction_to_corpus,
@@ -71,7 +73,7 @@ from .packets import (
 from .pool import build_candidate_pool_summary
 from .promotion import build_promoted_records
 from .ranking import build_candidate_ranking, export_review_batch
-from .release import build_release
+from .release import build_release, build_release_preflight
 from .rereview import (
     REVIEW_BATCH_LIMIT,
     build_rereview_batch,
@@ -113,6 +115,13 @@ from .source_manifest import (
     load_and_validate_source_manifest,
     referenced_source_names,
 )
+from .source_policy import (
+    apply_source_decision,
+    build_source_policy_packet,
+    build_source_policy_status,
+    source_manifest_hash,
+    validate_source_decision,
+)
 from .splitting import split_records
 from .stats import build_stats
 from .translation import (
@@ -151,6 +160,300 @@ def cmd_stats(args):
         )
     )
     return 0
+
+
+def _canonical_cli_records(args):
+    paths = args.records or [canonical_corpus_path()]
+    if len(paths) == 1 and Path(paths[0]).is_dir():
+        errors = validate_corpus(paths[0])
+    else:
+        errors = validate_records(read_records(paths))
+    records = read_records(paths)
+    if errors:
+        raise ValueError("canonical corpus validation failed: " + "; ".join(errors))
+    return records
+
+
+def cmd_corpus_status(args):
+    records = _canonical_cli_records(args)
+    manifest_path = Path(args.source_manifest)
+    source_manifest = (
+        load_and_validate_source_manifest(
+            manifest_path,
+            repo_root=Path.cwd(),
+            source_names=referenced_source_names(records),
+        )
+        if manifest_path.is_file()
+        else {"sources": []}
+    )
+    preflight = read_json(args.preflight) if args.preflight else None
+    partition = (
+        {
+            "embedded": preflight.get("embedded", 0),
+            "external_ref": preflight.get("external_ref", 0),
+            "blocked": preflight.get("blocked", 0),
+            "blockers": preflight.get("blockers", {}),
+        }
+        if preflight
+        else None
+    )
+    result = build_corpus_status(
+        records,
+        source_manifest=source_manifest,
+        retry_backlog=args.retry_backlog,
+        release_partition=partition,
+    )
+    if args.json:
+        write_json(args.json, result)
+    for key in (
+        "canonical",
+        "review_complete",
+        "review_gaps",
+        "retry_backlog",
+        "release_embedded",
+        "release_external_ref",
+        "release_blocked",
+        "local_benchmark_records",
+    ):
+        print(f"{key}={result[key]}")
+    return 0
+
+
+def _campaign_work_root(args):
+    return args.work_root if args.work_root else None
+
+
+def cmd_campaign_create(args):
+    metadata = create_campaign(
+        args.campaign,
+        work_root=_campaign_work_root(args),
+        batch_size=args.batch_size,
+        batch_roots=args.batches,
+    )
+    print(
+        f"campaign={metadata['campaign_id']} batches={len(metadata['batches'])} batch_size={metadata['batch_size']}"
+    )
+    return 0
+
+
+def cmd_campaign_status(args):
+    result = campaign_status(args.campaign, work_root=_campaign_work_root(args))
+    if args.json:
+        write_json(args.json, result)
+    totals = result["totals"]
+    print(
+        "campaign={} batches={} cases={} review_ready={} finalized={} complete={}".format(
+            result["campaign_id"],
+            totals["batches"],
+            totals["cases"],
+            totals["review_ready"],
+            totals["finalized"],
+            "yes" if result["complete"] else "no",
+        )
+    )
+    return 0
+
+
+def cmd_campaign_next(args):
+    result = campaign_next(
+        args.campaign, args.role, work_root=_campaign_work_root(args), out=args.out
+    )
+    if result is None:
+        print(f"campaign={args.campaign} role={args.role} packet=none")
+        return 0
+    print(
+        f"campaign={result['campaign_id']} role={result['role']} batch={result['batch_id']} cases={result['cases']} packet={result['packet']} template={result['template']}"
+    )
+    return 0
+
+
+def cmd_campaign_finalize(args):
+    result = campaign_finalize(
+        args.campaign,
+        corpus=args.corpus,
+        retry_pool=args.retry_pool,
+        work_root=_campaign_work_root(args),
+        write=args.write,
+    )
+    print(
+        f"campaign={result['campaign_id']} finalized={result['finalized']} write={'yes' if args.write else 'no'}"
+    )
+    return 0
+
+
+def _source_policy_inputs(args):
+    records = read_records(args.records or [canonical_corpus_path()])
+    manifest_path = Path(args.source_manifest)
+    manifest = load_and_validate_source_manifest(
+        manifest_path,
+        repo_root=Path.cwd(),
+        source_names=referenced_source_names(records),
+    )
+    decisions = read_json(args.decisions) if getattr(args, "decisions", None) else None
+    return records, manifest, manifest_path, decisions
+
+
+def cmd_source_policy_status(args):
+    records, manifest, _path, decisions = _source_policy_inputs(args)
+    result = build_source_policy_status(records, manifest, decisions)
+    if args.out:
+        write_json(args.out, result)
+    print(
+        "sources={} {}".format(
+            result["source_count"],
+            " ".join(f"{key}={value}" for key, value in result["counts"].items()),
+        )
+    )
+    return 0
+
+
+def cmd_source_policy_packet(args):
+    records, manifest, _path, _decisions = _source_policy_inputs(args)
+    packet = build_source_policy_packet(args.source, args.slot, records, manifest)
+    write_json(args.out, packet)
+    print(
+        f"source={args.source} slot={args.slot} records={sum(row.get('records', 0) for row in packet['source_census'])} packet={args.out}"
+    )
+    return 0
+
+
+def cmd_source_policy_review_merge(args):
+    packet = read_json(args.packet)
+    result = read_json(args.result)
+    if (
+        not isinstance(result, dict)
+        or not result.get("reviewer_id")
+        or not result.get("result")
+    ):
+        raise ValueError("source-policy review result requires reviewer_id and result")
+    output = {
+        "schema_version": "1.0.0",
+        "source": packet["source"]["name"],
+        "manifest_hash": packet["manifest_hash"],
+        "slot": packet["slot"],
+        **result,
+    }
+    write_json(args.out, output)
+    print(f"merged source-policy review for {output['source']} slot={output['slot']}")
+    return 0
+
+
+def cmd_source_policy_check(args):
+    _records, manifest, _path, decisions = _source_policy_inputs(args)
+    rows = (
+        decisions
+        if isinstance(decisions, list)
+        else (decisions or {}).get("decisions", [])
+        if isinstance(decisions, dict)
+        else []
+    )
+    source_map = {row.get("name"): row for row in manifest.get("sources", [])}
+    errors = []
+    for decision in rows:
+        source = source_map.get(decision.get("source"))
+        if source is None:
+            errors.append(f"unknown source: {decision.get('source')}")
+            continue
+        errors.extend(
+            f"{decision.get('source')}: {error}"
+            for error in validate_source_decision(
+                decision,
+                source,
+                manifest_hash=source_manifest_hash(manifest),
+                repo_root=Path.cwd(),
+            )
+        )
+    result = {
+        "manifest_hash": source_manifest_hash(manifest),
+        "decisions": len(rows),
+        "ready": not errors,
+        "errors": sorted(errors),
+    }
+    if args.out:
+        write_json(args.out, result)
+    print(
+        f"decisions={result['decisions']} ready={'yes' if result['ready'] else 'no'} errors={len(errors)}"
+    )
+    return 0 if result["ready"] else 1
+
+
+def cmd_source_policy_adjudication_packet(args):
+    packet = read_json(args.packet)
+    review_a = read_json(args.review_a)
+    review_b = read_json(args.review_b)
+    if review_a.get("source") != review_b.get("source") or review_a.get(
+        "manifest_hash"
+    ) != review_b.get("manifest_hash"):
+        raise ValueError(
+            "source-policy reviews do not describe the same source snapshot"
+        )
+    write_json(
+        args.out,
+        {
+            "schema_version": "1.0.0",
+            "packet_kind": "source_policy_adjudication",
+            "source": packet["source"],
+            "manifest_hash": packet["manifest_hash"],
+            "review_a": review_a,
+            "review_b": review_b,
+        },
+    )
+    print(f"source={packet['source']['name']} adjudication_packet={args.out}")
+    return 0
+
+
+def cmd_source_policy_adjudication_merge(args):
+    packet = read_json(args.packet)
+    result = read_json(args.result)
+    if result.get("decision") not in {
+        "embedded_public",
+        "external_ref_only",
+        "exclude_public",
+        "needs_human_legal_review",
+    }:
+        raise ValueError("invalid source-policy adjudication decision")
+    output = {
+        "schema_version": "1.0.0",
+        "source": packet["source"]["name"],
+        "source_revision": packet["source"].get("revision"),
+        "manifest_hash": packet["manifest_hash"],
+        **result,
+    }
+    write_json(args.out, output)
+    print(f"merged source-policy adjudication for {output['source']}")
+    return 0
+
+
+def cmd_source_policy_apply(args):
+    decision = read_json(args.decision)
+    if isinstance(decision, dict) and isinstance(decision.get("decisions"), list):
+        if len(decision["decisions"]) != 1:
+            raise ValueError("source-policy-apply requires exactly one decision")
+        decision = decision["decisions"][0]
+    updated = apply_source_decision(args.source_manifest, decision, write=args.write)
+    print(
+        f"source={decision['source']} release_ready={next(row for row in updated['sources'] if row['name'] == decision['source'])['release_ready']} written={'yes' if args.write else 'no'}"
+    )
+    return 0
+
+
+def cmd_release_preflight(args):
+    result = build_release_preflight(
+        data_paths=args.data,
+        source_manifest_path=args.source_manifest,
+        source_decisions_path=args.source_decisions,
+        release_sources=args.release_sources,
+    )
+    write_json(args.out, result)
+    print(
+        "canonical={canonical_records} embedded={embedded} "
+        "external_ref={external_ref} blocked={blocked} accounted={accounted}".format(
+            **result
+        )
+    )
+    if result["blockers"]:
+        print("blockers=" + json.dumps(result["blockers"], sort_keys=True))
+    return 0 if result["ready"] else 1
 
 
 def cmd_migrate_oracle(args):
@@ -953,6 +1256,7 @@ def cmd_release_check(args):
         control_paths=args.controls,
         conflict_adjudication_path=args.conflict_adjudication,
         release_sources=getattr(args, "release_sources", None),
+        source_decisions_path=getattr(args, "source_decisions", None),
     )
     print(
         "release={version} records={records} families={families}".format(
@@ -1074,10 +1378,38 @@ def cmd_doctor(args):
         "reports_root": _path_info(reports_root),
         "source_lock": _path_info(source_lock),
     }
+    if corpus.is_dir():
+        try:
+            records = read_records([corpus])
+            manifest_path = repo_root / "sources" / "manifest.json"
+            source_manifest = (
+                load_and_validate_source_manifest(
+                    manifest_path,
+                    repo_root=repo_root,
+                    source_names=referenced_source_names(records),
+                )
+                if manifest_path.is_file()
+                else {"sources": []}
+            )
+            report["corpus_status"] = build_corpus_status(
+                records, source_manifest=source_manifest
+            )
+        except (OSError, TypeError, ValueError) as exc:
+            report["corpus_status_error"] = str(exc)
     if args.json:
         write_json(args.json, report)
     print(f"repo_root: {repo_root}")
     print(f"corpus: {corpus}")
+    if "corpus_status" in report:
+        status = report["corpus_status"]
+        print(
+            "canonical_status: canonical={} review_complete={} review_gaps={} local_benchmark={}".format(
+                status["canonical"],
+                status["review_complete"],
+                status["review_gaps"],
+                status["local_benchmark_records"],
+            )
+        )
     for key in (
         "lineage",
         "source_cache",
@@ -1995,11 +2327,19 @@ def cmd_export(args):
 def cmd_benchmark(args):
     from .benchmark import run_benchmark
 
+    if bool(args.gold_root) == bool(args.corpus):
+        raise ValueError("provide exactly one of --gold-root or --corpus")
     summary = run_benchmark(
         gold_root=args.gold_root,
+        corpus_root=args.corpus,
         split=args.split,
         results_dir=args.results_dir,
         prepare_module=args.prepare_module,
+        language=args.language,
+        locale=args.locale,
+        category=args.category,
+        status=args.status,
+        case_ids=set(args.case_id or []),
         mode=args.mode,
     )
     print(
@@ -2008,6 +2348,9 @@ def cmd_benchmark(args):
                 "records": summary["record_count"],
                 "results_dir": str(args.results_dir),
                 "split": args.split,
+                "artifact_kind": "local_canonical_benchmark"
+                if args.corpus
+                else "release",
             },
             ensure_ascii=False,
         )
@@ -2035,6 +2378,13 @@ def build_parser():
     stats.add_argument("--json")
     stats.set_defaults(func=cmd_stats)
 
+    corpus_status = sub.add_parser("corpus-status")
+    corpus_status.add_argument("--records", nargs="*")
+    corpus_status.add_argument("--source-manifest", default="sources/manifest.json")
+    corpus_status.add_argument("--preflight")
+    corpus_status.add_argument("--retry-backlog", type=int, default=0)
+    corpus_status.add_argument("--json")
+    corpus_status.set_defaults(func=cmd_corpus_status)
     migrate = sub.add_parser("migrate-oracle")
     migrate.add_argument("input")
     migrate.add_argument("--out", required=True)
@@ -2142,6 +2492,63 @@ def build_parser():
     conflicts.add_argument("--out")
     conflicts.add_argument("--fail-on-conflict", action="store_true")
     conflicts.set_defaults(func=cmd_conflicts)
+
+    source_policy_status = sub.add_parser("source-policy-status")
+    source_policy_status.add_argument("--records", nargs="*")
+    source_policy_status.add_argument(
+        "--source-manifest", default="sources/manifest.json"
+    )
+    source_policy_status.add_argument("--decisions")
+    source_policy_status.add_argument("--out")
+    source_policy_status.set_defaults(func=cmd_source_policy_status)
+    source_policy_packet = sub.add_parser("source-policy-packet")
+    source_policy_packet.add_argument("--source", required=True)
+    source_policy_packet.add_argument("--slot", choices=["A", "B"], required=True)
+    source_policy_packet.add_argument("--records", nargs="*")
+    source_policy_packet.add_argument(
+        "--source-manifest", default="sources/manifest.json"
+    )
+    source_policy_packet.add_argument("--out", required=True)
+    source_policy_packet.set_defaults(func=cmd_source_policy_packet)
+    source_policy_review_merge = sub.add_parser("source-policy-review-merge")
+    source_policy_review_merge.add_argument("--packet", required=True)
+    source_policy_review_merge.add_argument("--result", required=True)
+    source_policy_review_merge.add_argument("--out", required=True)
+    source_policy_review_merge.set_defaults(func=cmd_source_policy_review_merge)
+    source_policy_check = sub.add_parser("source-policy-check")
+    source_policy_check.add_argument("--records", nargs="*")
+    source_policy_check.add_argument(
+        "--source-manifest", default="sources/manifest.json"
+    )
+    source_policy_check.add_argument("--decisions", required=True)
+    source_policy_check.add_argument("--out")
+    source_policy_check.set_defaults(func=cmd_source_policy_check)
+    source_policy_adjudication_packet = sub.add_parser(
+        "source-policy-adjudication-packet"
+    )
+    source_policy_adjudication_packet.add_argument("--packet", required=True)
+    source_policy_adjudication_packet.add_argument("--review-a", required=True)
+    source_policy_adjudication_packet.add_argument("--review-b", required=True)
+    source_policy_adjudication_packet.add_argument("--out", required=True)
+    source_policy_adjudication_packet.set_defaults(
+        func=cmd_source_policy_adjudication_packet
+    )
+    source_policy_adjudication_merge = sub.add_parser(
+        "source-policy-adjudication-merge"
+    )
+    source_policy_adjudication_merge.add_argument("--packet", required=True)
+    source_policy_adjudication_merge.add_argument("--result", required=True)
+    source_policy_adjudication_merge.add_argument("--out", required=True)
+    source_policy_adjudication_merge.set_defaults(
+        func=cmd_source_policy_adjudication_merge
+    )
+    source_policy_apply = sub.add_parser("source-policy-apply")
+    source_policy_apply.add_argument("--decision", required=True)
+    source_policy_apply.add_argument(
+        "--source-manifest", default="sources/manifest.json"
+    )
+    source_policy_apply.add_argument("--write", action="store_true")
+    source_policy_apply.set_defaults(func=cmd_source_policy_apply)
 
     source_census = sub.add_parser("source-census")
     source_census.add_argument("records", nargs="+")
@@ -2373,6 +2780,8 @@ def build_parser():
     release.add_argument("--coverage-profile", default="none")
     release.add_argument("--controls", nargs="+")
     release.add_argument("--conflict-adjudication")
+    release.add_argument("--release-sources", nargs="+")
+    release.add_argument("--source-decisions")
     release.set_defaults(func=cmd_release_check)
 
     promote = sub.add_parser("promote-reviewed")
@@ -2614,6 +3023,14 @@ def build_parser():
     export.add_argument("--dev", type=float, default=0.15)
     export.add_argument("--test", type=float, default=0.15)
     export.set_defaults(func=cmd_export)
+    preflight_release = sub.add_parser("release-preflight")
+    preflight_release.add_argument("--data", nargs="+", required=True)
+    preflight_release.add_argument("--source-manifest")
+    preflight_release.add_argument("--source-decisions")
+    preflight_release.add_argument("--release-sources", nargs="+")
+    preflight_release.add_argument("--out", required=True)
+    preflight_release.set_defaults(func=cmd_release_preflight)
+
     release_v2 = sub.add_parser("release")
     release_v2.add_argument("--version", required=True)
     release_v2.add_argument("--data", nargs="+", default=[str(canonical_corpus_path())])
@@ -2629,16 +3046,51 @@ def build_parser():
     release_v2.add_argument("--controls", nargs="+")
     release_v2.add_argument("--conflict-adjudication")
     release_v2.add_argument("--release-sources", nargs="+")
+    release_v2.add_argument("--source-decisions")
     release_v2.set_defaults(func=cmd_release_check)
     benchmark = sub.add_parser("benchmark")
-    benchmark.add_argument("--gold-root", required=True)
+    benchmark.add_argument("--gold-root")
+    benchmark.add_argument("--corpus")
     benchmark.add_argument("--split")
     benchmark.add_argument("--prepare-module", required=True)
     benchmark.add_argument("--results-dir", required=True)
+    benchmark.add_argument("--language")
+    benchmark.add_argument("--locale")
+    benchmark.add_argument("--category")
+    benchmark.add_argument("--status")
+    benchmark.add_argument("--case-id", action="append")
     benchmark.add_argument(
         "--mode", choices=["canonical", "accepted"], default="canonical"
     )
     benchmark.set_defaults(func=cmd_benchmark)
+    campaign_create = sub.add_parser("campaign-create")
+    campaign_create.add_argument("--campaign", required=True)
+    campaign_create.add_argument("--work-root", type=Path)
+    campaign_create.add_argument("--batch-size", type=int, default=1000)
+    campaign_create.add_argument("--batches", nargs="*")
+    campaign_create.set_defaults(func=cmd_campaign_create)
+    campaign_status_parser = sub.add_parser("campaign-status")
+    campaign_status_parser.add_argument("--campaign", required=True)
+    campaign_status_parser.add_argument("--work-root", type=Path)
+    campaign_status_parser.add_argument("--json", type=Path)
+    campaign_status_parser.set_defaults(func=cmd_campaign_status)
+    campaign_next_parser = sub.add_parser("campaign-next")
+    campaign_next_parser.add_argument("--campaign", required=True)
+    campaign_next_parser.add_argument(
+        "--role", choices=["review-a", "review-b", "adjudicator"], required=True
+    )
+    campaign_next_parser.add_argument("--work-root", type=Path)
+    campaign_next_parser.add_argument("--out", type=Path)
+    campaign_next_parser.set_defaults(func=cmd_campaign_next)
+    campaign_finalize_parser = sub.add_parser("campaign-finalize")
+    campaign_finalize_parser.add_argument("--campaign", required=True)
+    campaign_finalize_parser.add_argument(
+        "--corpus", type=Path, default=canonical_corpus_path()
+    )
+    campaign_finalize_parser.add_argument("--retry-pool", type=Path)
+    campaign_finalize_parser.add_argument("--work-root", type=Path)
+    campaign_finalize_parser.add_argument("--write", action="store_true")
+    campaign_finalize_parser.set_defaults(func=cmd_campaign_finalize)
     return parser
 
 

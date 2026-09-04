@@ -11,6 +11,8 @@ These templates describe the maintained sentence-centric v2 workflow:
 - `batch-handoff.md` - compact batch continuation metadata
 - `translator-ab-task.md` - independent locale-transplant candidate generation
 - `translation-adjudicator-task.md` - translation candidate selection before Gold review
+- `source-policy-reviewer-ab-task.md` - independent bounded source/revision policy review
+- `source-policy-adjudicator-task.md` - source-level policy adjudication before maintainer approval
 
 The canonical path is:
 

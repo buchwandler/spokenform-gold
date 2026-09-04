@@ -3,11 +3,13 @@ from __future__ import annotations
 import json
 import shutil
 from collections import Counter
+from copy import deepcopy
 from pathlib import Path
 
 from .conflicts import find_conflicts, unresolved_adjudicated_conflicts
 from .control_validation import validate_control_records
 from .corpus import validate_corpus_layout
+from .corpus_status import canonical_corpus_hash
 from .coverage import build_control_coverage, build_coverage, load_targets
 from .evaluation_profiles import load_registry, registry_hash
 from .gold_audit import audit_records
@@ -20,6 +22,8 @@ from .source_manifest import (
     normalize_materialization_policy,
     referenced_source_names,
 )
+from .source_policy import source_manifest_hash
+from .source_resolver import build_v2_external_overlay
 from .splitting import load_split_registry
 from .taxonomy import (
     policy_version,
@@ -309,7 +313,11 @@ def _build_release_notes(
         "# Spokenform Gold Release Notes\n\n"
         f"- version: {version}\n"
         f"- maturity: {maturity}\n"
-        f"- records: {counts['records']}\n"
+        f"- public release records: {counts['records']}\n"
+        f"- canonical corpus records: {counts.get('canonical_records', counts['records'])}\n"
+        f"- embedded records: {counts.get('public_embedded_records', counts['records'])}\n"
+        f"- external-reference records: {counts.get('public_external_ref_records', 0)}\n"
+        f"- blocked records: {counts.get('public_blocked_records', excluded_records)}\n"
         f"- families: {counts['families']}\n"
         f"- languages: {', '.join(sorted(counts['languages'])) or 'none'}\n"
         f"- locales: {', '.join(sorted(counts['locales'])) or 'none'}\n\n"
@@ -380,6 +388,283 @@ def _non_release_ready_records(records: list[dict], manifest: dict) -> int:
     return count
 
 
+def _source_decision_map(decisions: dict | list | None) -> dict[str, dict]:
+    if decisions is None:
+        return {}
+    if isinstance(decisions, dict) and isinstance(decisions.get("decisions"), list):
+        decisions = decisions["decisions"]
+    if isinstance(decisions, list):
+        return {
+            row["source"]: row
+            for row in decisions
+            if isinstance(row, dict) and isinstance(row.get("source"), str)
+        }
+    if isinstance(decisions, dict):
+        return {
+            name: value
+            for name, value in decisions.items()
+            if isinstance(name, str) and isinstance(value, dict)
+        }
+    raise TypeError("source decisions must be an object or list")
+
+
+def _source_capabilities(source: dict, decision: dict | None) -> set[str]:
+    policy = normalize_materialization_policy(source)
+    if decision:
+        if decision.get("decision") == "embedded_public":
+            return {"embedded", "external_ref"}
+        if decision.get("decision") == "external_ref_only":
+            return {"external_ref"}
+        return set()
+    if not source.get("release_ready", False):
+        return set()
+    if policy == "embedded_public":
+        return {"embedded", "external_ref"}
+    if policy == "external_ref_only":
+        return {"external_ref"}
+    return set()
+
+
+def plan_publication_records(
+    records: list[dict],
+    source_manifest: dict,
+    *,
+    decisions: dict | list | None = None,
+    manifest_hash: str | None = None,
+    release_sources: set[str] | None = None,
+) -> dict:
+    """Assign each canonical record one public representation or a blocker.
+
+    The plan is deliberately derived from source observations and approved
+    source-level capabilities.  It never modifies the supplied records.
+    """
+    source_map = {
+        entry.get("name"): entry
+        for entry in source_manifest.get("sources", [])
+        if isinstance(entry, dict) and isinstance(entry.get("name"), str)
+    }
+    decision_map = _source_decision_map(decisions)
+    rows = []
+    for record in sorted(records, key=lambda row: row.get("id", "")):
+        observations = record.get("source_observations") or [record.get("source", {})]
+        candidates = []
+        blockers = []
+        for observation in observations:
+            if not isinstance(observation, dict):
+                blockers.append("invalid_source_observation")
+                continue
+            name = observation.get("benchmark")
+            source = source_map.get(name)
+            decision = decision_map.get(name)
+            if source is None:
+                blockers.append("unknown_source")
+                continue
+            if release_sources is not None and name not in release_sources:
+                blockers.append("source_not_in_compatibility_allowlist")
+                continue
+            if decision:
+                revision = decision.get("source_revision", decision.get("revision"))
+                if revision and revision != source.get("revision"):
+                    blockers.append("stale_source_revision")
+                    continue
+                if manifest_hash and decision.get("manifest_hash") not in {
+                    None,
+                    manifest_hash,
+                }:
+                    blockers.append("stale_source_manifest_hash")
+                    continue
+            capabilities = _source_capabilities(source, decision)
+            requested = observation.get(
+                "materialization", record.get("materialization", "embedded")
+            )
+            if requested not in {"embedded", "external_ref"}:
+                blockers.append("invalid_materialization")
+                continue
+            if requested in capabilities:
+                candidates.append((requested, name, observation))
+            elif "embedded" in capabilities:
+                candidates.append(("embedded", name, observation))
+            elif "external_ref" in capabilities:
+                candidates.append(("external_ref", name, observation))
+            else:
+                blockers.append(
+                    "source_policy_unresolved"
+                    if not source.get("release_ready", False)
+                    else "materialization_not_authorized"
+                )
+        if not candidates:
+            mode = "blocked"
+            basis = []
+        elif any(mode == "embedded" for mode, _name, _obs in candidates):
+            mode = "embedded"
+            basis = sorted(
+                {
+                    name
+                    for candidate_mode, name, _obs in candidates
+                    if candidate_mode == "embedded"
+                }
+            )
+        else:
+            mode = "external_ref"
+            basis = sorted({name for _mode, name, _obs in candidates})
+        row = {
+            "record_id": record.get("id"),
+            "mode": mode,
+            "publication_basis": basis,
+            "other_source_observations": [
+                {
+                    "benchmark": source.get("benchmark"),
+                    "representation": "metadata_only",
+                }
+                for source in observations
+                if isinstance(source, dict) and source.get("benchmark") not in basis
+            ],
+        }
+        if blockers and mode == "blocked":
+            row["blocker"] = min(set(blockers))
+            row["blockers"] = sorted(set(blockers))
+        elif blockers:
+            row["non_basis_blockers"] = sorted(set(blockers))
+        rows.append(row)
+    counts = Counter(row["mode"] for row in rows)
+    return {
+        "records": len(rows),
+        "embedded": counts["embedded"],
+        "external_ref": counts["external_ref"],
+        "blocked": counts["blocked"],
+        "accounted": sum(counts.values()),
+        "blockers": dict(
+            sorted(
+                Counter(
+                    blocker for row in rows for blocker in row.get("blockers", [])
+                ).items()
+            )
+        ),
+        "records_plan": rows,
+    }
+
+
+def build_release_preflight(
+    *,
+    data_paths: list[str],
+    source_manifest_path: str | Path | None = None,
+    source_decisions_path: str | Path | None = None,
+    release_sources: list[str] | None = None,
+    strict: bool = True,
+) -> dict:
+    """Validate and partition the complete canonical corpus for publication."""
+    root = repo_root()
+    record_files = _repository_local_jsonl_files(root, data_paths, label="release data")
+    records = sorted(read_records(record_files), key=lambda row: row.get("id", ""))
+    validation_errors = validate_records(records)
+    audit = audit_records(records, strict=strict)
+    manifest_path = (
+        Path(source_manifest_path)
+        if source_manifest_path
+        else root / "sources" / "manifest.json"
+    )
+    referenced = referenced_source_names(records)
+    source_manifest = load_and_validate_source_manifest(
+        manifest_path, repo_root=root, source_names=referenced
+    )
+    decisions = read_json(source_decisions_path) if source_decisions_path else None
+    manifest_hash = source_manifest_hash(source_manifest)
+    partition = plan_publication_records(
+        records,
+        source_manifest,
+        decisions=decisions,
+        manifest_hash=manifest_hash,
+        release_sources=set(release_sources) if release_sources else None,
+    )
+    errors = list(validation_errors) + list(audit.get("errors", []))
+    if partition["accounted"] != len(records):
+        errors.append("release partition does not account for every canonical record")
+    if partition["blocked"]:
+        errors.append(f"release partition has {partition['blocked']} blocked record(s)")
+    return {
+        "canonical_records": len(records),
+        "canonical_corpus_hash": canonical_corpus_hash(records),
+        "embedded": partition["embedded"],
+        "external_ref": partition["external_ref"],
+        "blocked": partition["blocked"],
+        "accounted": partition["accounted"],
+        "records": partition["records_plan"],
+        "blockers": partition["blockers"],
+        "validation_errors": validation_errors,
+        "audit": audit,
+        "source_manifest": str(manifest_path),
+        "source_manifest_hash": manifest_hash,
+        "ready": not errors,
+        "errors": sorted(set(errors)),
+    }
+
+
+def _materialize_publication_plan(
+    records: list[dict], plan: dict, manifest: dict
+) -> tuple[list[dict], dict]:
+    source_map = {
+        entry.get("name"): entry
+        for entry in manifest.get("sources", [])
+        if isinstance(entry, dict)
+    }
+    by_id = {record.get("id"): record for record in records}
+    materialized = []
+    excluded = Counter()
+    for row in plan.get("records_plan", []):
+        record = by_id.get(row.get("record_id"))
+        if record is None:
+            excluded["missing_record"] += 1
+            continue
+        mode = row.get("mode")
+        if mode == "blocked":
+            excluded[row.get("blocker", "source_policy_unresolved")] += 1
+            continue
+        basis = row.get("publication_basis", [])
+        if not basis:
+            excluded["missing_publication_basis"] += 1
+            continue
+        if mode == "embedded":
+            output = deepcopy(record)
+            output["materialization"] = "embedded"
+            observations = record.get("source_observations", [])
+            output["source_observations"] = [
+                deepcopy(source)
+                for source in observations
+                if isinstance(source, dict) and source.get("benchmark") in basis
+            ]
+            output["other_source_observations"] = row.get(
+                "other_source_observations", []
+            )
+        elif mode == "external_ref":
+            source = source_map.get(basis[0])
+            if source is None:
+                excluded["unknown_publication_basis"] += 1
+                continue
+            observation = next(
+                (
+                    item
+                    for item in record.get("source_observations", [])
+                    if isinstance(item, dict) and item.get("benchmark") == basis[0]
+                ),
+                None,
+            )
+            if observation is None:
+                excluded["missing_publication_observation"] += 1
+                continue
+            output = build_v2_external_overlay(record, source=observation)
+            output["other_source_observations"] = row.get(
+                "other_source_observations", []
+            )
+        else:
+            excluded["invalid_publication_mode"] += 1
+            continue
+        materialized.append(output)
+    return materialized, {
+        "records": sum(excluded.values()),
+        "by_source": dict(sorted(excluded.items())),
+    }
+
+
 def build_corpus_release(
     *,
     version: str,
@@ -391,6 +676,7 @@ def build_corpus_release(
     control_paths: list[str] | None = None,
     conflict_adjudication_path: str | Path | None = None,
     release_sources: list[str] | None = None,
+    source_decisions_path: str | Path | None = None,
 ) -> dict:
     """Build a v2 release from the unsplit canonical corpus shards."""
     _profile(maturity)
@@ -419,6 +705,22 @@ def build_corpus_release(
     source_census = build_source_materialization_census(
         all_records, full_source_manifest
     )
+    if not release_sources:
+        decisions = read_json(source_decisions_path) if source_decisions_path else None
+        publication_plan = plan_publication_records(
+            all_records,
+            full_source_manifest,
+            decisions=decisions,
+            manifest_hash=source_manifest_hash(full_source_manifest),
+        )
+        if publication_plan["blocked"]:
+            raise ValueError(
+                "release preflight has blocked records: "
+                + json.dumps(publication_plan["blockers"], sort_keys=True)
+            )
+        records, exclusion = _materialize_publication_plan(
+            all_records, publication_plan, full_source_manifest
+        )
     if any("split" in record for record in records):
         raise ValueError("v2 corpus release input must not contain split")
     validation_errors = validate_records(records)
@@ -498,6 +800,17 @@ def build_corpus_release(
     _write_json(output_root / "oracle_audit.json", oracle_audit)
     counts = {
         "records": len(records),
+        "canonical_records": len(all_records),
+        "public_release_records": len(records),
+        "public_embedded_records": sum(
+            1
+            for record in records
+            if record.get("materialization", "embedded") == "embedded"
+        ),
+        "public_external_ref_records": sum(
+            1 for record in records if record.get("materialization") == "external_ref"
+        ),
+        "public_blocked_records": exclusion["records"],
         "families": len({record.get("family_id") for record in records}),
         "languages": dict(
             sorted(Counter(record.get("language") for record in records).items())
@@ -577,6 +890,17 @@ def build_corpus_release(
                 for row in source_census["groups"]
             },
         },
+        "canonical_records": len(all_records),
+        "public_release_records": len(records),
+        "public_embedded_records": sum(
+            1
+            for record in records
+            if record.get("materialization", "embedded") == "embedded"
+        ),
+        "public_external_ref_records": sum(
+            1 for record in records if record.get("materialization") == "external_ref"
+        ),
+        "public_blocked_records": exclusion["records"],
         "counts": counts,
         "record_files": ["corpus.jsonl"],
         "control_files": [str(path.relative_to(root)) for path in control_files],
@@ -623,6 +947,7 @@ def build_release(
     control_paths: list[str] | None = None,
     conflict_adjudication_path: str | Path | None = None,
     release_sources: list[str] | None = None,
+    source_decisions_path: str | Path | None = None,
 ) -> dict:
     _profile(maturity)
     candidate_files = expand_jsonl_paths(data_paths)
@@ -641,6 +966,7 @@ def build_release(
             control_paths=control_paths,
             conflict_adjudication_path=conflict_adjudication_path,
             release_sources=release_sources,
+            source_decisions_path=source_decisions_path,
         )
 
     root = repo_root()
@@ -819,6 +1145,11 @@ def build_release(
             "source_count": len(manifest_source.get("sources", [])),
             "referenced_sources": sorted(referenced_sources),
         },
+        "canonical_records": len(records),
+        "public_release_records": len(records),
+        "public_embedded_records": len(records),
+        "public_external_ref_records": 0,
+        "public_blocked_records": 0,
         "maturity_profile": _profile(maturity),
         "scoring_modes": ["canonical", "accepted"],
         "control_scoring": "control_coverage.json",

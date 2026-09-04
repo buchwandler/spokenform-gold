@@ -2,6 +2,8 @@
 
 For new data, run `spokenform-gold batch-create --batch <BATCH_ID> --limit 1000`. For an existing defect, start with the permanent `record.id` and use `trace-record`, `prepare-correction`, then `apply-correction --write`. The canonical lineage is `data/lineage/review-evidence.jsonl`; arbitrary work-root snapshots are not evidence inputs.
 
+The canonical corpus currently contains 19,789 reviewed Gold records. This count is distinct from any public release count: local benchmarking uses the complete corpus, while public records are selected by explicit source/revision/materialization policy.
+
 Spokenform Gold is the benchmark, annotation, validation, coverage, and oracle
 governance layer for Spokenform. Gold is defined by benchmark policy and reviewed
 semantic evidence, not by current implementation output or source majority vote.
@@ -57,26 +59,29 @@ Read only the focused policy or schema needed for a decision:
 
 ## Commands
 
-Validate the canonical corpus and create reports without dumping its contents:
+Validate the canonical corpus and inspect the full-corpus/public-release distinction without dumping its contents:
 
 ```bash
 spokenform-gold validate data/corpus/
-spokenform-gold coverage data/corpus/ \
-  --targets taxonomy/coverage_targets.json \
-  --json <WORK>/reports/coverage.json
-spokenform-gold conflicts data/corpus/ --mode unit \
-  --out <WORK>/reports/conflicts.json
-spokenform-gold report --records data/corpus/ \
-  --out <WORK>/reports/corpus.html
-spokenform-gold source-census data/corpus/*.jsonl \
-  --out <WORK>/reports/source-materialization-census.json
-spokenform-gold release \
-  --version 0.1.0-exp.1 --data data/corpus/ --controls data/controls \
-  --maturity experimental --coverage-profile all-active \
-  --conflict-adjudication release/conflict-adjudication.json \
-  --release-sources spokenform_curated --out <WORK>/releases/v0.1.0-exp.1
+spokenform-gold corpus-status --records data/corpus/
+spokenform-gold release-preflight --data data/corpus/ --out <WORK>/reports/release-preflight.json
+spokenform-gold benchmark --corpus data/corpus/ \
+  --prepare-module <MODULE:FUNCTION> --mode accepted \
+  --results-dir <WORK>/benchmarks/full-corpus
 ```
 
+`corpus-status` reports canonical, review-complete, retry, embedded, external-reference, blocked, and local benchmark counts. `release-preflight` writes a complete stable-ID partition and explicit source-policy blockers. A local benchmark writes `artifact_kind=local_canonical_benchmark` and `publishable=false`; it does not require a public release manifest.
+
+For public builds, provide approved source decisions. Do not use a curated-only allowlist as a substitute for source policy:
+
+```bash
+spokenform-gold release \
+  --version 0.1.0-exp.2 --data data/corpus/ --controls data/controls \
+  --maturity experimental --coverage-profile all-active \
+  --conflict-adjudication release/conflict-adjudication.json \
+  --source-decisions release/source-release-decisions.json \
+  --out <WORK>/releases/v0.1.0-exp.2
+```
 Integration is mechanical and requires complete reviewed decisions:
 
 ```bash

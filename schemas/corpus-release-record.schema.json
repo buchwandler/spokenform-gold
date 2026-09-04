@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Spokenform Gold v2 release record",
+  "type": "object",
+  "required": ["id", "language", "locale", "family_id", "status", "materialization", "source", "source_observations"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "language": {"type": "string", "minLength": 1},
+    "locale": {"type": "string", "minLength": 1},
+    "family_id": {"type": "string", "minLength": 1},
+    "status": {"type": "string"},
+    "materialization": {"enum": ["embedded", "external_ref"]},
+    "input": {"type": ["string", "null"]},
+    "source": {"type": "object"},
+    "source_observations": {"type": "array", "items": {"type": "object"}},
+    "oracle": {"type": "object"},
+    "oracle_hash": {"type": "string"},
+    "annotation": {"type": "object"},
+    "external_ref": {
+      "type": "object",
+      "required": ["source", "source_revision", "source_id", "source_artifact", "hydration"],
+      "properties": {
+        "source": {"type": "string"},
+        "source_revision": {"type": "string"},
+        "source_id": {"type": "string"},
+        "source_artifact": {"type": "string"},
+        "source_input_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "hydration": {"type": "object"}
+      }
+    }
+  },
+  "allOf": [
+    {"if": {"properties": {"materialization": {"const": "external_ref"}}}, "then": {"required": ["external_ref", "annotation"], "properties": {"input": {"type": "null"}}}},
+    {"if": {"properties": {"materialization": {"const": "embedded"}}}, "then": {"required": ["input", "oracle", "units", "negative_for"]}}
+  ]
+}
