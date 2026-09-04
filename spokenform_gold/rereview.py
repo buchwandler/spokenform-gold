@@ -14,7 +14,14 @@ from pathlib import Path
 from typing import Any
 
 from .corpus import corpus_identity_map, read_corpus, sentence_key, source_key
-from .io import read_json, read_jsonl, read_records, write_json, write_jsonl
+from .io import (
+    read_json,
+    read_jsonl,
+    read_records,
+    sha256_file,
+    write_json,
+    write_jsonl,
+)
 from .work_layout import BatchLayout
 
 RETRY_POOL_SCHEMA_VERSION = "1.0.0"
@@ -40,6 +47,7 @@ BLOCKER_CLASSES = {
     "other",
 }
 KNOWN_MIGRATION_BATCHES = {"batch-0014", "batch-0015"}
+LEGACY_UNRESOLVED_BLOCKER_MIGRATION_BATCHES = {"batch-0016"}
 
 
 @dataclass(frozen=True)
@@ -158,6 +166,113 @@ def _legacy_blocker(
     }
 
 
+def normalize_decision_blocker(
+    *,
+    batch_id: str,
+    batch_kind: str,
+    case: Mapping[str, Any] | None,
+    decision: Mapping[str, Any],
+    allow_legacy: bool,
+) -> dict[str, Any] | None:
+    """Return a validated blocker, migrating only explicitly known legacy rows."""
+    blocker = _normalise_blocker(decision.get("blocker"))
+    if blocker is not None:
+        return blocker
+    if not allow_legacy or decision.get("decision") != "unresolved":
+        return None
+    if batch_id in LEGACY_UNRESOLVED_BLOCKER_MIGRATION_BATCHES:
+        rationale = str(decision.get("rationale") or "")
+        return {
+            "code": "legacy.unresolved.missing_structured_blocker",
+            "class": "other",
+            "retryable": True,
+            "reason": "This case was adjudicated as unresolved before structured blockers became mandatory.",
+            "attempted_resolution": rationale
+            or "Historical unresolved decision migrated to the structured blocker contract.",
+            "requires": [
+                "triage:classify-blocker",
+                "context:additional-review-guidance",
+            ],
+        }
+    if batch_id in KNOWN_MIGRATION_BATCHES:
+        return _legacy_blocker(batch_id, decision.get("rationale"), case)
+    return None
+
+
+def migrate_legacy_adjudication(
+    batch_root: str | Path, *, write: bool = False
+) -> dict[str, Any]:
+    """Migrate only allowlisted unresolved decisions to the blocker contract."""
+    layout = BatchLayout(batch_root)
+    metadata = read_json(layout.metadata) if layout.metadata.is_file() else {}
+    batch_id = str(metadata.get("batch_id", layout.root.name))
+    decisions_path = layout.adjudication_decisions
+    if not decisions_path.is_file():
+        decisions_path = layout.legacy("adjudicated.jsonl")
+    rows = read_jsonl(decisions_path) if decisions_path.is_file() else []
+    changed_ids: list[str] = []
+    migrated: list[dict[str, Any]] = []
+    for row in rows:
+        item = dict(row)
+        if (
+            item.get("decision") == "unresolved"
+            and _normalise_blocker(item.get("blocker")) is None
+        ):
+            if batch_id not in LEGACY_UNRESOLVED_BLOCKER_MIGRATION_BATCHES:
+                raise ValueError(
+                    f"{batch_id}: unresolved decision has no structured blocker; historical migration is not allowed"
+                )
+            blocker = normalize_decision_blocker(
+                batch_id=batch_id,
+                batch_kind=str(metadata.get("batch_kind", "new_data")),
+                case=None,
+                decision=item,
+                allow_legacy=True,
+            )
+            if blocker is None:
+                raise ValueError(f"{batch_id}: legacy blocker migration failed")
+            item["blocker"] = blocker
+            changed_ids.append(str(item.get("case_id")))
+        migrated.append(item)
+    old_hash = sha256_file(decisions_path) if decisions_path.is_file() else None
+    new_payload = json.dumps(
+        [
+            {key: value for key, value in row.items() if not key.startswith("_")}
+            for row in migrated
+        ],
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    new_hash = (
+        "sha256:" + hashlib.sha256((new_payload + "\n").encode("utf-8")).hexdigest()
+    )
+    manifest = {
+        "schema_version": "1",
+        "rule": "legacy-unresolved-missing-blocker-v1",
+        "batch_id": batch_id,
+        "rows": len(rows),
+        "rows_changed": len(changed_ids),
+        "changed_case_ids": sorted(changed_ids),
+        "old_sha256": old_hash,
+        "new_sha256": new_hash,
+    }
+    if write and changed_ids:
+        decisions_path.parent.mkdir(parents=True, exist_ok=True)
+        fd, name = tempfile.mkstemp(
+            prefix=f".{decisions_path.name}.", dir=decisions_path.parent
+        )
+        os.close(fd)
+        temporary = Path(name)
+        try:
+            write_jsonl(temporary, migrated)
+            os.replace(temporary, decisions_path)
+        finally:
+            temporary.unlink(missing_ok=True)
+        write_json(layout.adjudication_dir / "migration-manifest.json", manifest)
+    return manifest
+
+
 def _case_identity(case: Mapping[str, Any]) -> tuple[str, str, str]:
     return sentence_key(
         str(case.get("language", "")),
@@ -176,23 +291,25 @@ def _event_from_decision(
     batch_id: str,
     batch_root: Path,
     batch_kind: str = "new_data",
+    *,
+    allow_legacy: bool = True,
 ) -> dict[str, Any] | None:
     disposition = decision.get("decision")
-    blocker = _normalise_blocker(decision.get("blocker"))
     rationale = decision.get("rationale", "")
-    if disposition == "unresolved":
-        if blocker is None:
-            blocker = _legacy_blocker(batch_id, rationale, case)
-        if not blocker.get("retryable") and disposition == "unresolved":
-            # Preserve unclassified legacy unresolved rows for explicit triage.
-            pass
-    elif disposition == "exclude":
-        if blocker is None:
-            blocker = _legacy_blocker(batch_id, rationale, case)
-        # Explicit retryable excludes are supported; terminal excludes are retained
-        # in the pool as lineage but are never selected.
-    elif disposition == "accept":
+    if disposition == "accept":
         blocker = None
+    elif disposition in {"unresolved", "exclude"}:
+        blocker = normalize_decision_blocker(
+            batch_id=batch_id,
+            batch_kind=batch_kind,
+            case=case,
+            decision=decision,
+            allow_legacy=allow_legacy,
+        )
+        if disposition == "unresolved" and blocker is None:
+            raise ValueError(
+                f"{case.get('case_id')}: unresolved decision requires retryable structured blocker"
+            )
     else:
         return None
     event = {

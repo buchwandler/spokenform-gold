@@ -281,6 +281,11 @@ def build_batch(
         "batch_id": batch_id,
         "batch_kind": batch_kind,
         "source_lock_hash": source_lock_hash,
+        "workflow_contracts": {
+            "review": "sentence-centric-v2",
+            "adjudication": "structured-blocker-v1",
+            "integration": "atomic-corpus-v2",
+        },
         "case_count": len(cases),
         "source_observation_count": counts["selected_source_observations"],
         "state": "empty" if not cases else "awaiting_review",

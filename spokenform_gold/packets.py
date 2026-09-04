@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import tempfile
@@ -9,7 +10,7 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
-from .io import write_jsonl
+from .io import write_json, write_jsonl
 from .review import validate_v2_review_rows
 from .validation import validate_records
 
@@ -276,6 +277,60 @@ def _validate_decision(
             raise PacketError(f"{case_id}: exclude blocker must be an object")
 
 
+def adjudication_repair_packet_rows(
+    cases: Iterable[Mapping[str, Any]],
+    contexts: Iterable[Mapping[str, Any]],
+    review_a: Iterable[Mapping[str, Any]],
+    review_b: Iterable[Mapping[str, Any]],
+    decisions: Iterable[Mapping[str, Any]],
+    diagnostics: Iterable[Mapping[str, Any]],
+    *,
+    max_cases: int,
+    max_bytes: int,
+) -> list[dict[str, Any]]:
+    """Build a bounded packet for replacing only preflight-invalid decisions."""
+    case_map = {row.get("case_id"): _public_row(row) for row in cases}
+    context_map = {row.get("case_id"): _public_row(row) for row in contexts}
+    a_map = {row.get("case_id"): _public_row(row) for row in review_a}
+    b_map = {row.get("case_id"): _public_row(row) for row in review_b}
+    decision_map = {row.get("case_id"): _public_row(row) for row in decisions}
+    rows = []
+    for diagnostic in sorted(diagnostics, key=lambda row: str(row.get("case_id", ""))):
+        case_id = diagnostic.get("case_id")
+        if case_id not in case_map or case_id not in decision_map:
+            raise PacketError(
+                f"repair diagnostic references unknown case_id: {case_id}"
+            )
+        rows.append(
+            {
+                "case": _without_sources(case_map[case_id]),
+                "context": _without_sources(
+                    context_map.get(case_id, case_map[case_id])
+                ),
+                "review_a": a_map[case_id],
+                "review_b": b_map[case_id],
+                "existing_adjudication": decision_map[case_id],
+                "validation_errors": list(diagnostic.get("errors", [])),
+                "case_id": case_id,
+                "source_observations": case_map[case_id].get("source_observations", []),
+            }
+        )
+    return select_packet_rows(rows, max_cases=max_cases, max_bytes=max_bytes)
+
+
+def _rows_digest(rows: Iterable[Mapping[str, Any]]) -> str:
+    payload = json.dumps(
+        [
+            {key: value for key, value in row.items() if not key.startswith("_")}
+            for row in rows
+        ],
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return "sha256:" + hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
 def merge_adjudication_rows(
     existing_rows: Iterable[Mapping[str, Any]],
     result_rows: Iterable[Mapping[str, Any]],
@@ -303,6 +358,52 @@ def merge_adjudication_rows(
         _validate_decision(row, require_structured_blocker=require_structured_blocker)
     if output is not None:
         _atomic_write(output, output_rows)
+    return output_rows
+
+
+def merge_adjudication_repairs(
+    existing_rows: Iterable[Mapping[str, Any]],
+    result_rows: Iterable[Mapping[str, Any]],
+    repair_case_ids: Iterable[str],
+    cases: Iterable[Mapping[str, Any]],
+    *,
+    output: str | Path,
+    manifest: str | Path,
+) -> list[dict[str, Any]]:
+    """Atomically replace exactly the decisions selected for repair."""
+    existing = _indexed_unique(existing_rows, "existing adjudication")
+    results = _indexed_unique(result_rows, "repair result")
+    selected = set(repair_case_ids)
+    if set(results) != selected:
+        raise PacketError(
+            f"repair result case IDs mismatch: missing={sorted(selected - set(results))} "
+            f"extra={sorted(set(results) - selected)}"
+        )
+    case_ids = {row.get("case_id") for row in cases}
+    if set(existing) != case_ids:
+        raise PacketError("existing adjudication does not cover the batch exactly")
+    if not selected <= case_ids:
+        raise PacketError("repair packet contains an unknown batch case")
+    for row in results.values():
+        _validate_decision(row)
+    merged = dict(existing)
+    for case_id, row in results.items():
+        merged[case_id] = dict(row)
+    output_rows = [merged[key] for key in sorted(merged)]
+    old_hash = _rows_digest(existing.values())
+    new_hash = _rows_digest(output_rows)
+    _atomic_write(output, output_rows)
+    write_json(
+        manifest,
+        {
+            "schema_version": "1",
+            "rule": "targeted-adjudication-repair-v1",
+            "repaired_case_ids": sorted(selected),
+            "old_decisions_sha256": old_hash,
+            "new_decisions_sha256": new_hash,
+            "case_count": len(output_rows),
+        },
+    )
     return output_rows
 
 

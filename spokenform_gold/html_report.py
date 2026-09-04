@@ -116,7 +116,19 @@ def _review_lineage(evidence: dict | None, record: dict) -> str:
     )
 
 
-def _record_row(record: dict, evidence: dict | None = None) -> str:
+def source_names(record: dict) -> set[str]:
+    """Return all source benchmarks, including v2 source observations."""
+    sources = record.get("source_observations") or [record.get("source", {})]
+    return {
+        str(item.get("benchmark"))
+        for item in sources
+        if isinstance(item, dict) and item.get("benchmark")
+    }
+
+
+def _record_row(
+    record: dict, evidence: dict | None = None, issues_url: str | None = None
+) -> str:
     units = [unit for unit in record.get("units", []) if isinstance(unit, dict)]
     categories = sorted(
         {str(unit.get("category")) for unit in units if unit.get("category")}
@@ -161,14 +173,11 @@ def _record_row(record: dict, evidence: dict | None = None) -> str:
         f"Current input: {record.get('input', '')}\n"
         f"Current canonical: {canonical}"
     )
-    source_names = sorted(
-        {
-            item.get("benchmark", "")
-            for item in (
-                record.get("source_observations") or [record.get("source", {})]
-            )
-            if isinstance(item, dict)
-        }
+    source_values = sorted(source_names(record))
+    report_button = (
+        f'<button data-report-issue="{_escape(issues_url)}">Report issue</button>'
+        if issues_url
+        else ""
     )
     attrs = {
         "split": record.get("split", ""),
@@ -176,14 +185,16 @@ def _record_row(record: dict, evidence: dict | None = None) -> str:
         "locale": record.get("locale", ""),
         "status": record.get("status", ""),
         "categories": " ".join(categories),
-        "source": " ".join(source_names),
+        "source": " ".join(source_values),
         "provenance": "translation-derived"
-        if "spokenform_translation" in source_names
+        if "spokenform_translation" in source_values
         else "native",
         "translation-parent": _primary_source(record).get(
             "translation_parent_record_id", ""
         ),
         "record-id": record_id,
+        "input": record.get("input", ""),
+        "canonical": canonical,
         "search": " ".join(
             str(value)
             for value in (
@@ -202,7 +213,7 @@ def _record_row(record: dict, evidence: dict | None = None) -> str:
     return (
         f'<tr id="record-{_escape(record_id)}" class="record-row" data-record-id="{_escape(record_id)}" {attr_text}>'
         f"<td><strong>{_escape(record_id)}</strong><small>{_escape(record.get('family_id', ''))}</small>"
-        f'<p class="row-actions"><button data-copy-id="{_escape(record_id)}">Copy ID</button><button data-copy-link="{_escape(record_id)}">Copy deep link</button><button data-copy-correction="{_escape(correction)}">Copy correction request</button></p></td>'
+        f'<p class="row-actions"><button data-copy-id="{_escape(record_id)}">Copy ID</button><button data-copy-link="{_escape(record_id)}">Copy deep link</button><button data-copy-correction="{_escape(correction)}">Copy correction request</button>{report_button}</p></td>'
         f"<td>{_escape(record.get('split', 'corpus'))}<small>{_escape(record.get('locale', ''))}</small></td>"
         f"<td>{_escape(record.get('status', ''))}</td>"
         f"<td>{_escape(', '.join(categories) or 'negative control')}</td>"
@@ -236,11 +247,7 @@ def render_release_html(
     locales = {str(record.get("locale")) for record in records if record.get("locale")}
     statuses = {str(record.get("status")) for record in records if record.get("status")}
     splits = {str(record.get("split")) for record in records if record.get("split")}
-    sources = {
-        str(record.get("source", {}).get("benchmark"))
-        for record in records
-        if record.get("source", {}).get("benchmark")
-    }
+    sources = {source for record in records for source in source_names(record)}
     categories = {
         str(unit.get("category"))
         for record in records

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from collections.abc import Iterable
 from copy import deepcopy
 from pathlib import Path
@@ -17,6 +19,7 @@ from .rereview import (
     _event_from_decision,
     load_retry_pool,
     merge_retry_events,
+    normalize_decision_blocker,
     retry_context_fingerprint,
     write_retry_pool_atomic,
 )
@@ -25,6 +28,18 @@ from .validation import validate_records
 from .work_layout import BatchLayout
 
 FINAL_DECISIONS = {"accept", "exclude", "unresolved"}
+
+
+def _rows_digest(rows: Iterable[dict]) -> str:
+    clean = [
+        {key: value for key, value in row.items() if not key.startswith("_")}
+        for row in rows
+    ]
+    clean.sort(key=lambda row: (str(row.get("case_id", "")), str(row.get("id", ""))))
+    payload = json.dumps(
+        clean, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    )
+    return "sha256:" + hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def _reviewer_id(row: dict) -> str | None:
@@ -109,7 +124,9 @@ def _source_case_map(cases: Iterable[dict]) -> dict[str, dict]:
     return {case.get("case_id"): case for case in cases}
 
 
-def _canonical_record(case: dict, final: dict, existing: dict | None = None) -> dict:
+def build_accepted_record(
+    case: dict, final: dict, existing: dict | None = None
+) -> dict:
     record = deepcopy(final)
     record.pop("case_id", None)
     record.pop("decision", None)
@@ -150,6 +167,140 @@ def _canonical_record(case: dict, final: dict, existing: dict | None = None) -> 
         "spokenform_gold.oracle", fromlist=["oracle_hash"]
     ).oracle_hash(record)
     return record
+
+
+def validate_accepted_decisions(
+    cases: Iterable[dict],
+    decisions: Iterable[dict],
+    existing_records: Iterable[dict] = (),
+    *,
+    batch_id: str = "",
+    allow_legacy: bool = False,
+) -> list[dict]:
+    """Return canonical validation diagnostics for accepted decisions only."""
+    case_map = {row.get("case_id"): row for row in cases}
+    existing_map = corpus_identity_map(existing_records)
+    diagnostics: list[dict] = []
+    for decision in decisions:
+        if decision.get("decision") != "accept":
+            continue
+        case_id = decision.get("case_id")
+        case = case_map.get(case_id)
+        if case is None:
+            diagnostics.append(
+                {
+                    "case_id": case_id,
+                    "record_id": None,
+                    "decision": "accept",
+                    "errors": ["case is missing from batch"],
+                }
+            )
+            continue
+        final = decision.get("final_record")
+        record_id = final.get("id") if isinstance(final, dict) else None
+        try:
+            record = (
+                build_accepted_record(
+                    case,
+                    final,
+                    existing_map.get(
+                        sentence_key(case["language"], case["locale"], case["input"])
+                    ),
+                )
+                if isinstance(final, dict)
+                else None
+            )
+            errors = (
+                validate_records([record])
+                if record is not None
+                else ["accept decision requires final_record"]
+            )
+        except (TypeError, ValueError, KeyError) as exc:
+            errors = [str(exc)]
+        if errors:
+            diagnostics.append(
+                {
+                    "case_id": case_id,
+                    "record_id": record_id or stable_record_id(case),
+                    "decision": "accept",
+                    "errors": sorted(set(errors)),
+                }
+            )
+    return diagnostics
+
+
+def batch_preflight(
+    batch_root: str | Path,
+    corpus_path: str | Path,
+) -> dict:
+    """Validate a batch without mutating its decisions or canonical corpus."""
+    layout, cases, review_a, review_b, decisions, metadata = _batch_artifacts(
+        batch_root
+    )
+    batch_id = str(metadata.get("batch_id", layout.root.name))
+    corpus_target = Path(corpus_path)
+    existing = (
+        read_corpus(corpus_target)
+        if corpus_target.is_dir()
+        else read_records([corpus_target])
+        if corpus_target.exists()
+        else []
+    )
+    review = check_reviews(cases, review_a, review_b)
+    case_ids = {case.get("case_id") for case in cases}
+    decision_ids = [row.get("case_id") for row in decisions]
+    coverage_ok = (
+        len(decision_ids) == len(set(decision_ids)) and set(decision_ids) == case_ids
+    )
+    accepted = sum(row.get("decision") == "accept" for row in decisions)
+    excluded = sum(row.get("decision") == "exclude" for row in decisions)
+    unresolved = sum(row.get("decision") == "unresolved" for row in decisions)
+    invalid_accepts = validate_accepted_decisions(
+        cases, decisions, existing, batch_id=batch_id, allow_legacy=False
+    )
+    legacy_missing = sum(
+        row.get("decision") == "unresolved"
+        and normalize_decision_blocker(
+            batch_id=batch_id,
+            batch_kind=str(metadata.get("batch_kind", "new_data")),
+            case=next(
+                (case for case in cases if case.get("case_id") == row.get("case_id")),
+                None,
+            ),
+            decision=row,
+            allow_legacy=True,
+        )
+        is not None
+        and not isinstance(row.get("blocker"), dict)
+        for row in decisions
+    )
+    invalid_units = sum(
+        sum("unit[" in error for error in item["errors"]) for item in invalid_accepts
+    )
+    ready = bool(
+        review["ready"] and coverage_ok and not invalid_accepts and not legacy_missing
+    )
+    return {
+        "batch_id": batch_id,
+        "cases": len(cases),
+        "reviews_ready": review["ready"],
+        "adjudication_complete": coverage_ok,
+        "accept": accepted,
+        "exclude": excluded,
+        "unresolved": unresolved,
+        "invalid_accepts": invalid_accepts,
+        "invalid_units": invalid_units,
+        "legacy_unresolved_missing_blocker": legacy_missing,
+        "ready_to_finalize": ready,
+        "next": (
+            "adjudication-repair-packet"
+            if invalid_accepts
+            else "batch-migrate-adjudication"
+            if legacy_missing
+            else None
+        ),
+        "review_issues": review["issues"],
+    }
 
 
 def _batch_artifacts(
@@ -222,6 +373,13 @@ def integrate_batch(
         if corpus_target.exists()
         else []
     )
+    accepted_diagnostics = validate_accepted_decisions(cases, adjudicated, existing)
+    if accepted_diagnostics:
+        details = "; ".join(
+            f"{item['case_id']}: {', '.join(item['errors'])}"
+            for item in accepted_diagnostics
+        )
+        raise ValueError(f"invalid accepted final_record(s): {details}")
     existing_map = corpus_identity_map(existing)
     final_records: list[dict] = []
     synthetic: list[dict] = []
@@ -266,7 +424,7 @@ def integrate_batch(
         if not isinstance(final, dict):
             raise TypeError(f"{case['case_id']}: accept decision requires final_record")
         identity = sentence_key(case["language"], case["locale"], case["input"])
-        record = _canonical_record(case, final, existing_map.get(identity))
+        record = build_accepted_record(case, final, existing_map.get(identity))
         record["review"] = {
             "protocol_version": "2.0.0",
             "status": "adjudicated",
@@ -288,7 +446,44 @@ def integrate_batch(
     errors = validate_records(list(combined.values()))
     if errors:
         raise ValueError("integrated corpus is invalid: " + "; ".join(errors))
-    if write:
+    manifest = {
+        "batch_id": str(metadata.get("batch_id", layout.root.name)),
+        "decision_sha256": _rows_digest(adjudicated),
+        "case_sha256": _rows_digest(cases),
+        "review_a_sha256": _rows_digest(review_a),
+        "review_b_sha256": _rows_digest(review_b),
+        "records_written": len(final_records),
+        "records_added": len(final_records),
+        "record_ids_sha256": _rows_digest(
+            [{"id": record["id"]} for record in final_records]
+        ),
+        "corpus_validation": "passed",
+        "corpus_sha256": _rows_digest(combined.values()),
+        "synthetic_candidates": len(synthetic),
+        "excluded": len(excluded),
+        "terminal_excluded": len(excluded),
+        "retry_deferred": len(retry),
+    }
+    previous = (
+        read_json(layout.integration_summary)
+        if layout.integration_summary.is_file()
+        else {}
+    )
+    manifest_keys = (
+        "batch_id",
+        "decision_sha256",
+        "case_sha256",
+        "review_a_sha256",
+        "review_b_sha256",
+        "records_written",
+        "record_ids_sha256",
+        "corpus_validation",
+        "corpus_sha256",
+    )
+    manifest_matches = previous.get("state") in {"integrated", "finalized"} and all(
+        previous.get(key) == manifest[key] for key in manifest_keys
+    )
+    if write and not manifest_matches:
         if corpus_target.suffix == ".jsonl":
             write_records_atomic(corpus_target, combined.values())
         else:
@@ -296,17 +491,7 @@ def integrate_batch(
         write_jsonl(layout.integration_dir / "synthetic-candidates.jsonl", synthetic)
         write_jsonl(layout.integration_dir / "exclusions.jsonl", excluded)
         write_jsonl(layout.integration_dir / "retry.jsonl", retry)
-        write_json(
-            layout.integration_summary,
-            {
-                "state": "integrated",
-                "records_added": len(final_records),
-                "synthetic_candidates": len(synthetic),
-                "excluded": len(excluded),
-                "terminal_excluded": len(excluded),
-                "retry_deferred": len(retry),
-            },
-        )
+        write_json(layout.integration_summary, {"state": "integrated", **manifest})
     return {
         "ready": True,
         "records": len(final_records),
@@ -314,7 +499,21 @@ def integrate_batch(
         "excluded": excluded,
         "retry": retry,
         "review": review_report,
+        "integration_manifest": manifest,
+        "skipped_integration": manifest_matches,
     }
+
+
+def integration_matches_current(
+    batch_root: str | Path, corpus_path: str | Path
+) -> bool:
+    """Return true only when a hash-bound integration matches current artifacts."""
+    try:
+        return bool(
+            integrate_batch(batch_root, corpus_path, write=False)["skipped_integration"]
+        )
+    except (OSError, TypeError, ValueError):
+        return False
 
 
 def finalize_batch(
@@ -384,6 +583,7 @@ def finalize_batch(
         write_json(
             layout.integration_summary,
             {
+                **result["integration_manifest"],
                 "state": "finalized",
                 **counts,
                 "synthetic_candidates": len(result["synthetic_candidates"]),

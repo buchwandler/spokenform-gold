@@ -21,6 +21,7 @@ from .conflicts import find_conflicts
 from .control_benchmark import load_control_predictions, score_control_records
 from .control_validation import validate_control_records
 from .corpus import canonical_corpus_path, shard_corpus
+from .corpus_site import DEFAULT_ISSUES_URL, generate_corpus_site
 from .corrections import (
     apply_correction,
     apply_correction_to_corpus,
@@ -59,7 +60,9 @@ from .migration import (
 from .oracle_diff import diff_records
 from .packets import (
     adjudication_packet_rows,
+    adjudication_repair_packet_rows,
     finalize_adjudication,
+    merge_adjudication_repairs,
     merge_adjudication_rows,
     merge_review_rows,
     review_packet_rows,
@@ -73,6 +76,7 @@ from .rereview import (
     REVIEW_BATCH_LIMIT,
     build_rereview_batch,
     load_retry_pool,
+    migrate_legacy_adjudication,
     rebuild_retry_pool,
     retry_pool_summary,
     select_retry_cases,
@@ -118,7 +122,13 @@ from .translation import (
 )
 from .validation import load_categories, validate_corpus, validate_records
 from .work_layout import BatchLayout, WorkLayout
-from .workflow import check_reviews, finalize_batch, integrate_batch
+from .workflow import (
+    batch_preflight,
+    check_reviews,
+    finalize_batch,
+    integrate_batch,
+    integration_matches_current,
+)
 
 
 def cmd_stats(args):
@@ -1142,11 +1152,6 @@ def cmd_batch_status(args):
     if work_root is not None:
         handoff_candidates.append(work_root / f"{batch_id}-handoff.md")
     handoff = next((path for path in handoff_candidates if path.is_file()), None)
-    integration = (
-        layout.integration_summary
-        if layout.integration_summary.is_file()
-        else root / "integration.json"
-    )
     cases_path = layout.cases if layout.cases.is_file() else root / "cases.jsonl"
     review_a_path = (
         layout.review_complete("A")
@@ -1172,9 +1177,8 @@ def cmd_batch_status(args):
         else 0,
         "adjudicated": len(decisions),
         **decision_counts,
-        "integrated": bool(
-            integration.is_file()
-            and read_json(integration).get("state") == "integrated"
+        "integrated": integration_matches_current(
+            root, args.corpus or canonical_corpus_path()
         ),
         "handoff": str(handoff) if handoff else None,
     }
@@ -1500,6 +1504,90 @@ def cmd_review_merge(args):
     return 0
 
 
+def cmd_batch_migrate_adjudication(args):
+    root, _work_root = _resolve_batch_root(args)
+    result = migrate_legacy_adjudication(root, write=args.write)
+    print(f"batch_id={result['batch_id']}")
+    print(f"rows={result['rows']}")
+    print(f"legacy_unresolved_missing_blocker={result['rows_changed']}")
+    print(f"rows_changed={result['rows_changed']}")
+    print(f"rule={result['rule']}")
+    print(
+        f"ready_to_write={'yes' if not args.write or result['rows_changed'] >= 0 else 'no'}"
+    )
+    return 0
+
+
+def cmd_adjudication_repair_packet(args):
+    root, _work_root = _resolve_batch_root(args)
+    layout = BatchLayout(root)
+    preflight = batch_preflight(root, args.corpus or canonical_corpus_path())
+    diagnostics = preflight["invalid_accepts"]
+    if not diagnostics:
+        raise ValueError("batch preflight found no invalid accepted decisions")
+    cases = read_records(
+        [layout.cases if layout.cases.is_file() else root / "cases.jsonl"]
+    )
+    contexts = read_records([layout.context]) if layout.context.is_file() else cases
+    review_a_path = (
+        layout.review_complete("A")
+        if layout.review_complete("A").is_file()
+        else root / "a.complete.jsonl"
+    )
+    review_b_path = (
+        layout.review_complete("B")
+        if layout.review_complete("B").is_file()
+        else root / "b.complete.jsonl"
+    )
+    decisions_path = (
+        layout.adjudication_decisions
+        if layout.adjudication_decisions.is_file()
+        else root / "adjudicated.jsonl"
+    )
+    review_a = read_records([review_a_path])
+    review_b = read_records([review_b_path])
+    decisions = read_records([decisions_path])
+    rows = adjudication_repair_packet_rows(
+        cases,
+        contexts,
+        review_a,
+        review_b,
+        decisions,
+        diagnostics,
+        max_cases=args.max_cases,
+        max_bytes=args.max_bytes,
+    )
+    output = args.out or layout.adjudication_dir / "repair-packet-001.jsonl"
+    write_jsonl(output, rows)
+    _packet_output_summary(output, rows)
+    return 0
+
+
+def cmd_adjudication_repair_merge(args):
+    root, _work_root = _resolve_batch_root(args)
+    layout = BatchLayout(root)
+    cases = read_records(
+        [layout.cases if layout.cases.is_file() else root / "cases.jsonl"]
+    )
+    decisions_path = (
+        layout.adjudication_decisions
+        if layout.adjudication_decisions.is_file()
+        else root / "adjudicated.jsonl"
+    )
+    existing = read_records([decisions_path])
+    packet = read_records([args.packet])
+    result_rows = read_records([args.packet_result])
+    selected = [row.get("case_id") for row in packet]
+    output = args.out or decisions_path
+    manifest = args.manifest or root / "adjudication-repair-manifest.json"
+    merged = merge_adjudication_repairs(
+        existing, result_rows, selected, cases, output=output, manifest=manifest
+    )
+    print(f"merged={output} decisions={len(merged)} repaired={len(selected)}")
+    print(f"manifest={manifest}")
+    return 0
+
+
 def cmd_adjudication_packet(args):
     root, _work_root = _resolve_batch_root(args)
     layout = BatchLayout(root)
@@ -1751,6 +1839,30 @@ def cmd_rereview_batch_create(args):
     return 0
 
 
+def cmd_batch_preflight(args):
+    root, _work_root = _resolve_batch_root(args)
+    result = batch_preflight(root, args.corpus or canonical_corpus_path())
+    if args.json:
+        write_json(args.json, result)
+    print(f"batch_id={result['batch_id']}")
+    print(f"cases={result['cases']}")
+    print(f"reviews_ready={'yes' if result['reviews_ready'] else 'no'}")
+    print(f"adjudication_complete={'yes' if result['adjudication_complete'] else 'no'}")
+    print(f"accept={result['accept']}")
+    print(f"exclude={result['exclude']}")
+    print(f"unresolved={result['unresolved']}")
+    print(f"invalid_accepts={len(result['invalid_accepts'])}")
+    print(f"invalid_units={result['invalid_units']}")
+    print(
+        "legacy_unresolved_missing_blocker="
+        f"{result['legacy_unresolved_missing_blocker']}"
+    )
+    print(f"ready_to_finalize={'yes' if result['ready_to_finalize'] else 'no'}")
+    if result.get("next"):
+        print(f"next={result['next']}")
+    return 0 if result["ready_to_finalize"] else 2
+
+
 def cmd_batch_finalize(args):
     root, work_root = _resolve_batch_root(args)
     corpus = args.corpus or canonical_corpus_path()
@@ -1787,6 +1899,8 @@ def cmd_report(args):
         "records": len(records),
         "families": len({row.get("family_id") for row in records}),
     }
+    review_paths = _default_review_evidence_paths(Path.cwd())
+    review_evidence = read_records(review_paths) if review_paths else []
     output = render_release_html(
         args.out,
         version=args.version,
@@ -1795,8 +1909,46 @@ def cmd_report(args):
         coverage=coverage,
         control_coverage={},
         counts=counts,
+        review_evidence=review_evidence,
     )
     print(f"wrote corpus report for {len(records)} records to {output}")
+    return 0
+
+
+def cmd_corpus_site(args):
+    record_paths = args.records or [canonical_corpus_path()]
+    records = read_records(record_paths)
+    errors = (
+        validate_corpus(record_paths[0])
+        if len(record_paths) == 1 and Path(record_paths[0]).is_dir()
+        else validate_records(records)
+    )
+    if errors:
+        raise ValueError(
+            "cannot generate corpus site for invalid corpus: " + "; ".join(errors)
+        )
+    evidence_path = args.review_evidence
+    evidence = (
+        read_records([evidence_path])
+        if evidence_path and Path(evidence_path).is_file()
+        else []
+    )
+    result = generate_corpus_site(
+        records,
+        args.out_dir,
+        review_evidence=evidence,
+        issues_url=args.issues_url or None,
+        max_records_per_page=args.max_records_per_page,
+        write=args.write,
+        check=args.check,
+    )
+    print(
+        f"corpus_site={result['corpus_site']} changed={result['changed']} "
+        f"missing={result['missing']} extra={result['extra']} files={result['files']}"
+    )
+    if args.check and result["corpus_site"] == "stale":
+        print(f"next=spokenform-gold corpus-site --out-dir {args.out_dir} --write")
+        return 1
     return 0
 
 
@@ -2262,6 +2414,7 @@ def build_parser():
     batch_status = sub.add_parser("batch-status")
     batch_status.add_argument("--batch", required=True)
     batch_status.add_argument("--work-root", type=Path)
+    batch_status.add_argument("--corpus", type=Path, default=canonical_corpus_path())
     batch_status.add_argument("--json")
     batch_status.set_defaults(func=cmd_batch_status)
     trace_case = sub.add_parser("trace-case")
@@ -2338,6 +2491,27 @@ def build_parser():
     review_merge.add_argument("--out", type=Path, required=True)
     review_merge.add_argument("--work-root", type=Path)
     review_merge.set_defaults(func=cmd_review_merge)
+    batch_migrate = sub.add_parser("batch-migrate-adjudication")
+    batch_migrate.add_argument("--batch", required=True)
+    batch_migrate.add_argument("--write", action="store_true")
+    batch_migrate.add_argument("--work-root", type=Path)
+    batch_migrate.set_defaults(func=cmd_batch_migrate_adjudication)
+    repair_packet = sub.add_parser("adjudication-repair-packet")
+    repair_packet.add_argument("--batch", required=True)
+    repair_packet.add_argument("--corpus", type=Path, default=canonical_corpus_path())
+    repair_packet.add_argument("--max-cases", type=int, default=50)
+    repair_packet.add_argument("--max-bytes", type=int, default=98304)
+    repair_packet.add_argument("--out", type=Path)
+    repair_packet.add_argument("--work-root", type=Path)
+    repair_packet.set_defaults(func=cmd_adjudication_repair_packet)
+    repair_merge = sub.add_parser("adjudication-repair-merge")
+    repair_merge.add_argument("--batch", required=True)
+    repair_merge.add_argument("--packet", type=Path, required=True)
+    repair_merge.add_argument("--packet-result", type=Path, required=True)
+    repair_merge.add_argument("--out", type=Path)
+    repair_merge.add_argument("--manifest", type=Path)
+    repair_merge.add_argument("--work-root", type=Path)
+    repair_merge.set_defaults(func=cmd_adjudication_repair_merge)
     adjudication_packet = sub.add_parser("adjudication-packet")
     adjudication_packet.add_argument("--batch", required=True)
     adjudication_packet.add_argument("--review-a", type=Path, required=True)
@@ -2364,11 +2538,34 @@ def build_parser():
     review_check.add_argument("--review-b", type=Path, required=True)
     review_check.add_argument("--json")
     review_check.set_defaults(func=cmd_review_check)
+    batch_preflight_parser = sub.add_parser("batch-preflight")
+    batch_preflight_parser.add_argument("--batch", type=Path, required=True)
+    batch_preflight_parser.add_argument(
+        "--corpus", type=Path, default=canonical_corpus_path()
+    )
+    batch_preflight_parser.add_argument("--json", type=Path)
+    batch_preflight_parser.set_defaults(func=cmd_batch_preflight)
     integrate = sub.add_parser("integrate")
     integrate.add_argument("--batch", type=Path, required=True)
     integrate.add_argument("--corpus", type=Path, default=canonical_corpus_path())
     integrate.add_argument("--write", action="store_true")
     integrate.set_defaults(func=cmd_integrate)
+    corpus_site = sub.add_parser("corpus-site")
+    corpus_site.add_argument("--records", nargs="*")
+    corpus_site.add_argument(
+        "--review-evidence",
+        type=Path,
+        default=Path("data/lineage/review-evidence.jsonl"),
+    )
+    corpus_site.add_argument(
+        "--targets", type=Path, default=Path("taxonomy/coverage_targets.json")
+    )
+    corpus_site.add_argument("--out-dir", type=Path, default=Path("docs/corpus"))
+    corpus_site.add_argument("--issues-url", default=DEFAULT_ISSUES_URL)
+    corpus_site.add_argument("--max-records-per-page", type=int, default=3000)
+    corpus_site.add_argument("--write", action="store_true")
+    corpus_site.add_argument("--check", action="store_true")
+    corpus_site.set_defaults(func=cmd_corpus_site)
     report = sub.add_parser("report")
     report.add_argument("--records", nargs="*")
     report.add_argument("--out", required=True)

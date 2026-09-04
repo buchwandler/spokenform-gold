@@ -1,0 +1,60 @@
+{
+  "corpus_hash": "sha256:c11016b0cab70ccc9258133c050a913b55671144c1fe145227d36a8e3a3378ea",
+  "generator": "spokenform-gold corpus-site",
+  "languages": {
+    "de": {
+      "file": "de.html",
+      "records": 1175,
+      "sha256": "sha256:8a553f7fd660894a689b3ebc539b591e3f756e3e7e08f21b3b46886d01211012"
+    },
+    "en": {
+      "file": "en/index.html",
+      "parts": [
+        "en/part-001.html",
+        "en/part-002.html",
+        "en/part-003.html",
+        "en/part-004.html"
+      ],
+      "records": 11026,
+      "routing": "en/routing.json",
+      "sha256": "sha256:78b1eabe46b0c438f8d472e5525d1fbd99e43d4251e33e5b8145ef16403854f5"
+    },
+    "es": {
+      "file": "es/index.html",
+      "parts": [
+        "es/part-001.html",
+        "es/part-002.html"
+      ],
+      "records": 4010,
+      "routing": "es/routing.json",
+      "sha256": "sha256:e32e9092f8686296b7f1bc3bb73c475deb08c9e2bd9485fee868ef66de61f3b9"
+    },
+    "fr": {
+      "file": "fr.html",
+      "records": 1143,
+      "sha256": "sha256:f73dcb79f7a701ccd251459e1453052c7b6668d39ff7f7023c650f69837608b7"
+    },
+    "it": {
+      "file": "it.html",
+      "records": 1133,
+      "sha256": "sha256:7cbdf47b62a0e665e4a7c7aaaeded84d8079260a81118e35594a5111f1b30ca7"
+    },
+    "ja": {
+      "file": "ja.html",
+      "records": 80,
+      "sha256": "sha256:2e1db9f8f82d010b57143293d5742740ad4ec8feb88f5dd49c136dc6f9f098ef"
+    },
+    "pt": {
+      "file": "pt.html",
+      "records": 883,
+      "sha256": "sha256:e59a7b0d1c82f9ce6e46552e5869adc030229582e6eeccd18eb0bffe3ec2d8a8"
+    },
+    "zh": {
+      "file": "zh.html",
+      "records": 339,
+      "sha256": "sha256:61fe0e4be4cbab448495a505caf817975b6458d84e41f18df22269a4a9f24953"
+    }
+  },
+  "record_count": 19789,
+  "schema_version": "1"
+}

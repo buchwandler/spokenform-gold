@@ -15,3 +15,4 @@ context_spokenform_gold*.*
 .ledger/backups/
 .ledger/migrations/
 .ledger/ledger.local.toml
+run.html

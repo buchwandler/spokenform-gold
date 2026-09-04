@@ -63,7 +63,7 @@ class CliContextBudgetTests(unittest.TestCase):
             self.assertLess(len(text), 4096)
             self.assertIn("batch_id=batch-0001", text)
             self.assertIn("review_ready=yes", text)
-            self.assertIn("integrated=yes", text)
+            self.assertIn("integrated=no", text)
             self.assertNotIn('"case_id"', text)
 
     def test_trace_case_is_exact_and_writes_detail_to_file(self):

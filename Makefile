@@ -1,6 +1,6 @@
-.PHONY: check lint test stats candidate-stats validate validate-corpus validate-controls coverage control-coverage conflicts split score adjudicate judge-calibrate release-check
+.PHONY: check lint test stats candidate-stats validate validate-corpus corpus-site-check validate-controls coverage control-coverage conflicts split score adjudicate judge-calibrate release-check
 
-check: lint test stats candidate-stats validate validate-corpus validate-controls coverage control-coverage conflicts adjudicate score judge-calibrate release-check
+check: lint test stats candidate-stats validate validate-corpus corpus-site-check validate-controls coverage control-coverage conflicts adjudicate score judge-calibrate release-check
 
 lint:
 	ruff check .
@@ -57,3 +57,6 @@ release-check:
 
 validate-corpus:
 	PYTHONPATH=. python -m spokenform_gold.cli validate data/corpus/
+
+corpus-site-check:
+	@if [ -d data/corpus ]; then PYTHONPATH=. python -m spokenform_gold.cli corpus-site --out-dir docs/corpus --check; fi
