@@ -4,6 +4,7 @@ from pathlib import Path
 
 from spokenform_gold.corpus import read_corpus
 from spokenform_gold.io import read_records
+from spokenform_gold.oracle import oracle_hash
 from spokenform_gold.source_manifest import validate_source_manifest
 from spokenform_gold.validation import validate_records
 
@@ -124,6 +125,37 @@ class ValidationTests(unittest.TestCase):
         self.assertFalse(
             any("ambiguous date unit requires" in error for error in errors)
         )
+
+    def _no_change_pair(self, left_input, right_input):
+        base = next(
+            record
+            for record in read_corpus(ROOT / "data/corpus")
+            if record["status"] == "no_change"
+        )
+        records = []
+        for record_id, input_text in (("left", left_input), ("right", right_input)):
+            record = copy.deepcopy(base)
+            record["id"] = f"identity-{record_id}"
+            record["input"] = input_text
+            record["oracle"] = {
+                "accepted_outputs": [input_text],
+                "canonical_output": input_text,
+                "comparison_profile": "sentence-exact-v1",
+                "rejected_outputs": [],
+                "variant_mode": "explicit",
+            }
+            record["oracle_hash"] = oracle_hash(record)
+            records.append(record)
+        return records
+
+    def test_case_distinct_inputs_have_distinct_sentence_identity(self):
+        records = self._no_change_pair("ABC", "abc")
+        self.assertEqual(validate_records(records), [])
+
+    def test_nfkc_equivalent_inputs_share_sentence_identity(self):
+        records = self._no_change_pair("A", "Ａ")
+        errors = validate_records(records)
+        self.assertTrue(any("duplicate sentence identity" in error for error in errors))
 
 
 if __name__ == "__main__":

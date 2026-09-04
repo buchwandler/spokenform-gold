@@ -65,9 +65,16 @@ spokenform-gold coverage data/corpus/ \
   --targets taxonomy/coverage_targets.json \
   --json <WORK>/reports/coverage.json
 spokenform-gold conflicts data/corpus/ --mode unit \
-  --json <WORK>/reports/conflicts.json
+  --out <WORK>/reports/conflicts.json
 spokenform-gold report --records data/corpus/ \
   --out <WORK>/reports/corpus.html
+spokenform-gold source-census data/corpus/*.jsonl \
+  --out <WORK>/reports/source-materialization-census.json
+spokenform-gold release \
+  --version 0.1.0-exp.1 --data data/corpus/ --controls data/controls \
+  --maturity experimental --coverage-profile all-active \
+  --conflict-adjudication release/conflict-adjudication.json \
+  --release-sources spokenform_curated --out <WORK>/releases/v0.1.0-exp.1
 ```
 
 Integration is mechanical and requires complete reviewed decisions:

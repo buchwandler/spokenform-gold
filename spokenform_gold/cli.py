@@ -108,6 +108,11 @@ from .safe_search import (
 )
 from .scoring import load_predictions, score_records
 from .source_lock import build_source_lock
+from .source_manifest import (
+    build_source_materialization_census,
+    load_and_validate_source_manifest,
+    referenced_source_names,
+)
 from .splitting import split_records
 from .stats import build_stats
 from .translation import (
@@ -541,6 +546,28 @@ def cmd_control_coverage(args):
     return 0
 
 
+def cmd_source_census(args):
+    records = read_records(args.records)
+    manifest = load_and_validate_source_manifest(
+        args.source_manifest,
+        repo_root=Path.cwd(),
+        source_names=referenced_source_names(records),
+    )
+    census = build_source_materialization_census(records, manifest)
+    if args.out:
+        write_json(args.out, census)
+    print("source materialization census")
+    print(
+        "benchmark | source_version | materialization | records | unique_source_ids | policy | release_ready"
+    )
+    for row in census["groups"]:
+        print(
+            "{benchmark} | {source_version} | {materialization} | {records} | "
+            "{unique_source_ids} | {manifest_policy} | {release_ready}".format(**row)
+        )
+    return 0
+
+
 def cmd_conflicts(args):
     records = read_records(args.paths)
     conflicts = find_conflicts(records, args.mode)
@@ -925,6 +952,7 @@ def cmd_release_check(args):
         coverage_profile=args.coverage_profile,
         control_paths=args.controls,
         conflict_adjudication_path=args.conflict_adjudication,
+        release_sources=getattr(args, "release_sources", None),
     )
     print(
         "release={version} records={records} families={families}".format(
@@ -2115,6 +2143,12 @@ def build_parser():
     conflicts.add_argument("--fail-on-conflict", action="store_true")
     conflicts.set_defaults(func=cmd_conflicts)
 
+    source_census = sub.add_parser("source-census")
+    source_census.add_argument("records", nargs="+")
+    source_census.add_argument("--source-manifest", default="sources/manifest.json")
+    source_census.add_argument("--out", required=True)
+    source_census.set_defaults(func=cmd_source_census)
+
     discover = sub.add_parser("discover")
     discover.add_argument("corpus")
     discover.add_argument("--against", required=True)
@@ -2594,6 +2628,7 @@ def build_parser():
     release_v2.add_argument("--coverage-profile", default="none")
     release_v2.add_argument("--controls", nargs="+")
     release_v2.add_argument("--conflict-adjudication")
+    release_v2.add_argument("--release-sources", nargs="+")
     release_v2.set_defaults(func=cmd_release_check)
     benchmark = sub.add_parser("benchmark")
     benchmark.add_argument("--gold-root", required=True)

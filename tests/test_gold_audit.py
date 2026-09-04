@@ -2,6 +2,7 @@ import copy
 import unittest
 from pathlib import Path
 
+from spokenform_gold.corpus import sentence_key
 from spokenform_gold.gold_audit import audit_records, find_reviewed_oracle_conflicts
 from spokenform_gold.io import read_records
 
@@ -27,6 +28,35 @@ class GoldAuditTests(unittest.TestCase):
         other["oracle"]["canonical_output"] = "different"
         records.append(other)
         self.assertTrue(find_reviewed_oracle_conflicts(records))
+
+    def test_case_distinct_inputs_are_not_merged_by_canonical_identity(self):
+        base = copy.deepcopy(read_records([ROOT / "data/test"])[0])
+        left = copy.deepcopy(base)
+        right = copy.deepcopy(base)
+        left["id"] = "case-left"
+        right["id"] = "case-right"
+        left["input"] = "ABC"
+        right["input"] = "abc"
+        self.assertNotEqual(
+            sentence_key("en", "en-US", left["input"]),
+            sentence_key("en", "en-US", right["input"]),
+        )
+        self.assertEqual(find_reviewed_oracle_conflicts([left, right]), [])
+
+    def test_nfkc_equivalent_inputs_still_conflict(self):
+        base = copy.deepcopy(read_records([ROOT / "data/test"])[0])
+        left = copy.deepcopy(base)
+        right = copy.deepcopy(base)
+        left["id"] = "nfkc-left"
+        right["id"] = "nfkc-right"
+        left["input"] = "A"
+        right["input"] = "Ａ"
+        right["oracle"]["canonical_output"] = "different"
+        self.assertEqual(
+            sentence_key("en", "en-US", left["input"]),
+            sentence_key("en", "en-US", right["input"]),
+        )
+        self.assertTrue(find_reviewed_oracle_conflicts([left, right]))
 
 
 if __name__ == "__main__":

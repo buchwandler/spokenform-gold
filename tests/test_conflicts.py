@@ -1,6 +1,10 @@
 import unittest
 
-from spokenform_gold.conflicts import find_conflicts, unresolved_adjudicated_conflicts
+from spokenform_gold.conflicts import (
+    conflict_fingerprint,
+    find_conflicts,
+    unresolved_adjudicated_conflicts,
+)
 
 
 class ConflictTests(unittest.TestCase):
@@ -45,6 +49,7 @@ class ConflictTests(unittest.TestCase):
                 {
                     "key": ["de-DE", "ordinal", "1."],
                     "disposition": "contextual_valid",
+                    "fingerprint": conflict_fingerprint(conflict),
                 }
             ]
         }
@@ -62,11 +67,74 @@ class ConflictTests(unittest.TestCase):
                 {
                     "key": ["de-DE", "chemical", "C₆H₁₂O₆"],
                     "disposition": "corrected_policy_inconsistency",
+                    "fingerprint": conflict_fingerprint(conflict),
                 }
             ]
         }
         unresolved = unresolved_adjudicated_conflicts([conflict], adjudication)
         self.assertEqual(unresolved[0]["action"], "correction_not_applied")
+
+    def test_conflict_includes_v2_source_provenance_and_fingerprint(self):
+        first = {
+            "locale": "en-US",
+            "status": "gold",
+            "input": "x 3/4",
+            "source_observations": [
+                {
+                    "benchmark": "fixture",
+                    "source_version": "rev-1",
+                    "source_id": "fixture:1",
+                }
+            ],
+            "units": [
+                {
+                    "surface": "3/4",
+                    "category": "fraction",
+                    "canonical": "three quarters",
+                    "accepted": ["three quarters"],
+                }
+            ],
+            "id": "one",
+        }
+        second = dict(first)
+        second["id"] = "two"
+        second["units"] = [
+            {
+                "surface": "3/4",
+                "category": "fraction",
+                "canonical": "three slash four",
+                "accepted": ["three slash four"],
+            }
+        ]
+        conflict = find_conflicts([first, second], "unit")[0]
+        self.assertTrue(conflict["fingerprint"].startswith("sha256:"))
+        self.assertEqual(
+            conflict["items"][0]["source_observations"][0],
+            {
+                "record_id": "one",
+                "benchmark": "fixture",
+                "source_version": "rev-1",
+                "source_id": "fixture:1",
+            },
+        )
+
+    def test_stale_fingerprint_is_rejected(self):
+        conflict = {
+            "key": ["de-DE", "ordinal", "1."],
+            "variants": ["erste", "eins"],
+            "items": [{"record_id": "record-1"}],
+        }
+        adjudication = {
+            "groups": [
+                {
+                    "key": conflict["key"],
+                    "fingerprint": "sha256:stale",
+                    "disposition": "contextual_valid",
+                }
+            ]
+        }
+        unresolved = unresolved_adjudicated_conflicts([conflict], adjudication)
+        self.assertEqual(unresolved[0]["action"], "stale_adjudication")
 
 
 if __name__ == "__main__":

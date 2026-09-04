@@ -72,6 +72,20 @@ class DocumentationContractTests(unittest.TestCase):
         ):
             self.assertNotIn(obsolete_concept, combined)
 
+    def test_release_workflow_uses_v2_corpus_and_independent_profile(self):
+        workflow = (ROOT / ".github/workflows/release.yml").read_text()
+        self.assertIn("spokenform-gold release \\", workflow)
+        self.assertIn("--data data/corpus/", workflow)
+        self.assertIn('--coverage-profile "${COVERAGE_PROFILE}"', workflow)
+        self.assertIn(
+            "--conflict-adjudication release/conflict-adjudication.json", workflow
+        )
+        self.assertIn("--release-sources spokenform_curated", workflow)
+        self.assertNotIn("--data data/train data/dev data/test", workflow)
+        self.assertNotIn("--registry splits/family_assignments.json", workflow)
+        self.assertNotIn('coverage_profile="${MATURITY}"', workflow)
+        self.assertIn('*exp*) maturity="experimental"', workflow)
+
     def test_human_review_contract_is_documented(self):
         combined = "\n".join(
             (ROOT / path).read_text()

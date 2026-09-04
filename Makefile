@@ -52,8 +52,8 @@ judge-calibrate:
 	PYTHONPATH=. python -m spokenform_gold.cli judge-calibrate data/judge_gold/*.jsonl --predictions tests/fixtures/predictions/judge_predictions.jsonl --json reports/judge_calibration.json
 
 release-check:
-	rm -rf dist/spokenform-gold-v0.1.0-exp
-	PYTHONPATH=. python -m spokenform_gold.cli release-check --version 0.1.0-exp --data data/train data/dev data/test --controls data/controls --registry splits/family_assignments.json --maturity experimental --out dist/spokenform-gold-v0.1.0-exp
+	rm -rf dist/spokenform-gold-v0.1.0-exp.1
+	PYTHONPATH=. python -m spokenform_gold.cli release --version 0.1.0-exp.1 --data data/corpus/ --controls data/controls --maturity experimental --coverage-profile all-active --conflict-adjudication release/conflict-adjudication.json --release-sources spokenform_curated --out dist/spokenform-gold-v0.1.0-exp.1
 
 validate-corpus:
 	PYTHONPATH=. python -m spokenform_gold.cli validate data/corpus/

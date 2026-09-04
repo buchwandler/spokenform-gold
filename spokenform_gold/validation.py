@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 
-from .corpus import read_corpus, validate_corpus_layout
+from .corpus import read_corpus, sentence_key, validate_corpus_layout
 from .oracle import (
     COMPARISON_PROFILE,
     canonical_unit_reconstruction,
@@ -622,10 +622,10 @@ def validate_v2_records(
                 )
         if not isinstance(record.get("input"), str):
             continue
-        identity = (
+        identity = sentence_key(
             record.get("language", ""),
             record.get("locale", ""),
-            " ".join(record["input"].split()),
+            record.get("input", ""),
         )
         if identity in identities and identities[identity] != record.get("id"):
             errors.append(

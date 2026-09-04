@@ -15,6 +15,7 @@ from .html_report import render_release_html
 from .io import expand_jsonl_paths, read_json, read_records, sha256_file, write_jsonl
 from .review_lineage import backfill_legacy_evidence, write_review_evidence
 from .source_manifest import (
+    build_source_materialization_census,
     load_and_validate_source_manifest,
     normalize_materialization_policy,
     referenced_source_names,
@@ -143,6 +144,11 @@ def _enforce_source_materialization(records: list[dict], source_manifest: dict) 
             if benchmark not in source_map:
                 continue
             policy = normalize_materialization_policy(source_map[benchmark])
+            if not source_map[benchmark].get("release_ready", False):
+                errors.append(
+                    f"record {record.get('id', '?')} references source {benchmark!r} "
+                    "that is not release_ready"
+                )
             materialization = source.get(
                 "materialization", record.get("materialization", "embedded")
             )
@@ -292,6 +298,8 @@ def _build_release_notes(
     maturity: str,
     counts: dict,
     source_manifest: dict,
+    coverage_profile: str = "none",
+    excluded_records: int = 0,
 ) -> str:
     source_lines = [
         f"- {entry['name']}: {entry['revision']} ({entry['license']}, {entry['redistribution_status']})"
@@ -305,8 +313,71 @@ def _build_release_notes(
         f"- families: {counts['families']}\n"
         f"- languages: {', '.join(sorted(counts['languages'])) or 'none'}\n"
         f"- locales: {', '.join(sorted(counts['locales'])) or 'none'}\n\n"
+        "## Release Limitations\n\n"
+        f"- coverage profile: {coverage_profile}\n"
+        "- this is an experimental prerelease; stable guarantees do not apply.\n"
+        f"- records excluded by source policy: {excluded_records}\n\n"
         "## Source Manifest\n\n" + "\n".join(source_lines) + "\n"
     )
+
+
+def _record_materialization_keys(record: dict) -> list[tuple[str, str]]:
+    sources = record.get("source_observations") or [record.get("source", {})]
+    keys = []
+    for source in sources:
+        if not isinstance(source, dict):
+            continue
+        keys.append(
+            (
+                source.get("benchmark") or "unknown",
+                source.get("materialization")
+                or record.get("materialization", "embedded"),
+            )
+        )
+    return keys
+
+
+def _select_release_records(
+    records: list[dict], release_sources: set[str] | None
+) -> tuple[list[dict], dict]:
+    if not release_sources:
+        return records, {"records": 0, "by_source": {}}
+    selected = []
+    excluded = Counter()
+    excluded_records = 0
+    for record in records:
+        keys = _record_materialization_keys(record)
+        benchmarks = {benchmark for benchmark, _ in keys}
+        if benchmarks and benchmarks <= release_sources:
+            selected.append(record)
+            continue
+        excluded_records += 1
+        for benchmark, materialization in keys or [("unknown", "unknown")]:
+            excluded[f"{benchmark}:{materialization}"] += 1
+    return selected, {
+        "records": excluded_records,
+        "by_source": dict(sorted(excluded.items())),
+    }
+
+
+def _non_release_ready_records(records: list[dict], manifest: dict) -> int:
+    source_map = {
+        entry["name"]: entry
+        for entry in manifest.get("sources", [])
+        if isinstance(entry, dict) and isinstance(entry.get("name"), str)
+    }
+    count = 0
+    for record in records:
+        sources = record.get("source_observations") or [record.get("source", {})]
+        if any(
+            isinstance(source, dict)
+            and not source_map.get(source.get("benchmark"), {}).get(
+                "release_ready", False
+            )
+            for source in sources
+        ):
+            count += 1
+    return count
 
 
 def build_corpus_release(
@@ -319,6 +390,7 @@ def build_corpus_release(
     coverage_profile: str = "none",
     control_paths: list[str] | None = None,
     conflict_adjudication_path: str | Path | None = None,
+    release_sources: list[str] | None = None,
 ) -> dict:
     """Build a v2 release from the unsplit canonical corpus shards."""
     _profile(maturity)
@@ -329,7 +401,24 @@ def build_corpus_release(
     output_root.mkdir(parents=True)
     _validate_corpus_directory_inputs(data_paths)
     record_files = _repository_local_jsonl_files(root, data_paths, label="release data")
-    records = sorted(read_records(record_files), key=lambda row: row["id"])
+    all_records = sorted(read_records(record_files), key=lambda row: row["id"])
+    records, exclusion = _select_release_records(
+        all_records, set(release_sources) if release_sources else None
+    )
+    manifest_path = (
+        Path(source_manifest_path)
+        if source_manifest_path
+        else root / "sources" / "manifest.json"
+    )
+    referenced_all = referenced_source_names(all_records)
+    full_source_manifest = load_and_validate_source_manifest(
+        manifest_path,
+        repo_root=root,
+        source_names=referenced_all,
+    )
+    source_census = build_source_materialization_census(
+        all_records, full_source_manifest
+    )
     if any("split" in record for record in records):
         raise ValueError("v2 corpus release input must not contain split")
     validation_errors = validate_records(records)
@@ -370,11 +459,6 @@ def build_corpus_release(
     )
     if conflicts:
         raise ValueError("release data has unresolved conflicts")
-    manifest_path = (
-        Path(source_manifest_path)
-        if source_manifest_path
-        else root / "sources" / "manifest.json"
-    )
     referenced = referenced_source_names(records)
     source_manifest = load_and_validate_source_manifest(
         manifest_path,
@@ -383,8 +467,7 @@ def build_corpus_release(
         source_names=referenced,
         filter_to_source_names=True,
     )
-    if maturity == "stable":
-        _enforce_source_materialization(records, source_manifest)
+    _enforce_source_materialization(records, source_manifest)
     coverage = build_coverage(records, targets)
     _enforce_maturity(
         profile_name=maturity,
@@ -408,6 +491,10 @@ def build_corpus_release(
         adjudication_output["raw_conflicts"] = raw_conflicts
         adjudication_output["unresolved_conflicts"] = conflicts
         _write_json(output_root / "conflict_adjudication.json", adjudication_output)
+    _write_json(
+        output_root / "source_materialization_census.json",
+        source_census,
+    )
     _write_json(output_root / "oracle_audit.json", oracle_audit)
     counts = {
         "records": len(records),
@@ -447,6 +534,8 @@ def build_corpus_release(
             maturity=maturity,
             counts=counts,
             source_manifest=source_manifest,
+            coverage_profile=coverage_profile,
+            excluded_records=exclusion["records"],
         ),
         encoding="utf-8",
     )
@@ -459,6 +548,35 @@ def build_corpus_release(
         "policy_version": policy_version(),
         "coverage_profile": coverage_profile,
         "source_manifest_version": source_manifest.get("version"),
+        "source_integrity": {
+            "records_checked": len(all_records),
+            "records_emitted": len(records),
+            "excluded_records": exclusion["records"],
+            "excluded_by_source": exclusion["by_source"],
+            "non_release_ready_records": _non_release_ready_records(
+                records, source_manifest
+            ),
+            "externalized_records": sum(
+                1
+                for record in records
+                if record.get("materialization") == "external_ref"
+                or any(
+                    isinstance(source, dict)
+                    and source.get("materialization") == "external_ref"
+                    for source in record.get("source_observations", [])
+                )
+            ),
+            "census": "source_materialization_census.json",
+            "benchmarks": {
+                row["benchmark"]: {
+                    "records": row["records"],
+                    "materialization": row["materialization"],
+                    "release_ready": row["release_ready"],
+                    "manifest_policy": row["manifest_policy"],
+                }
+                for row in source_census["groups"]
+            },
+        },
         "counts": counts,
         "record_files": ["corpus.jsonl"],
         "control_files": [str(path.relative_to(root)) for path in control_files],
@@ -504,6 +622,7 @@ def build_release(
     coverage_profile: str = "none",
     control_paths: list[str] | None = None,
     conflict_adjudication_path: str | Path | None = None,
+    release_sources: list[str] | None = None,
 ) -> dict:
     _profile(maturity)
     candidate_files = expand_jsonl_paths(data_paths)
@@ -521,6 +640,7 @@ def build_release(
             coverage_profile=coverage_profile,
             control_paths=control_paths,
             conflict_adjudication_path=conflict_adjudication_path,
+            release_sources=release_sources,
         )
 
     root = repo_root()

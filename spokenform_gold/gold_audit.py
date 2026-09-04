@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from collections.abc import Iterable
 
+from .corpus import sentence_key
 from .oracle import normalize_text, oracle_hash
 from .validation import REVIEWED_STATUSES, validate_records
 
@@ -29,11 +30,12 @@ def find_reviewed_oracle_conflicts(records: Iterable[dict]) -> list[dict]:
         if record.get("status") not in REVIEWED_STATUSES:
             continue
         groups[
-            (
+            sentence_key(
+                record.get("language", ""),
                 record.get("locale", ""),
-                normalize_text(record.get("input")),
-                record.get("policy_version", ""),
+                record.get("input", ""),
             )
+            + (record.get("policy_version", ""),)
         ].append(record)
     conflicts = []
     for key, items in sorted(groups.items()):

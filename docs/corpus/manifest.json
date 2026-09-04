@@ -1,5 +1,5 @@
 {
-  "corpus_hash": "sha256:c11016b0cab70ccc9258133c050a913b55671144c1fe145227d36a8e3a3378ea",
+  "corpus_hash": "sha256:3cf05c200c04b0d1f2297288f9907c97e3a510589bc278ec1c58fc6803ae9cd9",
   "generator": "spokenform-gold corpus-site",
   "languages": {
     "de": {
@@ -21,10 +21,7 @@
     },
     "es": {
       "file": "es/index.html",
-      "parts": [
-        "es/part-001.html",
-        "es/part-002.html"
-      ],
+      "parts": ["es/part-001.html", "es/part-002.html"],
       "records": 4010,
       "routing": "es/routing.json",
       "sha256": "sha256:e32e9092f8686296b7f1bc3bb73c475deb08c9e2bd9485fee868ef66de61f3b9"

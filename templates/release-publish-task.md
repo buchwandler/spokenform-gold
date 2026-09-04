@@ -18,7 +18,11 @@ git status --short
 git rev-parse HEAD
 make check
 spokenform-gold validate data/corpus/
-spokenform-gold release-check --version <VERSION> --data data/corpus/ \
+spokenform-gold release --version <VERSION> --data data/corpus/ \
+  --controls data/controls --maturity experimental \
+  --coverage-profile all-active \
+  --conflict-adjudication release/conflict-adjudication.json \
+  --release-sources spokenform_curated \
   --out <WORK>/releases/<VERSION>
 ```
 

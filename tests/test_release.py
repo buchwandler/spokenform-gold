@@ -75,6 +75,8 @@ class ReleaseTests(unittest.TestCase):
                 data_paths=[str(input_root)],
                 out_root=output_root,
                 maturity="experimental",
+                conflict_adjudication_path=ROOT / "release/conflict-adjudication.json",
+                release_sources=["spokenform_curated"],
             )
             self.assertTrue((output_root / "corpus.jsonl").is_file())
             self.assertEqual(manifest["record_files"], ["corpus.jsonl"])

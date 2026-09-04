@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from pathlib import Path
 
 from .io import read_json, sha256_file
@@ -245,3 +246,57 @@ def load_and_validate_source_manifest(
     if filter_to_source_names:
         return filter_source_manifest(manifest, source_names)
     return manifest
+
+
+def build_source_materialization_census(records: list[dict], manifest: dict) -> dict:
+    """Summarize materialization and manifest policy for canonical records."""
+    source_map = {
+        entry["name"]: entry
+        for entry in manifest.get("sources", [])
+        if isinstance(entry, dict) and isinstance(entry.get("name"), str)
+    }
+    groups = defaultdict(lambda: {"records": set(), "source_ids": set()})
+    for record in records:
+        observations = record.get("source_observations") or [record.get("source", {})]
+        for source in observations:
+            if not isinstance(source, dict):
+                continue
+            benchmark = source.get("benchmark") or "unknown"
+            key = (
+                benchmark,
+                source.get("source_version") or "unknown",
+                source.get("materialization")
+                or record.get("materialization", "embedded"),
+            )
+            groups[key]["records"].add(record.get("id"))
+            source_id = source.get("source_id")
+            if source_id:
+                groups[key]["source_ids"].add(source_id)
+    rows = []
+    for (benchmark, source_version, materialization), values in sorted(groups.items()):
+        source = source_map.get(benchmark, {})
+        rows.append(
+            {
+                "benchmark": benchmark,
+                "source_version": source_version,
+                "materialization": materialization,
+                "records": len(values["records"]),
+                "unique_source_ids": len(values["source_ids"]),
+                "source_ids": sorted(values["source_ids"]),
+                "manifest_policy": normalize_materialization_policy(source)
+                if source
+                else "unknown",
+                "release_ready": source.get("release_ready", False)
+                if source
+                else False,
+                "license": source.get("license") if source else None,
+                "redistribution_status": source.get("redistribution_status")
+                if source
+                else "unknown",
+                "attribution": source.get("attribution") if source else None,
+            }
+        )
+    return {
+        "records_checked": len(records),
+        "groups": rows,
+    }

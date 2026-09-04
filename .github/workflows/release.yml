@@ -13,12 +13,22 @@ on:
       maturity:
         description: "Release maturity"
         required: true
-        default: candidate
+        default: experimental
         type: choice
         options:
           - experimental
           - candidate
           - stable
+      coverage_profile:
+        description: "Independent language coverage profile"
+        required: true
+        default: all-active
+        type: choice
+        options:
+          - none
+          - stable
+          - cjk-experimental
+          - all-active
 
 permissions:
   contents: write
@@ -39,15 +49,18 @@ jobs:
         env:
           INPUT_VERSION: ${{ inputs.version }}
           INPUT_MATURITY: ${{ inputs.maturity }}
+          INPUT_COVERAGE_PROFILE: ${{ inputs.coverage_profile }}
         run: |
           set -euo pipefail
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
             version="${INPUT_VERSION}"
             maturity="${INPUT_MATURITY}"
+            coverage_profile="${INPUT_COVERAGE_PROFILE}"
             tag="v${version}"
           else
             tag="${GITHUB_REF_NAME}"
             version="${tag#v}"
+            coverage_profile="all-active"
             case "${version}" in
               *candidate*) maturity="candidate" ;;
               *exp*) maturity="experimental" ;;
@@ -55,8 +68,10 @@ jobs:
             esac
           fi
           [[ "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]
+          [[ -n "${coverage_profile}" ]]
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
           echo "maturity=${maturity}" >> "${GITHUB_OUTPUT}"
+          echo "coverage_profile=${coverage_profile}" >> "${GITHUB_OUTPUT}"
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
           if [[ "${maturity}" == "stable" ]]; then
             echo "prerelease=false" >> "${GITHUB_OUTPUT}"
@@ -72,17 +87,19 @@ jobs:
         env:
           VERSION: ${{ steps.release.outputs.version }}
           MATURITY: ${{ steps.release.outputs.maturity }}
+          COVERAGE_PROFILE: ${{ steps.release.outputs.coverage_profile }}
         run: |
           set -euo pipefail
           name="spokenform-gold-v${VERSION}"
           rm -rf "dist/${name}"
-          spokenform-gold release-check \
+          spokenform-gold release \
             --version "${VERSION}" \
-            --data data/train data/dev data/test \
+            --data data/corpus/ \
             --controls data/controls \
-            --registry splits/family_assignments.json \
             --maturity "${MATURITY}" \
-            --coverage-profile "${MATURITY}" \
+            --coverage-profile "${COVERAGE_PROFILE}" \
+            --conflict-adjudication release/conflict-adjudication.json \
+            --release-sources spokenform_curated \
             --out "dist/${name}"
           python - "${name}" <<'PY'
           import shutil

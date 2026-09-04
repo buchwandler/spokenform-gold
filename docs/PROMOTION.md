@@ -1,9 +1,8 @@
 # Reviewed promotion workflow
 
 `promote-reviewed` is the boundary between external candidate work and the
-Git-tracked canonical benchmark across `data/train`, `data/dev`, and
-`data/test`. It writes staging JSONL and an audit report. It never modifies any
-canonical shard or the split registry.
+Git-tracked canonical benchmark in `data/corpus/`. It writes staging JSONL and an
+audit report. It never modifies any canonical shard or release artifact.
 
 ## Required review evidence
 
@@ -33,7 +32,7 @@ and before merging them into canonical data.
 spokenform-gold promote-reviewed \
   --candidates "$SPOKENFORM_GOLD_WORK/candidates/review-batch.jsonl" \
   --decisions "$SPOKENFORM_GOLD_WORK/reviews/decisions.jsonl" \
-  --against data/train data/dev data/test \
+  --against data/corpus/ \
   --out "$SPOKENFORM_GOLD_WORK/promotion_staging/reviewed.jsonl" \
   --report "$SPOKENFORM_GOLD_WORK/promotion_staging/promotion-report.json"
 ```
@@ -52,7 +51,7 @@ After promotion staging:
 3. inspect unit conflicts and coverage impact;
 4. validate controls separately;
 5. inspect the Git diff;
-6. build an experimental release with `release-check`.
+6. build a v2 experimental release with `release --data data/corpus/`.
 
 Do not put source caches, candidate pools, review traces, or promotion reports
 into Git unless a separate policy explicitly requires a small audit artifact.
@@ -65,7 +64,7 @@ The external work area currently contains a 100-record ranked review batch and
 30 proposals from each of two annotator passes. The adjudication report records
 `proposal_only_no_independent_human_reviewer`, unresolved semantic and canonical
 fields, and `quarantine=30`, with zero promoted records. These proposals remain
-`data/train`, `data/dev`, or `data/test` until independent human review,
+proposals remain outside `data/corpus/` until independent human review,
 adjudication, stable Spokenform family assignment, and source-policy decisions
 are complete.
 
