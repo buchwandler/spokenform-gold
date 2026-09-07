@@ -581,7 +581,9 @@ def validate_v2_records(
                 errors.append(f"{prefix}: missing field {key}")
         if record.get("schema_version") != "2.0.0":
             errors.append(f"{prefix}: v2 records require schema_version 2.0.0")
-        if not isinstance(record.get("input"), str):
+        if record.get("materialization", "embedded") == "embedded" and not isinstance(
+            record.get("input"), str
+        ):
             errors.append(f"{prefix}: input must be a string")
         if record.get("status") not in STATUSES - {"quarantine"}:
             errors.append(f"{prefix}: invalid v2 status {record.get('status')!r}")

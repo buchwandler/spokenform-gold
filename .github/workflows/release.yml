@@ -90,6 +90,19 @@ jobs:
             --data data/corpus/ \
             --source-decisions release/source-release-decisions.json \
             --out dist/release-preflight.json
+      - name: Verify release preflight
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("dist/release-preflight.json").read_text())
+          if not report["ready"] or report["blocked"] != 0:
+              raise SystemExit("release preflight is blocked")
+          if report["accounted"] != report["canonical_records"]:
+              raise SystemExit("release preflight accounting is incomplete")
+          print({key: report[key] for key in ("canonical_records", "embedded", "external_ref", "excluded", "blocked")})
+          PY
       - name: Build release and downloadable archives
         shell: bash
         env:

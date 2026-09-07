@@ -12,19 +12,23 @@ canonical Gold state. Do not alter annotations, provenance, taxonomy, policy, or
 family assignments during publication.
 
 ## Verify locally
-
 ```bash
 git status --short
 git rev-parse HEAD
 make check
 spokenform-gold validate data/corpus/
+spokenform-gold release-preflight --data data/corpus/ \
+  --source-decisions release/source-release-decisions.json \
+  --out <WORK>/reports/release-preflight.json
 spokenform-gold release --version <VERSION> --data data/corpus/ \
   --controls data/controls --maturity experimental \
   --coverage-profile all-active \
   --conflict-adjudication release/conflict-adjudication.json \
-  --release-sources spokenform_curated \
+  --source-decisions release/source-release-decisions.json \
   --out <WORK>/releases/<VERSION>
 ```
+
+Preflight must report `ready=true`, `blocked=0`, and `accounted=canonical_records`. Deliberately excluded records are reported explicitly and do not block an experimental release.
 
 Inspect the manifest, checksums, records report, coverage, controls, source
 lock, and taxonomy/schema snapshots. Record version, commit, manifest hash,

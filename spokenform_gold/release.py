@@ -18,11 +18,12 @@ from .io import expand_jsonl_paths, read_json, read_records, sha256_file, write_
 from .review_lineage import backfill_legacy_evidence, write_review_evidence
 from .source_manifest import (
     build_source_materialization_census,
+    filter_source_manifest,
     load_and_validate_source_manifest,
     normalize_materialization_policy,
     referenced_source_names,
 )
-from .source_policy import source_manifest_hash
+from .source_policy import effective_source_manifest, source_manifest_hash
 from .source_resolver import build_v2_external_overlay
 from .splitting import load_split_registry
 from .taxonomy import (
@@ -317,14 +318,16 @@ def _build_release_notes(
         f"- canonical corpus records: {counts.get('canonical_records', counts['records'])}\n"
         f"- embedded records: {counts.get('public_embedded_records', counts['records'])}\n"
         f"- external-reference records: {counts.get('public_external_ref_records', 0)}\n"
-        f"- blocked records: {counts.get('public_blocked_records', excluded_records)}\n"
+        f"- blocked records: {counts.get('public_blocked_records', 0)}\n"
+        f"- deliberately excluded records: {counts.get('public_excluded_records', excluded_records)}\n"
         f"- families: {counts['families']}\n"
         f"- languages: {', '.join(sorted(counts['languages'])) or 'none'}\n"
         f"- locales: {', '.join(sorted(counts['locales'])) or 'none'}\n\n"
         "## Release Limitations\n\n"
         f"- coverage profile: {coverage_profile}\n"
         "- this is an experimental prerelease; stable guarantees do not apply.\n"
-        f"- records excluded by source policy: {excluded_records}\n\n"
+        f"- records excluded by source policy: {counts.get('public_excluded_records', excluded_records)}\n"
+        "- PolyNorm upstream ingestion is incomplete; remaining source rows are post-release data growth.\n\n"
         "## Source Manifest\n\n" + "\n".join(source_lines) + "\n"
     )
 
@@ -433,11 +436,7 @@ def plan_publication_records(
     manifest_hash: str | None = None,
     release_sources: set[str] | None = None,
 ) -> dict:
-    """Assign each canonical record one public representation or a blocker.
-
-    The plan is deliberately derived from source observations and approved
-    source-level capabilities.  It never modifies the supplied records.
-    """
+    """Assign each canonical record one public representation or outcome."""
     source_map = {
         entry.get("name"): entry
         for entry in source_manifest.get("sources", [])
@@ -449,6 +448,7 @@ def plan_publication_records(
         observations = record.get("source_observations") or [record.get("source", {})]
         candidates = []
         blockers = []
+        excluded_sources = set()
         for observation in observations:
             if not isinstance(observation, dict):
                 blockers.append("invalid_source_observation")
@@ -473,6 +473,9 @@ def plan_publication_records(
                 }:
                     blockers.append("stale_source_manifest_hash")
                     continue
+                if decision.get("decision") == "exclude_public":
+                    excluded_sources.add(name)
+                    continue
             capabilities = _source_capabilities(source, decision)
             requested = observation.get(
                 "materialization", record.get("materialization", "embedded")
@@ -492,21 +495,29 @@ def plan_publication_records(
                     if not source.get("release_ready", False)
                     else "materialization_not_authorized"
                 )
-        if not candidates:
+        if candidates:
+            if any(mode == "embedded" for mode, _name, _obs in candidates):
+                mode = "embedded"
+                basis = sorted(
+                    {
+                        name
+                        for candidate_mode, name, _obs in candidates
+                        if candidate_mode == "embedded"
+                    }
+                )
+            else:
+                mode = "external_ref"
+                basis = sorted({name for _mode, name, _obs in candidates})
+        elif (
+            excluded_sources
+            and not blockers
+            and len(excluded_sources) == len(observations)
+        ):
+            mode = "excluded"
+            basis = []
+        else:
             mode = "blocked"
             basis = []
-        elif any(mode == "embedded" for mode, _name, _obs in candidates):
-            mode = "embedded"
-            basis = sorted(
-                {
-                    name
-                    for candidate_mode, name, _obs in candidates
-                    if candidate_mode == "embedded"
-                }
-            )
-        else:
-            mode = "external_ref"
-            basis = sorted({name for _mode, name, _obs in candidates})
         row = {
             "record_id": record.get("id"),
             "mode": mode,
@@ -520,6 +531,8 @@ def plan_publication_records(
                 if isinstance(source, dict) and source.get("benchmark") not in basis
             ],
         }
+        if excluded_sources:
+            row["excluded_sources"] = sorted(excluded_sources)
         if blockers and mode == "blocked":
             row["blocker"] = min(set(blockers))
             row["blockers"] = sorted(set(blockers))
@@ -531,6 +544,7 @@ def plan_publication_records(
         "records": len(rows),
         "embedded": counts["embedded"],
         "external_ref": counts["external_ref"],
+        "excluded": counts["excluded"],
         "blocked": counts["blocked"],
         "accounted": sum(counts.values()),
         "blockers": dict(
@@ -564,14 +578,24 @@ def build_release_preflight(
         else root / "sources" / "manifest.json"
     )
     referenced = referenced_source_names(records)
-    source_manifest = load_and_validate_source_manifest(
+    base_manifest = read_json(manifest_path)
+    load_and_validate_source_manifest(
         manifest_path, repo_root=root, source_names=referenced
     )
     decisions = read_json(source_decisions_path) if source_decisions_path else None
-    manifest_hash = source_manifest_hash(source_manifest)
+    manifest_hash = source_manifest_hash(base_manifest)
+    effective_manifest = (
+        effective_source_manifest(
+            base_manifest, decisions, repo_root=root, require_all=False
+        )
+        if decisions is not None
+        else load_and_validate_source_manifest(
+            manifest_path, repo_root=root, source_names=referenced
+        )
+    )
     partition = plan_publication_records(
         records,
-        source_manifest,
+        effective_manifest,
         decisions=decisions,
         manifest_hash=manifest_hash,
         release_sources=set(release_sources) if release_sources else None,
@@ -586,7 +610,10 @@ def build_release_preflight(
         "canonical_corpus_hash": canonical_corpus_hash(records),
         "embedded": partition["embedded"],
         "external_ref": partition["external_ref"],
+        "excluded": partition["excluded"],
         "blocked": partition["blocked"],
+        "public_release_records": partition["embedded"] + partition["external_ref"],
+        "public_excluded_records": partition["excluded"],
         "accounted": partition["accounted"],
         "records": partition["records_plan"],
         "blockers": partition["blockers"],
@@ -610,18 +637,22 @@ def _materialize_publication_plan(
     by_id = {record.get("id"): record for record in records}
     materialized = []
     excluded = Counter()
+    blocked = Counter()
     for row in plan.get("records_plan", []):
         record = by_id.get(row.get("record_id"))
         if record is None:
-            excluded["missing_record"] += 1
+            blocked["missing_record"] += 1
             continue
         mode = row.get("mode")
         if mode == "blocked":
-            excluded[row.get("blocker", "source_policy_unresolved")] += 1
+            blocked[row.get("blocker", "source_policy_unresolved")] += 1
+            continue
+        if mode == "excluded":
+            excluded["source_policy_exclude_public"] += 1
             continue
         basis = row.get("publication_basis", [])
         if not basis:
-            excluded["missing_publication_basis"] += 1
+            blocked["missing_publication_basis"] += 1
             continue
         if mode == "embedded":
             output = deepcopy(record)
@@ -638,7 +669,7 @@ def _materialize_publication_plan(
         elif mode == "external_ref":
             source = source_map.get(basis[0])
             if source is None:
-                excluded["unknown_publication_basis"] += 1
+                blocked["unknown_publication_basis"] += 1
                 continue
             observation = next(
                 (
@@ -649,19 +680,54 @@ def _materialize_publication_plan(
                 None,
             )
             if observation is None:
-                excluded["missing_publication_observation"] += 1
+                blocked["missing_publication_observation"] += 1
                 continue
             output = build_v2_external_overlay(record, source=observation)
             output["other_source_observations"] = row.get(
                 "other_source_observations", []
             )
         else:
-            excluded["invalid_publication_mode"] += 1
+            blocked["invalid_publication_mode"] += 1
             continue
         materialized.append(output)
     return materialized, {
-        "records": sum(excluded.values()),
-        "by_source": dict(sorted(excluded.items())),
+        "records": sum(excluded.values()) + sum(blocked.values()),
+        "excluded": sum(excluded.values()),
+        "blocked": sum(blocked.values()),
+        "excluded_by_reason": dict(sorted(excluded.items())),
+        "blocked_by_reason": dict(sorted(blocked.items())),
+    }
+
+
+def _build_review_evidence_summary(records: list[dict], root: Path) -> dict:
+    lineage_path = root / "data" / "lineage" / "review-evidence.jsonl"
+    lineage = read_records([lineage_path]) if lineage_path.is_file() else []
+    record_ids = {record.get("id") for record in records}
+    by_record = {row.get("record_id"): row for row in lineage}
+    modern_ab = sum(
+        1
+        for record_id in record_ids
+        if isinstance(by_record.get(record_id), dict)
+        and isinstance(by_record[record_id].get("review_a"), dict)
+        and isinstance(by_record[record_id].get("review_b"), dict)
+    )
+    legacy_metadata = sum(
+        1
+        for record_id in record_ids
+        if isinstance(by_record.get(record_id), dict)
+        and not (
+            isinstance(by_record[record_id].get("review_a"), dict)
+            and isinstance(by_record[record_id].get("review_b"), dict)
+        )
+    )
+    missing_lineage = len(record_ids - set(by_record))
+    return {
+        "records_checked": len(record_ids),
+        "modern_ab": modern_ab,
+        "legacy_metadata": legacy_metadata,
+        "missing_lineage": missing_lineage,
+        "lineage_records": len(record_ids & set(by_record)),
+        "lineage_path": str(lineage_path),
     }
 
 
@@ -688,6 +754,18 @@ def build_corpus_release(
     _validate_corpus_directory_inputs(data_paths)
     record_files = _repository_local_jsonl_files(root, data_paths, label="release data")
     all_records = sorted(read_records(record_files), key=lambda row: row["id"])
+    canonical_validation_errors = validate_records(all_records)
+    if canonical_validation_errors:
+        raise ValueError(
+            "canonical corpus validation failed: "
+            + "; ".join(canonical_validation_errors)
+        )
+    canonical_oracle_audit = audit_records(all_records, strict=maturity == "stable")
+    if canonical_oracle_audit["errors"]:
+        raise ValueError(
+            "canonical corpus oracle audit failed: "
+            + "; ".join(canonical_oracle_audit["errors"])
+        )
     records, exclusion = _select_release_records(
         all_records, set(release_sources) if release_sources else None
     )
@@ -697,21 +775,28 @@ def build_corpus_release(
         else root / "sources" / "manifest.json"
     )
     referenced_all = referenced_source_names(all_records)
-    full_source_manifest = load_and_validate_source_manifest(
-        manifest_path,
-        repo_root=root,
-        source_names=referenced_all,
+    base_manifest = read_json(manifest_path)
+    load_and_validate_source_manifest(
+        manifest_path, repo_root=root, source_names=referenced_all
     )
-    source_census = build_source_materialization_census(
-        all_records, full_source_manifest
+    decisions = read_json(source_decisions_path) if source_decisions_path else None
+    manifest_hash = source_manifest_hash(base_manifest)
+    effective_manifest = (
+        effective_source_manifest(
+            base_manifest, decisions, repo_root=root, require_all=False
+        )
+        if decisions is not None
+        else base_manifest
     )
+    review_evidence_summary = _build_review_evidence_summary(all_records, root)
+    source_census = build_source_materialization_census(all_records, effective_manifest)
+    publication_plan = None
     if not release_sources:
-        decisions = read_json(source_decisions_path) if source_decisions_path else None
         publication_plan = plan_publication_records(
             all_records,
-            full_source_manifest,
+            effective_manifest,
             decisions=decisions,
-            manifest_hash=source_manifest_hash(full_source_manifest),
+            manifest_hash=manifest_hash,
         )
         if publication_plan["blocked"]:
             raise ValueError(
@@ -719,18 +804,17 @@ def build_corpus_release(
                 + json.dumps(publication_plan["blockers"], sort_keys=True)
             )
         records, exclusion = _materialize_publication_plan(
-            all_records, publication_plan, full_source_manifest
+            all_records, publication_plan, effective_manifest
         )
-    if any("split" in record for record in records):
-        raise ValueError("v2 corpus release input must not contain split")
+        if exclusion["blocked"]:
+            raise ValueError(
+                "release materialization has blocked records: "
+                + json.dumps(exclusion["blocked_by_reason"], sort_keys=True)
+            )
     validation_errors = validate_records(records)
     if validation_errors:
         raise ValueError("release validation failed: " + "; ".join(validation_errors))
-    oracle_audit = audit_records(records, strict=maturity == "stable")
-    if oracle_audit["errors"]:
-        raise ValueError(
-            "release oracle audit failed: " + "; ".join(oracle_audit["errors"])
-        )
+    oracle_audit = canonical_oracle_audit
     control_files = _repository_local_jsonl_files(
         root, control_paths, label="release controls"
     )
@@ -762,13 +846,7 @@ def build_corpus_release(
     if conflicts:
         raise ValueError("release data has unresolved conflicts")
     referenced = referenced_source_names(records)
-    source_manifest = load_and_validate_source_manifest(
-        manifest_path,
-        repo_root=root,
-        require_release_ready=maturity == "stable",
-        source_names=referenced,
-        filter_to_source_names=True,
-    )
+    source_manifest = filter_source_manifest(effective_manifest, referenced)
     _enforce_source_materialization(records, source_manifest)
     coverage = build_coverage(records, targets)
     _enforce_maturity(
@@ -797,6 +875,15 @@ def build_corpus_release(
         output_root / "source_materialization_census.json",
         source_census,
     )
+    _write_json(
+        output_root / "review_evidence_summary.json",
+        review_evidence_summary,
+    )
+    if publication_plan is not None:
+        _write_json(
+            output_root / "publication_plan.json",
+            publication_plan,
+        )
     _write_json(output_root / "oracle_audit.json", oracle_audit)
     counts = {
         "records": len(records),
@@ -810,7 +897,10 @@ def build_corpus_release(
         "public_external_ref_records": sum(
             1 for record in records if record.get("materialization") == "external_ref"
         ),
-        "public_blocked_records": exclusion["records"],
+        "public_excluded_records": exclusion.get(
+            "excluded", exclusion.get("records", 0)
+        ),
+        "public_blocked_records": exclusion.get("blocked", 0),
         "families": len({record.get("family_id") for record in records}),
         "languages": dict(
             sorted(Counter(record.get("language") for record in records).items())
@@ -848,7 +938,7 @@ def build_corpus_release(
             counts=counts,
             source_manifest=source_manifest,
             coverage_profile=coverage_profile,
-            excluded_records=exclusion["records"],
+            excluded_records=counts["public_excluded_records"],
         ),
         encoding="utf-8",
     )
@@ -864,8 +954,11 @@ def build_corpus_release(
         "source_integrity": {
             "records_checked": len(all_records),
             "records_emitted": len(records),
-            "excluded_records": exclusion["records"],
-            "excluded_by_source": exclusion["by_source"],
+            "excluded_records": counts["public_excluded_records"],
+            "blocked_records": counts["public_blocked_records"],
+            "excluded_by_source": exclusion.get(
+                "excluded_by_reason", exclusion.get("by_source", {})
+            ),
             "non_release_ready_records": _non_release_ready_records(
                 records, source_manifest
             ),
@@ -892,6 +985,16 @@ def build_corpus_release(
         },
         "canonical_records": len(all_records),
         "public_release_records": len(records),
+        "canonical_corpus_hash": canonical_corpus_hash(all_records),
+        "public_excluded_records": counts["public_excluded_records"],
+        "public_blocked_records": counts["public_blocked_records"],
+        "source_manifest_hash": manifest_hash,
+        "source_decisions_hash": (
+            "sha256:" + sha256_file(Path(source_decisions_path))
+            if source_decisions_path
+            else None
+        ),
+        "review_evidence_summary": review_evidence_summary,
         "public_embedded_records": sum(
             1
             for record in records
@@ -900,7 +1003,6 @@ def build_corpus_release(
         "public_external_ref_records": sum(
             1 for record in records if record.get("materialization") == "external_ref"
         ),
-        "public_blocked_records": exclusion["records"],
         "counts": counts,
         "record_files": ["corpus.jsonl"],
         "control_files": [str(path.relative_to(root)) for path in control_files],

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from spokenform_gold.importers import import_async, import_polynorm, import_proteno
 from spokenform_gold.importers.async_tn import detect_async_source_schema
+from spokenform_gold.importers.polynorm import canonical_polynorm_category
 from spokenform_gold.io import read_json
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -85,6 +86,50 @@ class ImporterTests(unittest.TestCase):
         self.assertEqual(
             detect_async_source_schema(multilingual_payload, "multilingual"),
             "async_tn_multilingual_v1",
+        )
+
+    def test_polynorm_aliases_preserve_source_category_and_map_explicitly(self):
+        self.assertEqual(canonical_polynorm_category("Fractions"), "Fraction")
+        self.assertEqual(
+            canonical_polynorm_category("Hashtag or Mention"),
+            "Hashtag/Mention",
+        )
+        self.assertEqual(
+            canonical_polynorm_category("Websites"), "Electronic (URL/Email)"
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "aliases.jsonl"
+            rows = [
+                {
+                    "source_id": "hashtag",
+                    "category": "Hashtag or Mention",
+                    "input": "Tag #news",
+                    "surface": "#news",
+                    "start": 4,
+                    "end": 9,
+                },
+                {
+                    "source_id": "website",
+                    "category": "Websites",
+                    "input": "Visit example.com",
+                    "surface": "example.com",
+                    "start": 6,
+                    "end": 17,
+                },
+            ]
+            path.write_text(
+                "\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8"
+            )
+            result = import_polynorm(path, format="projection")
+        self.assertEqual(len(result.records), 2)
+        self.assertEqual(len(result.exclusions), 0)
+        self.assertEqual(
+            [record["source"]["source_category"] for record in result.records],
+            ["Hashtag or Mention", "Websites"],
+        )
+        self.assertEqual(
+            [record["units"][0]["category"] for record in result.records],
+            ["social_handle", "url_or_email"],
         )
 
     def test_polynorm_import_supports_raw_bundle_and_projection(self):

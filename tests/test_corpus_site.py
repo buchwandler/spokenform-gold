@@ -20,6 +20,9 @@ def test_generates_language_index_pages_and_manifest(tmp_path):
     assert (tmp_path / "index.html").is_file()
     manifest = json.loads((tmp_path / "manifest.json").read_text())
     assert manifest["record_count"] == len(rows)
+    assert manifest["canonical_corpus_hash"].startswith("sha256:")
+    assert manifest["site_content_hash"].startswith("sha256:")
+    assert manifest["canonical_corpus_hash"] != manifest["site_content_hash"]
     assert set(manifest["languages"]) == {row["language"] for row in rows}
     for row in rows:
         hits = sum(

@@ -19,6 +19,8 @@ A 1,000-case logical batch may require multiple bounded packet invocations.
 Packet inputs contain blind-review fields only. The complete artifact must still
 cover the entire logical batch.
 
+
+If you cannot confidently review the packet language or domain, do not fabricate uniform annotations or write a completed artifact. Return a structured reviewer-capability blocker identifying the packet and capability gap so the campaign harness can route it to another fresh reviewer.
 ## Packet and output
 
 Create or consume packets with deterministic limits on both cases and serialized

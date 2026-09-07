@@ -151,6 +151,11 @@
       "category": "version",
       "status": "exact",
       "surface_pattern": "semantic_version"
+    },
+    "Hashtag/Mention": {
+      "category": "social_handle",
+      "status": "exact",
+      "surface_pattern": "social_handle"
     }
   }
 }

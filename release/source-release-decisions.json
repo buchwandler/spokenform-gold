@@ -1,0 +1,199 @@
+{
+  "schema_version": "1.0.0",
+  "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
+  "source_manifest": "sources/manifest.json",
+  "authorization": "release/source-policy-authorization.md",
+  "decisions": [
+    {
+      "schema_version": "1.0.0",
+      "source": "async_tn",
+      "source_revision": "ad8fa8152279bb13c0ded87e3d465494c319da30",
+      "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
+      "decision": "external_ref_only",
+      "allowed_materializations": [
+        "external_ref"
+      ],
+      "license_evidence": [
+        {
+          "kind": "file",
+          "locator": "release/source-policy-authorization.md",
+          "sha256": "sha256:bc78339181e060a5b25ded88252e113aa7bdd69a6cc3c5109d56a3e114d2479f"
+        }
+      ],
+      "attribution_requirements": [],
+      "review_a": null,
+      "review_b": null,
+      "adjudication": null,
+      "maintainer_approval": {
+        "approved": true,
+        "actor": "user-authorized",
+        "approval_source": "explicit_user_chat"
+      },
+      "decision_hash": "sha256:b356bb8feab6a6a9da60e570e6bd302414a1dc2401fcfb241c20525a552fc6ae"
+    },
+    {
+      "schema_version": "1.0.0",
+      "source": "polynorm",
+      "source_revision": "f3c67e047bea6b7c40bc2466c0fdaad51d8ce67d",
+      "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
+      "decision": "external_ref_only",
+      "allowed_materializations": [
+        "external_ref"
+      ],
+      "license_evidence": [
+        {
+          "kind": "file",
+          "locator": "release/source-policy-authorization.md",
+          "sha256": "sha256:bc78339181e060a5b25ded88252e113aa7bdd69a6cc3c5109d56a3e114d2479f"
+        }
+      ],
+      "attribution_requirements": [],
+      "review_a": null,
+      "review_b": null,
+      "adjudication": null,
+      "maintainer_approval": {
+        "approved": true,
+        "actor": "user-authorized",
+        "approval_source": "explicit_user_chat"
+      },
+      "decision_hash": "sha256:735b2a69b2943840f7ac2b7c5ece51306b35a1d1bcd7379e3d8cc9c08a41f994"
+    },
+    {
+      "schema_version": "1.0.0",
+      "source": "proteno",
+      "source_revision": "8839501abaf50eeccbe21a2397cefa118eae9660",
+      "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
+      "decision": "external_ref_only",
+      "allowed_materializations": [
+        "external_ref"
+      ],
+      "license_evidence": [
+        {
+          "kind": "file",
+          "locator": "release/source-policy-authorization.md",
+          "sha256": "sha256:bc78339181e060a5b25ded88252e113aa7bdd69a6cc3c5109d56a3e114d2479f"
+        }
+      ],
+      "attribution_requirements": [],
+      "review_a": null,
+      "review_b": null,
+      "adjudication": null,
+      "maintainer_approval": {
+        "approved": true,
+        "actor": "user-authorized",
+        "approval_source": "explicit_user_chat"
+      },
+      "decision_hash": "sha256:add61e1cbf71b885521bc00f893468ca3f98664bcd313c820f260ab0be423e25"
+    },
+    {
+      "schema_version": "1.0.0",
+      "source": "proteno_en",
+      "source_revision": "8839501abaf50eeccbe21a2397cefa118eae9660",
+      "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
+      "decision": "external_ref_only",
+      "allowed_materializations": [
+        "external_ref"
+      ],
+      "license_evidence": [
+        {
+          "kind": "file",
+          "locator": "release/source-policy-authorization.md",
+          "sha256": "sha256:bc78339181e060a5b25ded88252e113aa7bdd69a6cc3c5109d56a3e114d2479f"
+        }
+      ],
+      "attribution_requirements": [],
+      "review_a": null,
+      "review_b": null,
+      "adjudication": null,
+      "maintainer_approval": {
+        "approved": true,
+        "actor": "user-authorized",
+        "approval_source": "explicit_user_chat"
+      },
+      "decision_hash": "sha256:7af9689723e82ce9e8ef61d0338582d7615405fe574ce3d4d1b8e8c73e1ce44b"
+    },
+    {
+      "schema_version": "1.0.0",
+      "source": "proteno_es",
+      "source_revision": "8839501abaf50eeccbe21a2397cefa118eae9660",
+      "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
+      "decision": "external_ref_only",
+      "allowed_materializations": [
+        "external_ref"
+      ],
+      "license_evidence": [
+        {
+          "kind": "file",
+          "locator": "release/source-policy-authorization.md",
+          "sha256": "sha256:bc78339181e060a5b25ded88252e113aa7bdd69a6cc3c5109d56a3e114d2479f"
+        }
+      ],
+      "attribution_requirements": [],
+      "review_a": null,
+      "review_b": null,
+      "adjudication": null,
+      "maintainer_approval": {
+        "approved": true,
+        "actor": "user-authorized",
+        "approval_source": "explicit_user_chat"
+      },
+      "decision_hash": "sha256:ad3953a7bf67e67f2d1b20173575ff013aa4250e9536fbf7e345215fd5ef8cef"
+    },
+    {
+      "schema_version": "1.0.0",
+      "source": "spokenform_curated",
+      "source_revision": "2026-08-18",
+      "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
+      "decision": "embedded_public",
+      "allowed_materializations": [
+        "embedded",
+        "external_ref"
+      ],
+      "license_evidence": [
+        {
+          "kind": "file",
+          "locator": "release/source-policy-authorization.md",
+          "sha256": "sha256:bc78339181e060a5b25ded88252e113aa7bdd69a6cc3c5109d56a3e114d2479f"
+        }
+      ],
+      "attribution_requirements": [],
+      "review_a": null,
+      "review_b": null,
+      "adjudication": null,
+      "maintainer_approval": {
+        "approved": true,
+        "actor": "user-authorized",
+        "approval_source": "explicit_user_chat"
+      },
+      "decision_hash": "sha256:b30f3c5a1ac9d06173f3f98048ffef84a7d76adac1106622e9aadece83bdc622"
+    },
+    {
+      "schema_version": "1.0.0",
+      "source": "spokenform_discovered",
+      "source_revision": "01_todo.md",
+      "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
+      "decision": "embedded_public",
+      "allowed_materializations": [
+        "embedded",
+        "external_ref"
+      ],
+      "license_evidence": [
+        {
+          "kind": "file",
+          "locator": "release/source-policy-authorization.md",
+          "sha256": "sha256:bc78339181e060a5b25ded88252e113aa7bdd69a6cc3c5109d56a3e114d2479f"
+        }
+      ],
+      "attribution_requirements": [],
+      "review_a": null,
+      "review_b": null,
+      "adjudication": null,
+      "maintainer_approval": {
+        "approved": true,
+        "actor": "user-authorized",
+        "approval_source": "explicit_user_chat"
+      },
+      "decision_hash": "sha256:75af59e98de133e9699d5de90c9e1d29245e524666b764a2db2883edb6aded2c"
+    }
+  ]
+}

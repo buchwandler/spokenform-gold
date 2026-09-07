@@ -64,13 +64,15 @@ Validate the canonical corpus and inspect the full-corpus/public-release distinc
 ```bash
 spokenform-gold validate data/corpus/
 spokenform-gold corpus-status --records data/corpus/
-spokenform-gold release-preflight --data data/corpus/ --out <WORK>/reports/release-preflight.json
+spokenform-gold release-preflight --data data/corpus/ \
+  --source-decisions release/source-release-decisions.json \
+  --out <WORK>/reports/release-preflight.json
 spokenform-gold benchmark --corpus data/corpus/ \
   --prepare-module <MODULE:FUNCTION> --mode accepted \
   --results-dir <WORK>/benchmarks/full-corpus
 ```
 
-`corpus-status` reports canonical, review-complete, retry, embedded, external-reference, blocked, and local benchmark counts. `release-preflight` writes a complete stable-ID partition and explicit source-policy blockers. A local benchmark writes `artifact_kind=local_canonical_benchmark` and `publishable=false`; it does not require a public release manifest.
+`corpus-status` reports canonical, review-complete, retry, embedded, external-reference, blocked, and local benchmark counts. Decision-based `release-preflight` reports embedded, external-reference, excluded, and blocked records, requires `blocked=0`, and allows deliberate exclusions for an experimental release. A local benchmark writes `artifact_kind=local_canonical_benchmark` and `publishable=false`; it does not require a public release manifest.
 
 For public builds, provide approved source decisions. Do not use a curated-only allowlist as a substitute for source policy:
 

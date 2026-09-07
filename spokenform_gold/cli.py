@@ -8,7 +8,14 @@ from pathlib import Path
 
 from .adjudication import build_adjudication_queue
 from .adjudication_quality import validate_adjudication_batch
-from .campaign import campaign_finalize, campaign_next, campaign_status, create_campaign
+from .campaign import (
+    campaign_fill,
+    campaign_finalize,
+    campaign_merge,
+    campaign_next,
+    campaign_status,
+    create_campaign,
+)
 from .census import build_upstream_census, write_census_artifacts
 from .collection import DEFAULT_V2_COLLECTION_LIMIT, collect_batch
 from .config import (
@@ -94,6 +101,7 @@ from .review import (
     validate_v2_review_rows,
     write_review_application,
 )
+from .review_anomaly import build_review_anomaly_report
 from .review_html import render_review_html
 from .review_lineage import (
     backfill_legacy_evidence,
@@ -229,9 +237,44 @@ def cmd_campaign_create(args):
         work_root=_campaign_work_root(args),
         batch_size=args.batch_size,
         batch_roots=args.batches,
+        source=args.source,
+        source_revision=args.source_revision,
+        languages=args.languages,
     )
     print(
         f"campaign={metadata['campaign_id']} batches={len(metadata['batches'])} batch_size={metadata['batch_size']}"
+    )
+    return 0
+
+
+def cmd_campaign_fill(args):
+    result = campaign_fill(
+        args.campaign,
+        candidates=args.candidates,
+        work_root=_campaign_work_root(args),
+        source=args.source,
+        source_revision=args.source_revision,
+        languages=args.languages,
+    )
+    totals = result["totals"]
+    print(
+        f"campaign={result['campaign_id']} batches={totals['batches']} cases={totals['cases']} "
+        f"snapshot={result.get('candidate_snapshot_hash')}"
+    )
+    return 0
+
+
+def cmd_campaign_merge(args):
+    result = campaign_merge(
+        args.campaign,
+        args.role,
+        args.result,
+        batch_id=args.batch_id,
+        work_root=_campaign_work_root(args),
+    )
+    print(
+        f"campaign={result['campaign_id']} role={result['role']} "
+        f"batch={result['batch_id']} rows={result['rows']}"
     )
     return 0
 
@@ -2086,6 +2129,24 @@ def cmd_collect(args):
     return 0
 
 
+def cmd_review_anomaly_check(args):
+    layout = BatchLayout(args.batch)
+    review_path = Path(args.review)
+    review_rows = read_records([review_path])
+    cases_path = layout.cases if layout.cases.is_file() else args.batch / "cases.jsonl"
+    source_rows = read_records([cases_path]) if cases_path.is_file() else []
+    result = build_review_anomaly_report(
+        review_rows, source_rows=source_rows, slot=args.slot
+    )
+    if args.out:
+        write_json(args.out, result)
+    print(
+        f"slot={args.slot} cases={result['cases']} "
+        f"ready={'yes' if result['ready'] else 'no'} signals={len(result['signals'])}"
+    )
+    return 0 if result["ready"] else 2
+
+
 def cmd_review_check(args):
     layout = BatchLayout(args.batch)
     cases_path = layout.cases if layout.cases.is_file() else args.batch / "cases.jsonl"
@@ -2975,6 +3036,12 @@ def build_parser():
     adjudication_merge.add_argument("--finalize", action="store_true")
     adjudication_merge.add_argument("--work-root", type=Path)
     adjudication_merge.set_defaults(func=cmd_adjudication_merge)
+    review_anomaly = sub.add_parser("review-anomaly-check")
+    review_anomaly.add_argument("--batch", type=Path, required=True)
+    review_anomaly.add_argument("--review", type=Path, required=True)
+    review_anomaly.add_argument("--slot", choices=["A", "B"], required=True)
+    review_anomaly.add_argument("--out", type=Path, required=True)
+    review_anomaly.set_defaults(func=cmd_review_anomaly_check)
     review_check = sub.add_parser("review-check")
     review_check.add_argument("--batch", type=Path, required=True)
     review_check.add_argument("--review-a", type=Path, required=True)
@@ -3068,7 +3135,27 @@ def build_parser():
     campaign_create.add_argument("--work-root", type=Path)
     campaign_create.add_argument("--batch-size", type=int, default=1000)
     campaign_create.add_argument("--batches", nargs="*")
+    campaign_create.add_argument("--source")
+    campaign_create.add_argument("--source-revision")
+    campaign_create.add_argument("--languages", nargs="*")
     campaign_create.set_defaults(func=cmd_campaign_create)
+    campaign_fill_parser = sub.add_parser("campaign-fill")
+    campaign_fill_parser.add_argument("--campaign", required=True)
+    campaign_fill_parser.add_argument("--candidates", required=True, type=Path)
+    campaign_fill_parser.add_argument("--source")
+    campaign_fill_parser.add_argument("--source-revision")
+    campaign_fill_parser.add_argument("--languages", nargs="*")
+    campaign_fill_parser.add_argument("--work-root", type=Path)
+    campaign_fill_parser.set_defaults(func=cmd_campaign_fill)
+    campaign_merge_parser = sub.add_parser("campaign-merge")
+    campaign_merge_parser.add_argument("--campaign", required=True)
+    campaign_merge_parser.add_argument(
+        "--role", choices=["review-a", "review-b", "adjudicator"], required=True
+    )
+    campaign_merge_parser.add_argument("--result", required=True, type=Path)
+    campaign_merge_parser.add_argument("--batch-id")
+    campaign_merge_parser.add_argument("--work-root", type=Path)
+    campaign_merge_parser.set_defaults(func=cmd_campaign_merge)
     campaign_status_parser = sub.add_parser("campaign-status")
     campaign_status_parser.add_argument("--campaign", required=True)
     campaign_status_parser.add_argument("--work-root", type=Path)

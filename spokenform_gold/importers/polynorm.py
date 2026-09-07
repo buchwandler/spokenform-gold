@@ -213,6 +213,54 @@ def _record_id(locale: str, source_id: str) -> str:
     return f"polynorm-{locale.lower()}-{source_id.replace(':', '-')}"
 
 
+POLYNORM_CATEGORY_ALIASES = {
+    "Fractions": "Fraction",
+    "Initialism or Acronym": "Acronym/Initialism",
+    "Initialisms or Acronyms": "Acronym/Initialism",
+    "Vehicle or Product Code": "Vehicle/Product Code",
+    "Vehicle or Product Codes": "Vehicle/Product Code",
+    "Version Numbers": "Version Number",
+    "Unit": "Unit (Measure)",
+    "Units": "Unit (Measure)",
+    "Sports score": "Sports Score",
+    "Sports Scores": "Sports Score",
+    "URL or Email": "Electronic (URL/Email)",
+    "URLs or Emails": "Electronic (URL/Email)",
+    "URLs or emails": "Electronic (URL/Email)",
+    "Websites": "Electronic (URL/Email)",
+    "License Plate or Serial Number": "License/Serial Number",
+    "License Plate or Serial Numbers": "License/Serial Number",
+    "License Plates or Serial Numbers": "License/Serial Number",
+    "Phone Number": "Telephone",
+    "Phone Numbers": "Telephone",
+    "Phone numbers": "Telephone",
+    "Currencies": "Currency",
+    "Mathematical Expressions": "Mathematical Expression",
+    "Dates": "Date",
+    "Times": "Time",
+    "Cardinals": "Cardinal",
+    "Cardinal numbers": "Cardinal",
+    "Ordinals": "Ordinal",
+    "Ordinal numbers": "Ordinal",
+    "Decimals": "Decimal",
+    "Decimal numbers": "Decimal",
+    "Roman Numerals": "Roman Numeral",
+    "Abbreviations": "Abbreviation",
+    "Biological Classifications": "Biological Classification",
+    "Chemical Formulas": "Chemical Formula",
+    "Stock Tickers": "Stock Ticker",
+    "Hashtag or Mention": "Hashtag/Mention",
+    "Hashtags or Mentions": "Hashtag/Mention",
+}
+
+
+def canonical_polynorm_category(source_category: str) -> str | None:
+    """Resolve an observed PolyNorm label without changing its provenance."""
+    if not isinstance(source_category, str) or not source_category:
+        return None
+    return POLYNORM_CATEGORY_ALIASES.get(source_category, source_category)
+
+
 def _make_record(
     row: dict,
     *,
@@ -222,10 +270,11 @@ def _make_record(
     mapping: dict,
     format_name: str,
 ) -> dict | tuple[str, str]:
-    category = row.get("category")
+    source_category = row.get("category")
+    category = canonical_polynorm_category(source_category)
     rule = mapping.get(category)
     if rule is None:
-        return "unsupported_category", str(category)
+        return "unsupported_category", str(source_category)
 
     if format_name == "official":
         text = row.get("original_text")
@@ -250,7 +299,7 @@ def _make_record(
     units: list[dict]
     unit_note = ""
     if format_name == "official":
-        units, unit_note = _official_units(text, str(category), rule)
+        units, unit_note = _official_units(text, str(source_category), rule)
     else:
         created_unit = _explicit_unit(
             text=text,
@@ -258,7 +307,7 @@ def _make_record(
             start=row.get("start"),
             end=row.get("end"),
             rule=rule,
-            category=str(category),
+            category=str(source_category),
             format_name=format_name,
         )
         if isinstance(created_unit, tuple):
@@ -271,7 +320,7 @@ def _make_record(
                 source_id,
                 text,
                 upstream_expected or "",
-                str(category),
+                str(source_category),
                 format_name,
             ]
         )
@@ -298,7 +347,7 @@ def _make_record(
             "source_url": manifest["source_url"],
             "license": manifest["license"],
             "upstream_expected": upstream_expected,
-            "source_category": category,
+            "source_category": source_category,
             "source_hash": f"sha256:{payload_hash}",
             "source_file": str(source_path.name),
             "source_split": row.get("source_split"),

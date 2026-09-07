@@ -10,6 +10,7 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
+from .corpus_status import canonical_corpus_hash
 from .html_report import _escape, _options, _record_row, source_names
 from .review_lineage import sanitize_review_artifact
 from .validation import validate_records
@@ -210,6 +211,8 @@ def render_corpus_site(
     manifest = {
         "schema_version": "1",
         "generator": "spokenform-gold corpus-site",
+        "canonical_corpus_hash": canonical_corpus_hash(rows),
+        "site_content_hash": _digest(corpus_rows),
         "corpus_hash": _digest(corpus_rows),
         "record_count": len(rows),
         "languages": {

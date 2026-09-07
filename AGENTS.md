@@ -32,6 +32,12 @@ and deterministic checkpoints. Only complete artifacts enter the next gate.
 - Keep source observations and licensing decisions explicit.
 - Humans inspect generated HTML reports. Humans do not edit or enumerate JSONL.
 
+## First-release boundary
+
+- Canonical corpus completeness, public materialization readiness, and upstream ingestion completeness are separate statuses. An experimental release does not require complete ingestion of every upstream source.
+- `exclude_public` is a valid terminal source-publication outcome and is not itself a release failure.
+- Do not attempt to semantically review an entire source corpus in one context. Use frozen campaign snapshots, bounded language-aware packets, and fresh reviewer contexts.
+
 ## Role isolation
 
 - Collection prepares observations, groups cases, and creates blind artifacts.

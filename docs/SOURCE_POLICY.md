@@ -2,6 +2,8 @@
 
 PolyNorm, async-TN and Proteno remain external benchmark sources.
 
+
+For the first experimental release, canonical corpus completeness, public materialization readiness, and upstream ingestion completeness are reported separately. A source-level `exclude_public` decision may deliberately omit affected records without blocking the release. PolyNorm completeness is a post-release campaign concern; the experimental release must disclose represented and unrepresented upstream rows rather than calling the canonical corpus a complete PolyNorm benchmark.
 MVP rules:
 
 - never silently rewrite an upstream record;

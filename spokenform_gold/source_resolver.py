@@ -9,6 +9,35 @@ from .validation import validate_records
 SourceTextLoader = Callable[[dict], str]
 
 
+PUBLIC_SOURCE_FIELDS = frozenset(
+    {
+        "benchmark",
+        "source_id",
+        "source_version",
+        "source_url",
+        "license",
+        "license_id",
+        "source_hash",
+        "source_file",
+        "source_split",
+        "source_category",
+        "materialization",
+        "source_artifact",
+    }
+)
+
+
+def public_source_reference(
+    source: dict, *, source_artifact: str | None = None
+) -> dict:
+    """Build the restricted-field-free source reference used in public releases."""
+    reference = {key: source[key] for key in PUBLIC_SOURCE_FIELDS if key in source}
+    artifact = source_artifact or source.get("source_artifact")
+    if artifact is not None:
+        reference["source_artifact"] = artifact
+    return reference
+
+
 def build_external_overlay(record: dict, *, source_artifact: str) -> dict:
     overlay = deepcopy(record)
     annotation = {
@@ -20,8 +49,12 @@ def build_external_overlay(record: dict, *, source_artifact: str) -> dict:
     overlay["materialization"] = "external_ref"
     overlay["annotation"] = annotation
     overlay["input"] = None
-    overlay["source"] = dict(overlay.get("source", {}))
-    overlay["source"]["source_artifact"] = source_artifact
+    source = public_source_reference(
+        overlay.get("source", {}), source_artifact=source_artifact
+    )
+    overlay["source"] = source
+    if "source_observations" in overlay:
+        overlay["source_observations"] = [source]
     return overlay
 
 
@@ -29,25 +62,25 @@ def build_v2_external_overlay(
     record: dict, *, source: dict, source_artifact: str | None = None
 ) -> dict:
     """Create a v2 release overlay without changing the canonical record."""
-    if not isinstance(record.get("input"), str) or not record["input"]:
-        raise ValueError("v2 external overlay requires canonical input")
+    if not isinstance(record.get("input"), str):
+        raise TypeError("v2 external overlay requires canonical input")
     overlay = deepcopy(record)
     overlay["materialization"] = "external_ref"
     overlay["input"] = None
-    overlay["source_observations"] = [deepcopy(source)]
-    public_source = deepcopy(source)
     artifact = (
         source_artifact
-        or public_source.get("source_artifact")
+        or source.get("source_artifact")
         or (
             "source://"
-            + str(public_source.get("benchmark", "unknown"))
+            + str(source.get("benchmark", "unknown"))
             + "/"
-            + str(public_source.get("source_id", ""))
+            + str(source.get("source_id", ""))
         )
     )
-    public_source["source_artifact"] = artifact
+    public_source = public_source_reference(source, source_artifact=artifact)
+    overlay["source_observations"] = [public_source]
     overlay["source"] = public_source
+    public_source["materialization"] = "external_ref"
     overlay["external_ref"] = {
         "source": public_source.get("benchmark"),
         "source_revision": public_source.get("source_version"),
@@ -94,8 +127,8 @@ def resolve_release_record(
     if source_loader is None:
         raise ValueError("external_ref record requires a source_loader")
     input_text = source_loader(record)
-    if not isinstance(input_text, str) or not input_text:
-        raise ValueError("source_loader must return non-empty source text")
+    if not isinstance(input_text, str):
+        raise TypeError("source_loader must return source text")
     hydrated = hydrate_external_overlay(record, input_text=input_text)
     validation_record = deepcopy(hydrated)
     validation_record["materialization"] = "embedded"

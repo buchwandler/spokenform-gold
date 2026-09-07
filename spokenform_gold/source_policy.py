@@ -194,6 +194,101 @@ def validate_source_decision(
     return errors
 
 
+def validate_source_decisions(
+    decisions: dict | list | None,
+    manifest: dict,
+    *,
+    repo_root: str | Path = ".",
+    require_approval: bool = True,
+    require_all: bool = False,
+) -> list[str]:
+    """Validate a decision set against one immutable manifest snapshot."""
+    rows = _decision_rows(decisions)
+    manifest_hash = source_manifest_hash(manifest)
+    source_map = {
+        row.get("name"): row
+        for row in manifest.get("sources", [])
+        if isinstance(row, dict) and isinstance(row.get("name"), str)
+    }
+    errors: list[str] = []
+    seen: set[str] = set()
+    for decision in rows:
+        source_name = decision.get("source")
+        if source_name in seen:
+            errors.append(f"duplicate source decision: {source_name}")
+            continue
+        seen.add(source_name)
+        source = source_map.get(source_name)
+        if source is None:
+            errors.append(f"unknown source decision: {source_name}")
+            continue
+        errors.extend(
+            f"{source_name}: {error}"
+            for error in validate_source_decision(
+                decision,
+                source,
+                manifest_hash=manifest_hash,
+                repo_root=repo_root,
+                require_approval=require_approval,
+            )
+        )
+    if require_all:
+        missing = sorted(set(source_map) - seen)
+        errors.extend(f"missing source decision: {name}" for name in missing)
+    return sorted(set(errors))
+
+
+def effective_source_manifest(
+    base_manifest: dict,
+    decisions: dict | list | None = None,
+    *,
+    repo_root: str | Path = ".",
+    require_approval: bool = True,
+    require_all: bool = False,
+) -> dict:
+    """Return release policy derived from a base manifest and decisions."""
+    rows = _decision_rows(decisions)
+    if not rows:
+        return deepcopy(base_manifest)
+    errors = validate_source_decisions(
+        rows,
+        base_manifest,
+        repo_root=repo_root,
+        require_approval=require_approval,
+        require_all=require_all,
+    )
+    if errors:
+        raise ValueError("source decisions are not applicable: " + "; ".join(errors))
+    effective = deepcopy(base_manifest)
+    decision_map = {row["source"]: row for row in rows}
+    for source in effective.get("sources", []):
+        decision = decision_map.get(source.get("name"))
+        if decision is None:
+            continue
+        outcome = decision["decision"]
+        source["effective_source_policy_decision"] = outcome
+        source["effective_allowed_materializations"] = list(
+            decision.get("allowed_materializations", [])
+        )
+        if outcome == "embedded_public":
+            source["release_ready"] = True
+            source["materialization_policy"] = "embedded_public"
+            source["redistribution_status"] = "allowed"
+        elif outcome == "external_ref_only":
+            source["release_ready"] = True
+            source["materialization_policy"] = "external_ref_only"
+            source["redistribution_status"] = "metadata_only"
+        elif outcome == "exclude_public":
+            source["release_ready"] = True
+            source["materialization_policy"] = "review_required"
+            source["redistribution_status"] = "not_redistributable"
+        else:
+            source["release_ready"] = False
+            source["materialization_policy"] = "review_required"
+            source["redistribution_status"] = "not_redistributable"
+    return effective
+
+
 def build_source_policy_status(
     records: list[dict], manifest: dict, decisions: dict | list | None = None
 ) -> dict:
