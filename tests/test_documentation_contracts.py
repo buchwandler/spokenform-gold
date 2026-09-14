@@ -90,7 +90,10 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertNotIn("--data data/train data/dev data/test", workflow)
         self.assertNotIn("--registry splits/family_assignments.json", workflow)
         self.assertNotIn('coverage_profile="${MATURITY}"', workflow)
-        self.assertIn('*exp*) maturity="experimental"', workflow)
+        self.assertIn('--maturity "$MATURITY"', workflow)
+        self.assertIn("next_release_version.py", workflow)
+        self.assertIn("consumer-gate:", workflow)
+        self.assertIn("verify-published:", workflow)
 
     def test_human_review_contract_is_documented(self):
         combined = "\n".join(

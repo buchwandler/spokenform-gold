@@ -1,12 +1,12 @@
 {
-  "canonical_corpus_hash": "sha256:0858f475caca9cc4706895b3693843937fbc2011711687120dae7bb15484d78c",
-  "corpus_hash": "sha256:3cf05c200c04b0d1f2297288f9907c97e3a510589bc278ec1c58fc6803ae9cd9",
+  "canonical_corpus_hash": "sha256:6debeaa3047d306c5e3f25dc6f40945eead37e182d7fbaf955cf7cd38faa3b59",
+  "corpus_hash": "sha256:d064972769a83a5ed8323f11803a9f74366c80d5873105f196b3278af2290ce5",
   "generator": "spokenform-gold corpus-site",
   "languages": {
     "de": {
       "file": "de.html",
       "records": 1175,
-      "sha256": "sha256:8a553f7fd660894a689b3ebc539b591e3f756e3e7e08f21b3b46886d01211012"
+      "sha256": "sha256:67f483758664fecafe3aeb862b96ed7eaf016acf98efe0233ce33ac483f010e1"
     },
     "en": {
       "file": "en/index.html",
@@ -45,6 +45,11 @@
       "records": 80,
       "sha256": "sha256:2e1db9f8f82d010b57143293d5742740ad4ec8feb88f5dd49c136dc6f9f098ef"
     },
+    "lt": {
+      "file": "lt.html",
+      "records": 259,
+      "sha256": "sha256:8bf98748b11883eb2f2d912a0ee6249e5b3b29c5e1fdb5b8af4586291652fe1d"
+    },
     "pt": {
       "file": "pt.html",
       "records": 883,
@@ -52,11 +57,11 @@
     },
     "zh": {
       "file": "zh.html",
-      "records": 339,
-      "sha256": "sha256:61fe0e4be4cbab448495a505caf817975b6458d84e41f18df22269a4a9f24953"
+      "records": 352,
+      "sha256": "sha256:09d072725260635042618331a3a82fdf01d945180ff7cebebbdea15621e5fad0"
     }
   },
-  "record_count": 19789,
+  "record_count": 20061,
   "schema_version": "1",
-  "site_content_hash": "sha256:3cf05c200c04b0d1f2297288f9907c97e3a510589bc278ec1c58fc6803ae9cd9"
+  "site_content_hash": "sha256:d064972769a83a5ed8323f11803a9f74366c80d5873105f196b3278af2290ce5"
 }

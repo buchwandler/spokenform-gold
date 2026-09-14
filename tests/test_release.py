@@ -4,6 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from scripts.compare_release_candidate import compare_release_candidates
+from scripts.package_release import package_release
 from spokenform_gold.benchmark import load_release_records, verify_release
 from spokenform_gold.coverage import build_coverage, load_targets
 from spokenform_gold.io import expand_jsonl_paths, read_json, read_records
@@ -261,6 +263,33 @@ class ReleaseTests(unittest.TestCase):
                 coverage=coverage,
                 source_manifest={"sources": [{"release_ready": True}]},
             )
+
+    def test_release_archives_are_deterministic_and_comparable(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir) / "spokenform-gold-v0.3.0-exp.1"
+            (root / "nested").mkdir(parents=True)
+            (root / "manifest.json").write_text(
+                json.dumps({"benchmark_version": "0.3.0-exp.1", "format": "v2"}),
+                encoding="utf-8",
+            )
+            (root / "nested" / "payload.txt").write_text("payload", encoding="utf-8")
+
+            first = package_release(root)
+            first_bytes = {key: Path(first[key]).read_bytes() for key in ("tar", "zip")}
+            second = package_release(root)
+            assert first_bytes == {
+                key: Path(second[key]).read_bytes() for key in ("tar", "zip")
+            }
+            assert Path(first["manifest"]).is_file()
+            assert Path(first["checksums"]).is_file()
+            assert compare_release_candidates(root, root)["equivalent"]
+            existing = root.parent / "existing"
+            shutil.copytree(root, existing)
+            (root / "manifest.json").write_text(
+                json.dumps({"benchmark_version": "0.3.1-exp.1", "format": "v2"}),
+                encoding="utf-8",
+            )
+            assert not compare_release_candidates(root, existing)["equivalent"]
 
 
 if __name__ == "__main__":

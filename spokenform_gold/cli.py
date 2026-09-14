@@ -2387,9 +2387,19 @@ def cmd_export(args):
 
 def cmd_benchmark(args):
     from .benchmark import run_benchmark
+    from .release_sources import build_release_source_loader
 
     if bool(args.gold_root) == bool(args.corpus):
         raise ValueError("provide exactly one of --gold-root or --corpus")
+    source_loader = None
+    if args.gold_root:
+        source_loader = build_release_source_loader(
+            args.gold_root,
+            args.source_cache,
+            offline=args.offline,
+            refresh=args.refresh,
+            accept_upstream_licenses=args.accept_upstream_licenses,
+        )
     summary = run_benchmark(
         gold_root=args.gold_root,
         corpus_root=args.corpus,
@@ -2402,6 +2412,7 @@ def cmd_benchmark(args):
         status=args.status,
         case_ids=set(args.case_id or []),
         mode=args.mode,
+        source_loader=source_loader,
     )
     print(
         json.dumps(
@@ -3129,6 +3140,12 @@ def build_parser():
     benchmark.add_argument(
         "--mode", choices=["canonical", "accepted"], default="canonical"
     )
+    benchmark.add_argument(
+        "--source-cache", type=Path, default=Path(".cache/spokenform-gold-sources")
+    )
+    benchmark.add_argument("--offline", action="store_true")
+    benchmark.add_argument("--refresh", action="store_true")
+    benchmark.add_argument("--accept-upstream-licenses", action="store_true")
     benchmark.set_defaults(func=cmd_benchmark)
     campaign_create = sub.add_parser("campaign-create")
     campaign_create.add_argument("--campaign", required=True)
