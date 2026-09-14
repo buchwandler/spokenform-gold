@@ -168,9 +168,11 @@ def _record_row(
         "</div></details>"
     )
     record_id = str(record.get("id", ""))
+    input_value = record.get("input", "")
+    input_suffix = f" {input_value}" if input_value else ""
     correction = (
         f"Correct Spokenform Gold entry {record_id}.\n"
-        f"Current input: {record.get('input', '')}\n"
+        f"Current input:{input_suffix}\n"
         f"Current canonical: {canonical}"
     )
     source_values = sorted(source_names(record))
