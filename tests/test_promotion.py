@@ -102,8 +102,16 @@ class PromotionTests(unittest.TestCase):
             read_records([ROOT / "data/candidates/async_tn.jsonl"])[0]["source"]
         )
         decision = self.decision(decision="promote_upstream")
+        restricted_manifest = {
+            "async_tn": {
+                "materialization_policy": "external_ref_only",
+                "redistribution_status": "metadata_only",
+            }
+        }
         with self.assertRaisesRegex(ValueError, "not permitted for embedded upstream"):
-            build_promoted_records([upstream], [decision], [])
+            build_promoted_records(
+                [upstream], [decision], [], source_manifests=restricted_manifest
+            )
 
     def test_existing_record_id_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "already exists"):

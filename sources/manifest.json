@@ -53,11 +53,11 @@
       "license": "Apache-2.0",
       "license_id": "Apache-2.0",
       "license_scope": "source:async_tn",
-      "materialization_policy": "review_required",
+      "materialization_policy": "embedded_public",
       "name": "async_tn",
       "notes": "Pinned local fixtures and current Space JSON schema metadata for the Async pronunciation benchmark; full source bundles remain external.",
-      "redistribution_status": "review_required",
-      "release_ready": false,
+      "redistribution_status": "allowed",
+      "release_ready": true,
       "revision": "ad8fa8152279bb13c0ded87e3d465494c319da30",
       "source_url": "https://huggingface.co/spaces/async-vocie-ai/text-to-speech-normalization-benchmark",
       "upstream_files": [
@@ -85,7 +85,8 @@
           "path": "downloads/multilingual/*.json",
           "role": "legacy-multilingual-bundle-export"
         }
-      ]
+      ],
+      "license_url": "https://huggingface.co/spaces/async-vocie-ai/text-to-speech-normalization-benchmark/resolve/main/README.md"
     },
     {
       "files": [
@@ -136,7 +137,8 @@
           "path": "polynorm_bench/*/*_groundtruth.jsonl",
           "role": "official-jsonl"
         }
-      ]
+      ],
+      "license_url": "https://github.com/apple-aiml-research/ml-speech-polynorm-bench/blob/main/LICENSE"
     },
     {
       "files": [
@@ -147,14 +149,14 @@
         }
       ],
       "kind": "projection_cache",
-      "license": "CC BY-SA 3.0 Unported",
-      "license_id": "CC-BY-SA-3.0",
+      "license": "CC BY-NC 4.0",
+      "license_id": "CC-BY-NC-4.0",
       "license_scope": "source:proteno",
-      "materialization_policy": "external_ref_only",
+      "materialization_policy": "embedded_public",
       "name": "proteno",
       "notes": "Pinned local neutral export fixture for Proteno bridge testing.",
-      "redistribution_status": "metadata_only",
-      "release_ready": false,
+      "redistribution_status": "allowed",
+      "release_ready": true,
       "revision": "8839501abaf50eeccbe21a2397cefa118eae9660",
       "source_url": "https://github.com/amazon-science/proteno",
       "upstream_files": [
@@ -166,7 +168,8 @@
           "path": "data/English/norm_list.pkl",
           "role": "official-normalized"
         }
-      ]
+      ],
+      "license_url": "https://github.com/amazon-science/proteno/blob/main/LICENSE.txt"
     },
     {
       "files": [
@@ -182,15 +185,15 @@
         }
       ],
       "kind": "upstream",
-      "license": "CC BY-SA 3.0 Unported",
-      "license_id": "CC-BY-SA-3.0",
+      "license": "CC BY-NC 4.0",
+      "license_id": "CC-BY-NC-4.0",
       "license_scope": "language:en",
-      "materialization_policy": "review_required",
+      "materialization_policy": "embedded_public",
       "name": "proteno_en",
       "notes": "Pinned local official English fixture for Proteno paired-list importer tests.",
       "parent_source": "proteno",
-      "redistribution_status": "review_required",
-      "release_ready": false,
+      "redistribution_status": "allowed",
+      "release_ready": true,
       "revision": "8839501abaf50eeccbe21a2397cefa118eae9660",
       "source_url": "https://github.com/amazon-science/proteno",
       "upstream_files": [
@@ -202,7 +205,8 @@
           "path": "data/English/norm_list.pkl",
           "role": "official-normalized"
         }
-      ]
+      ],
+      "license_url": "https://github.com/amazon-science/proteno/blob/main/LICENSE.txt"
     },
     {
       "files": [
@@ -218,15 +222,15 @@
         }
       ],
       "kind": "upstream",
-      "license": "CC BY-SA 3.0 Unported",
-      "license_id": "CC-BY-SA-3.0",
+      "license": "CC BY-NC 4.0",
+      "license_id": "CC-BY-NC-4.0",
       "license_scope": "language:es",
-      "materialization_policy": "review_required",
+      "materialization_policy": "embedded_public",
       "name": "proteno_es",
       "notes": "Pinned local official Spanish fixture for Proteno paired-list importer tests.",
       "parent_source": "proteno",
-      "redistribution_status": "review_required",
-      "release_ready": false,
+      "redistribution_status": "allowed",
+      "release_ready": true,
       "revision": "8839501abaf50eeccbe21a2397cefa118eae9660",
       "source_url": "https://github.com/amazon-science/proteno",
       "upstream_files": [
@@ -238,7 +242,8 @@
           "path": "data/Spanish/norm_list.pkl",
           "role": "official-normalized"
         }
-      ]
+      ],
+      "license_url": "https://github.com/amazon-science/proteno/blob/main/LICENSE.txt"
     },
     {
       "files": [
@@ -254,15 +259,15 @@
         }
       ],
       "kind": "upstream",
-      "license": "CC BY-NC-SA 3.0 Unported",
-      "license_id": "CC-BY-NC-SA-3.0",
+      "license": "CC BY-NC 4.0",
+      "license_id": "CC-BY-NC-4.0",
       "license_scope": "language:ta",
-      "materialization_policy": "review_required",
+      "materialization_policy": "embedded_public",
       "name": "proteno_ta",
       "notes": "Pinned local official Tamil fixture for Proteno paired-list importer tests.",
       "parent_source": "proteno",
-      "redistribution_status": "review_required",
-      "release_ready": false,
+      "redistribution_status": "allowed",
+      "release_ready": true,
       "revision": "8839501abaf50eeccbe21a2397cefa118eae9660",
       "source_url": "https://github.com/amazon-science/proteno",
       "upstream_files": [
@@ -274,7 +279,8 @@
           "path": "data/Tamil/norm_list.pkl",
           "role": "official-normalized"
         }
-      ]
+      ],
+      "license_url": "https://github.com/amazon-science/proteno/blob/main/LICENSE.txt"
     },
     {
       "files": [

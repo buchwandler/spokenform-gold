@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
+  "manifest_hash": "sha256:a974e4d4e5e796cb4d867b8d72bb2155d9a736706b91d48dafa6b376903cd117",
   "source_manifest": "sources/manifest.json",
   "authorization": "release/source-policy-authorization.md",
   "decisions": [
@@ -8,17 +8,22 @@
       "schema_version": "1.0.0",
       "source": "async_tn",
       "source_revision": "ad8fa8152279bb13c0ded87e3d465494c319da30",
-      "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
-      "decision": "external_ref_only",
-      "allowed_materializations": ["external_ref"],
+      "manifest_hash": "sha256:a974e4d4e5e796cb4d867b8d72bb2155d9a736706b91d48dafa6b376903cd117",
+      "decision": "embedded_public",
+      "allowed_materializations": [
+        "embedded",
+        "external_ref"
+      ],
       "license_evidence": [
         {
           "kind": "file",
-          "locator": "release/source-policy-authorization.md",
-          "sha256": "sha256:bc78339181e060a5b25ded88252e113aa7bdd69a6cc3c5109d56a3e114d2479f"
+          "locator": "release/licenses/async-README.md",
+          "sha256": "sha256:a1f16f5d91b8c1844a0f5888dc8bf8ff5da82511d05d5dc58340284832c7dc7d"
         }
       ],
-      "attribution_requirements": [],
+      "attribution_requirements": [
+        "Preserve the Apache-2.0 license notice and source attribution."
+      ],
       "review_a": null,
       "review_b": null,
       "adjudication": null,
@@ -27,23 +32,29 @@
         "actor": "user-authorized",
         "approval_source": "explicit_user_chat"
       },
-      "decision_hash": "sha256:b356bb8feab6a6a9da60e570e6bd302414a1dc2401fcfb241c20525a552fc6ae"
+      "decision_hash": "sha256:f72a0b8c59d158abb39fe1c5b7e358dabe7a4b0409d6c3e351aa9755ed32b6e2"
     },
     {
       "schema_version": "1.0.0",
       "source": "polynorm",
       "source_revision": "f3c67e047bea6b7c40bc2466c0fdaad51d8ce67d",
-      "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
+      "manifest_hash": "sha256:a974e4d4e5e796cb4d867b8d72bb2155d9a736706b91d48dafa6b376903cd117",
       "decision": "external_ref_only",
-      "allowed_materializations": ["external_ref"],
+      "allowed_materializations": [
+        "external_ref"
+      ],
       "license_evidence": [
         {
           "kind": "file",
-          "locator": "release/source-policy-authorization.md",
-          "sha256": "sha256:bc78339181e060a5b25ded88252e113aa7bdd69a6cc3c5109d56a3e114d2479f"
+          "locator": "release/licenses/polynorm-LICENSE",
+          "sha256": "sha256:f989be1b7297acfd094646b05412c3b13f2dd35ebc0d16629ef8ce71467485f3"
         }
       ],
-      "attribution_requirements": [],
+      "attribution_requirements": [
+        "NonCommercial use only.",
+        "Do not share Adapted Material.",
+        "Retain attribution, license, disclaimer, and source link."
+      ],
       "review_a": null,
       "review_b": null,
       "adjudication": null,
@@ -52,23 +63,30 @@
         "actor": "user-authorized",
         "approval_source": "explicit_user_chat"
       },
-      "decision_hash": "sha256:735b2a69b2943840f7ac2b7c5ece51306b35a1d1bcd7379e3d8cc9c08a41f994"
+      "decision_hash": "sha256:5ecc2e63f79d3df4beaf7132472f0c460e49427c0dab37c9c3f8d51d12340555"
     },
     {
       "schema_version": "1.0.0",
       "source": "proteno",
       "source_revision": "8839501abaf50eeccbe21a2397cefa118eae9660",
-      "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
-      "decision": "external_ref_only",
-      "allowed_materializations": ["external_ref"],
+      "manifest_hash": "sha256:a974e4d4e5e796cb4d867b8d72bb2155d9a736706b91d48dafa6b376903cd117",
+      "decision": "embedded_public",
+      "allowed_materializations": [
+        "embedded",
+        "external_ref"
+      ],
       "license_evidence": [
         {
           "kind": "file",
-          "locator": "release/source-policy-authorization.md",
-          "sha256": "sha256:bc78339181e060a5b25ded88252e113aa7bdd69a6cc3c5109d56a3e114d2479f"
+          "locator": "release/licenses/proteno-LICENSE.txt",
+          "sha256": "sha256:41003d4a74749c0220e33dd415042164b5a1093ed401f36277234f772d22d3d0"
         }
       ],
-      "attribution_requirements": [],
+      "attribution_requirements": [
+        "NonCommercial use only.",
+        "Provide attribution and retain the CC BY-NC 4.0 license link.",
+        "Indicate modifications."
+      ],
       "review_a": null,
       "review_b": null,
       "adjudication": null,
@@ -77,23 +95,30 @@
         "actor": "user-authorized",
         "approval_source": "explicit_user_chat"
       },
-      "decision_hash": "sha256:add61e1cbf71b885521bc00f893468ca3f98664bcd313c820f260ab0be423e25"
+      "decision_hash": "sha256:631aee56fc8407898070c48300cb7842d7985727d939d55913ec5111c8e82bba"
     },
     {
       "schema_version": "1.0.0",
       "source": "proteno_en",
       "source_revision": "8839501abaf50eeccbe21a2397cefa118eae9660",
-      "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
-      "decision": "external_ref_only",
-      "allowed_materializations": ["external_ref"],
+      "manifest_hash": "sha256:a974e4d4e5e796cb4d867b8d72bb2155d9a736706b91d48dafa6b376903cd117",
+      "decision": "embedded_public",
+      "allowed_materializations": [
+        "embedded",
+        "external_ref"
+      ],
       "license_evidence": [
         {
           "kind": "file",
-          "locator": "release/source-policy-authorization.md",
-          "sha256": "sha256:bc78339181e060a5b25ded88252e113aa7bdd69a6cc3c5109d56a3e114d2479f"
+          "locator": "release/licenses/proteno-LICENSE.txt",
+          "sha256": "sha256:41003d4a74749c0220e33dd415042164b5a1093ed401f36277234f772d22d3d0"
         }
       ],
-      "attribution_requirements": [],
+      "attribution_requirements": [
+        "NonCommercial use only.",
+        "Provide attribution and retain the CC BY-NC 4.0 license link.",
+        "Indicate modifications."
+      ],
       "review_a": null,
       "review_b": null,
       "adjudication": null,
@@ -102,23 +127,30 @@
         "actor": "user-authorized",
         "approval_source": "explicit_user_chat"
       },
-      "decision_hash": "sha256:7af9689723e82ce9e8ef61d0338582d7615405fe574ce3d4d1b8e8c73e1ce44b"
+      "decision_hash": "sha256:5006321684b3bcfebe76821d53c4288c9e94c71dc43c1e6c1f30d479029cc9d8"
     },
     {
       "schema_version": "1.0.0",
       "source": "proteno_es",
       "source_revision": "8839501abaf50eeccbe21a2397cefa118eae9660",
-      "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
-      "decision": "external_ref_only",
-      "allowed_materializations": ["external_ref"],
+      "manifest_hash": "sha256:a974e4d4e5e796cb4d867b8d72bb2155d9a736706b91d48dafa6b376903cd117",
+      "decision": "embedded_public",
+      "allowed_materializations": [
+        "embedded",
+        "external_ref"
+      ],
       "license_evidence": [
         {
           "kind": "file",
-          "locator": "release/source-policy-authorization.md",
-          "sha256": "sha256:bc78339181e060a5b25ded88252e113aa7bdd69a6cc3c5109d56a3e114d2479f"
+          "locator": "release/licenses/proteno-LICENSE.txt",
+          "sha256": "sha256:41003d4a74749c0220e33dd415042164b5a1093ed401f36277234f772d22d3d0"
         }
       ],
-      "attribution_requirements": [],
+      "attribution_requirements": [
+        "NonCommercial use only.",
+        "Provide attribution and retain the CC BY-NC 4.0 license link.",
+        "Indicate modifications."
+      ],
       "review_a": null,
       "review_b": null,
       "adjudication": null,
@@ -127,20 +159,55 @@
         "actor": "user-authorized",
         "approval_source": "explicit_user_chat"
       },
-      "decision_hash": "sha256:ad3953a7bf67e67f2d1b20173575ff013aa4250e9536fbf7e345215fd5ef8cef"
+      "decision_hash": "sha256:7736616005a1f702f332b906c43a4c47d7bb6b9d692ad80919609949f15642f4"
+    },
+    {
+      "schema_version": "1.0.0",
+      "source": "proteno_ta",
+      "source_revision": "8839501abaf50eeccbe21a2397cefa118eae9660",
+      "manifest_hash": "sha256:a974e4d4e5e796cb4d867b8d72bb2155d9a736706b91d48dafa6b376903cd117",
+      "decision": "embedded_public",
+      "allowed_materializations": [
+        "embedded",
+        "external_ref"
+      ],
+      "license_evidence": [
+        {
+          "kind": "file",
+          "locator": "release/licenses/proteno-LICENSE.txt",
+          "sha256": "sha256:41003d4a74749c0220e33dd415042164b5a1093ed401f36277234f772d22d3d0"
+        }
+      ],
+      "attribution_requirements": [
+        "NonCommercial use only.",
+        "Provide attribution and retain the CC BY-NC 4.0 license link.",
+        "Indicate modifications."
+      ],
+      "review_a": null,
+      "review_b": null,
+      "adjudication": null,
+      "maintainer_approval": {
+        "approved": true,
+        "actor": "user-authorized",
+        "approval_source": "explicit_user_chat"
+      },
+      "decision_hash": "sha256:765967482b8fb982da2af4118a3c442144d7429326e59f2dd6104a55f1c407b7"
     },
     {
       "schema_version": "1.0.0",
       "source": "spokenform_curated",
       "source_revision": "2026-08-18",
-      "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
+      "manifest_hash": "sha256:a974e4d4e5e796cb4d867b8d72bb2155d9a736706b91d48dafa6b376903cd117",
       "decision": "embedded_public",
-      "allowed_materializations": ["embedded", "external_ref"],
+      "allowed_materializations": [
+        "embedded",
+        "external_ref"
+      ],
       "license_evidence": [
         {
           "kind": "file",
           "locator": "release/source-policy-authorization.md",
-          "sha256": "sha256:bc78339181e060a5b25ded88252e113aa7bdd69a6cc3c5109d56a3e114d2479f"
+          "sha256": "sha256:32b195ae8cb120f627f8fbe6ea69565069069f63b15aaac0a217d8413e3a47d9"
         }
       ],
       "attribution_requirements": [],
@@ -152,20 +219,23 @@
         "actor": "user-authorized",
         "approval_source": "explicit_user_chat"
       },
-      "decision_hash": "sha256:b30f3c5a1ac9d06173f3f98048ffef84a7d76adac1106622e9aadece83bdc622"
+      "decision_hash": "sha256:b94528503c8757eb3a9e7ded7cb75d195680c88cf20b681bb48953bebd4f2813"
     },
     {
       "schema_version": "1.0.0",
       "source": "spokenform_discovered",
       "source_revision": "01_todo.md",
-      "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
+      "manifest_hash": "sha256:a974e4d4e5e796cb4d867b8d72bb2155d9a736706b91d48dafa6b376903cd117",
       "decision": "embedded_public",
-      "allowed_materializations": ["embedded", "external_ref"],
+      "allowed_materializations": [
+        "embedded",
+        "external_ref"
+      ],
       "license_evidence": [
         {
           "kind": "file",
           "locator": "release/source-policy-authorization.md",
-          "sha256": "sha256:bc78339181e060a5b25ded88252e113aa7bdd69a6cc3c5109d56a3e114d2479f"
+          "sha256": "sha256:32b195ae8cb120f627f8fbe6ea69565069069f63b15aaac0a217d8413e3a47d9"
         }
       ],
       "attribution_requirements": [],
@@ -177,7 +247,7 @@
         "actor": "user-authorized",
         "approval_source": "explicit_user_chat"
       },
-      "decision_hash": "sha256:75af59e98de133e9699d5de90c9e1d29245e524666b764a2db2883edb6aded2c"
+      "decision_hash": "sha256:841ecbcde91d9ab8f3ae4e3fa6479227ca55506427a5eed61d35d64f15efe7a5"
     }
   ]
 }

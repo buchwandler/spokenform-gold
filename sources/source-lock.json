@@ -9,8 +9,8 @@
       "license": "Apache-2.0",
       "license_id": "Apache-2.0",
       "license_scope": "source:async_tn",
-      "redistribution_status": "review_required",
-      "materialization_policy": "review_required",
+      "redistribution_status": "allowed",
+      "materialization_policy": "embedded_public",
       "artifacts": [
         {
           "path": "tests/fixtures/importers/async_english.json",
@@ -110,11 +110,11 @@
       "name": "proteno",
       "revision": "8839501abaf50eeccbe21a2397cefa118eae9660",
       "source_url": "https://github.com/amazon-science/proteno",
-      "license": "CC BY-SA 3.0 Unported",
-      "license_id": "CC-BY-SA-3.0",
+      "license": "CC BY-NC 4.0",
+      "license_id": "CC-BY-NC-4.0",
       "license_scope": "source:proteno",
-      "redistribution_status": "metadata_only",
-      "materialization_policy": "external_ref_only",
+      "redistribution_status": "allowed",
+      "materialization_policy": "embedded_public",
       "artifacts": [
         {
           "path": "tests/fixtures/importers/proteno_sample.json",
@@ -138,11 +138,11 @@
       "name": "proteno_en",
       "revision": "8839501abaf50eeccbe21a2397cefa118eae9660",
       "source_url": "https://github.com/amazon-science/proteno",
-      "license": "CC BY-SA 3.0 Unported",
-      "license_id": "CC-BY-SA-3.0",
+      "license": "CC BY-NC 4.0",
+      "license_id": "CC-BY-NC-4.0",
       "license_scope": "language:en",
-      "redistribution_status": "review_required",
-      "materialization_policy": "review_required",
+      "redistribution_status": "allowed",
+      "materialization_policy": "embedded_public",
       "artifacts": [
         {
           "path": "tests/fixtures/importers/proteno_official/English/norm_list.pkl",
@@ -172,11 +172,11 @@
       "name": "proteno_es",
       "revision": "8839501abaf50eeccbe21a2397cefa118eae9660",
       "source_url": "https://github.com/amazon-science/proteno",
-      "license": "CC BY-SA 3.0 Unported",
-      "license_id": "CC-BY-SA-3.0",
+      "license": "CC BY-NC 4.0",
+      "license_id": "CC-BY-NC-4.0",
       "license_scope": "language:es",
-      "redistribution_status": "review_required",
-      "materialization_policy": "review_required",
+      "redistribution_status": "allowed",
+      "materialization_policy": "embedded_public",
       "artifacts": [
         {
           "path": "tests/fixtures/importers/proteno_official/Spanish/norm_list.pkl",
@@ -206,11 +206,11 @@
       "name": "proteno_ta",
       "revision": "8839501abaf50eeccbe21a2397cefa118eae9660",
       "source_url": "https://github.com/amazon-science/proteno",
-      "license": "CC BY-NC-SA 3.0 Unported",
-      "license_id": "CC-BY-NC-SA-3.0",
+      "license": "CC BY-NC 4.0",
+      "license_id": "CC-BY-NC-4.0",
       "license_scope": "language:ta",
-      "redistribution_status": "review_required",
-      "materialization_policy": "review_required",
+      "redistribution_status": "allowed",
+      "materialization_policy": "embedded_public",
       "artifacts": [
         {
           "path": "tests/fixtures/importers/proteno_official/Tamil/norm_list.pkl",
@@ -306,7 +306,7 @@
           "path": "docs/TRANSLATION.md",
           "role": "translation-policy",
           "sha256": "cc19aa56a3cf4098ee455a411a50f5754496ad95a3c96ae8183e02359f70e4bd",
-          "observed_sha256": "cc19aa56a3cf4098ee455a411a50f5754496ad95a3c96ae8183e02359f70e4bd"
+          "observed_sha256": "aefbbfd7dcd4c96030edfbd7f9b6310f6ef5cbe3065e763f74ab49a04b382088"
         },
         {
           "path": "templates/translation-adjudicator-task.md",

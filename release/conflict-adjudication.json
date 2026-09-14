@@ -11183,6 +11183,101 @@
         "sfg-f15cf92eec484e46f93e"
       ],
       "variants": ["sete doze avos", "sete sobre doze"]
+    },
+    {
+      "disposition": "contextual_valid",
+      "fingerprint": "sha256:509bf61a795b4a5b293f92f6f9bc39c3d919e01bd9a349edb7b1b07c6ac2a73c",
+      "key": ["lt-LT", "abbreviation", "k."],
+      "reason": "Context determines k. as kalba in a language abbreviation and kaimas in address abbreviations; both realizations are contextually valid.",
+      "record_ids": [
+        "sfg-8787398bf86442bdb206",
+        "sfg-9051a6b438395cdb26ad",
+        "sfg-e5c9c12922794a5a3917",
+        "sfg-ea81fc4febbc4b100d5a"
+      ],
+      "variants": ["kaimas", "kalba"]
+    },
+    {
+      "disposition": "contextual_valid",
+      "fingerprint": "sha256:77fa5bce623f83eb36c656aafd3174bc9ff3f002d8bef76ba8b876966db0b79e",
+      "key": ["lt-LT", "abbreviation", "prof."],
+      "reason": "Grammatical gender and sentence context distinguish profesorius from profesorės; both realizations are contextually valid.",
+      "record_ids": [
+        "sfg-493156d7fb5055923946",
+        "sfg-cba28f4cbe09cbc47e63"
+      ],
+      "variants": ["profesorius", "profesorės"]
+    },
+    {
+      "disposition": "contextual_valid",
+      "fingerprint": "sha256:2048b3e20d53e983fd2456f00b014efa3d007d96f28adc71782eb15bc63405a3",
+      "key": ["lt-LT", "cardinal", "5"],
+      "reason": "Sentence grammar determines the required case for 5; both penki and penkių are contextually valid.",
+      "record_ids": [
+        "sfg-33ce66dfd2a9d90e714c",
+        "sfg-6488efa811ae8874495a",
+        "sfg-69f428393fd3ac930b91",
+        "sfg-99b52b29bf3e96a549c5",
+        "sfg-bcbf3fdd6aff1370bb82",
+        "sfg-c3c183111b3298736a4f",
+        "sfg-d20a30e880eaa8be9396"
+      ],
+      "variants": ["penki", "penkių"]
+    },
+    {
+      "disposition": "contextual_valid",
+      "fingerprint": "sha256:ca2a320bbdf5297d7c2b8012adc936ae040929e8a482ce1197fb39877a6b0694",
+      "key": ["lt-LT", "math_expression", "x"],
+      "reason": "The bounded expressions use x in distinct mathematical contexts; iks and kartų are contextually valid realizations.",
+      "record_ids": [
+        "sfg-929410e459d6eb246796",
+        "sfg-bcbf3fdd6aff1370bb82"
+      ],
+      "variants": ["iks", "kartų"]
+    },
+    {
+      "disposition": "contextual_valid",
+      "fingerprint": "sha256:fa804fdd260607ab54a2c56a435842e61683e81ac496ba0f80858dbca700bb21",
+      "key": ["lt-LT", "music", "3/4"],
+      "reason": "Both Lithuanian musical-meter realizations are retained as contextually valid variants.",
+      "record_ids": [
+        "sfg-276d1db821d0c39d9f32",
+        "sfg-4abe9fb3eb4ad73cd66a"
+      ],
+      "variants": ["trijų ketvirtžingsniu", "trijų ketvirtžingsnių"]
+    },
+    {
+      "disposition": "contextual_valid",
+      "fingerprint": "sha256:94dc692fc8fbdbc6ced206bb6c956e800eec88797835e6e19b30ed8d05578fae",
+      "key": ["lt-LT", "music", "♩"],
+      "reason": "Both ketvirtinė and ketvirtinė nata are contextually valid names for the quarter-note symbol.",
+      "record_ids": [
+        "sfg-3735dab9a893292c325e",
+        "sfg-b1408c0294c540bf45a2"
+      ],
+      "variants": ["ketvirtinė", "ketvirtinė nata"]
+    },
+    {
+      "disposition": "contextual_valid",
+      "fingerprint": "sha256:4c990ec6562aac9894d576a5aa7d84147b168967e9c03430ae9b3ba1fcb7a89a",
+      "key": ["lt-LT", "ordinal", "2"],
+      "reason": "Sentence grammar determines ordinal case; antroji and antrą are contextually valid.",
+      "record_ids": [
+        "sfg-64e74bf2d6eacc80efbe",
+        "sfg-e20a002f3b814e06d87a"
+      ],
+      "variants": ["antroji", "antrą"]
+    },
+    {
+      "disposition": "contextual_valid",
+      "fingerprint": "sha256:5953ca61dffb60997c01e5ddba2bdcc5617475d2066733a74740c32d3e2f0945",
+      "key": ["lt-LT", "ordinal", "3"],
+      "reason": "Sentence grammar determines ordinal case; trečios and trečiu are contextually valid.",
+      "record_ids": [
+        "sfg-c82d5c0f97b15a3206ba",
+        "sfg-e20a002f3b814e06d87a"
+      ],
+      "variants": ["trečios", "trečiu"]
     }
   ],
   "mode": "unit",

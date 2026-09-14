@@ -1,12 +1,12 @@
 {
-  "canonical_corpus_hash": "sha256:6debeaa3047d306c5e3f25dc6f40945eead37e182d7fbaf955cf7cd38faa3b59",
-  "corpus_hash": "sha256:d064972769a83a5ed8323f11803a9f74366c80d5873105f196b3278af2290ce5",
+  "canonical_corpus_hash": "sha256:8150703cb617acd16e02c9cd8e3ca206d5f5779b82fb463e1bdf55037603f6ad",
+  "corpus_hash": "sha256:b62eb3ff19779fbd436e469c66f73b2cbdafae568b3126c38a63fe200d233269",
   "generator": "spokenform-gold corpus-site",
   "languages": {
     "de": {
       "file": "de.html",
       "records": 1175,
-      "sha256": "sha256:67f483758664fecafe3aeb862b96ed7eaf016acf98efe0233ce33ac483f010e1"
+      "sha256": "sha256:36e6baae03a9838b5c56e042403ac276e1dff898427341670782d6719cb80d9d"
     },
     "en": {
       "file": "en/index.html",
@@ -33,35 +33,35 @@
     "fr": {
       "file": "fr.html",
       "records": 1143,
-      "sha256": "sha256:f73dcb79f7a701ccd251459e1453052c7b6668d39ff7f7023c650f69837608b7"
+      "sha256": "sha256:02fac1a9ba440d32407e4d73bb4a6e1774074ecdee60c8fc1df02a428c212301"
     },
     "it": {
       "file": "it.html",
       "records": 1133,
-      "sha256": "sha256:7cbdf47b62a0e665e4a7c7aaaeded84d8079260a81118e35594a5111f1b30ca7"
+      "sha256": "sha256:393a6942f9d0575c507b056ba23f7d732d9d4489d186b46efc956b77044be850"
     },
     "ja": {
       "file": "ja.html",
       "records": 80,
-      "sha256": "sha256:2e1db9f8f82d010b57143293d5742740ad4ec8feb88f5dd49c136dc6f9f098ef"
+      "sha256": "sha256:d743c7fe39cabf8859e214d45a0ca5369a59442e9d148497767fc8cf77dd8fa6"
     },
     "lt": {
       "file": "lt.html",
       "records": 259,
-      "sha256": "sha256:8bf98748b11883eb2f2d912a0ee6249e5b3b29c5e1fdb5b8af4586291652fe1d"
+      "sha256": "sha256:b7c115b939a3de62487684e23b2316f60ef625f2a2e8eef8de98e267e739260d"
     },
     "pt": {
       "file": "pt.html",
       "records": 883,
-      "sha256": "sha256:e59a7b0d1c82f9ce6e46552e5869adc030229582e6eeccd18eb0bffe3ec2d8a8"
+      "sha256": "sha256:dd53ef95e169b43e165b23f9f6928531e5fa314c10027b315c3e057a1948b6af"
     },
     "zh": {
       "file": "zh.html",
       "records": 352,
-      "sha256": "sha256:09d072725260635042618331a3a82fdf01d945180ff7cebebbdea15621e5fad0"
+      "sha256": "sha256:9cb180a43bf7f1a8c81b2863b599e7855c931df9afc51ae5bb0cfc5ad8695848"
     }
   },
   "record_count": 20061,
   "schema_version": "1",
-  "site_content_hash": "sha256:d064972769a83a5ed8323f11803a9f74366c80d5873105f196b3278af2290ce5"
+  "site_content_hash": "sha256:b62eb3ff19779fbd436e469c66f73b2cbdafae568b3126c38a63fe200d233269"
 }
