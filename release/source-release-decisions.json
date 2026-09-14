@@ -10,9 +10,7 @@
       "source_revision": "ad8fa8152279bb13c0ded87e3d465494c319da30",
       "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
       "decision": "external_ref_only",
-      "allowed_materializations": [
-        "external_ref"
-      ],
+      "allowed_materializations": ["external_ref"],
       "license_evidence": [
         {
           "kind": "file",
@@ -37,9 +35,7 @@
       "source_revision": "f3c67e047bea6b7c40bc2466c0fdaad51d8ce67d",
       "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
       "decision": "external_ref_only",
-      "allowed_materializations": [
-        "external_ref"
-      ],
+      "allowed_materializations": ["external_ref"],
       "license_evidence": [
         {
           "kind": "file",
@@ -64,9 +60,7 @@
       "source_revision": "8839501abaf50eeccbe21a2397cefa118eae9660",
       "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
       "decision": "external_ref_only",
-      "allowed_materializations": [
-        "external_ref"
-      ],
+      "allowed_materializations": ["external_ref"],
       "license_evidence": [
         {
           "kind": "file",
@@ -91,9 +85,7 @@
       "source_revision": "8839501abaf50eeccbe21a2397cefa118eae9660",
       "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
       "decision": "external_ref_only",
-      "allowed_materializations": [
-        "external_ref"
-      ],
+      "allowed_materializations": ["external_ref"],
       "license_evidence": [
         {
           "kind": "file",
@@ -118,9 +110,7 @@
       "source_revision": "8839501abaf50eeccbe21a2397cefa118eae9660",
       "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
       "decision": "external_ref_only",
-      "allowed_materializations": [
-        "external_ref"
-      ],
+      "allowed_materializations": ["external_ref"],
       "license_evidence": [
         {
           "kind": "file",
@@ -145,10 +135,7 @@
       "source_revision": "2026-08-18",
       "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
       "decision": "embedded_public",
-      "allowed_materializations": [
-        "embedded",
-        "external_ref"
-      ],
+      "allowed_materializations": ["embedded", "external_ref"],
       "license_evidence": [
         {
           "kind": "file",
@@ -173,10 +160,7 @@
       "source_revision": "01_todo.md",
       "manifest_hash": "sha256:1d4f270686cb0b8190a92606c57e7f1f7c48917efa90ee65026066cae996175b",
       "decision": "embedded_public",
-      "allowed_materializations": [
-        "embedded",
-        "external_ref"
-      ],
+      "allowed_materializations": ["embedded", "external_ref"],
       "license_evidence": [
         {
           "kind": "file",

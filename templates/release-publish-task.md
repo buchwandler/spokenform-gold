@@ -12,6 +12,7 @@ canonical Gold state. Do not alter annotations, provenance, taxonomy, policy, or
 family assignments during publication.
 
 ## Verify locally
+
 ```bash
 git status --short
 git rev-parse HEAD

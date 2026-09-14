@@ -84,6 +84,7 @@ spokenform-gold release \
   --source-decisions release/source-release-decisions.json \
   --out <WORK>/releases/v0.1.0-exp.2
 ```
+
 Integration is mechanical and requires complete reviewed decisions:
 
 ```bash
