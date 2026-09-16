@@ -285,26 +285,6 @@
     {
       "files": [
         {
-          "path": "data/candidates/01_todo_regressions.jsonl",
-          "role": "candidate-regression-batch",
-          "sha256": "3b6ce7df9405305b35528f59653d15fe64d375a7f391bc2330c67808fd118f2e"
-        }
-      ],
-      "kind": "curated",
-      "license": "CC-BY-4.0",
-      "license_id": "CC-BY-4.0",
-      "license_scope": "repository:candidate-proposals",
-      "materialization_policy": "embedded_public",
-      "name": "spokenform_discovered",
-      "notes": "Repository-local candidate-only regression proposals; not reviewed Gold.",
-      "redistribution_status": "allowed",
-      "release_ready": false,
-      "revision": "01_todo.md",
-      "source_url": "local://spokenform-gold/01_todo.md"
-    },
-    {
-      "files": [
-        {
           "path": "docs/TRANSLATION.md",
           "role": "translation-policy",
           "sha256": "cc19aa56a3cf4098ee455a411a50f5754496ad95a3c96ae8183e02359f70e4bd"

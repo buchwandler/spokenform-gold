@@ -10881,7 +10881,7 @@
     },
     {
       "disposition": "contextual_valid",
-      "fingerprint": "sha256:d2fac769bdf364afb5a444d7dcfaf8359f30bf3870023cd493af82437d396cfe",
+      "fingerprint": "sha256:489e0eae13e42896321b17d4be52bc93794a12f9b016bd99b6557c5a44acdd70",
       "key": ["en-US", "version", "v2.0.0-beta.4"],
       "reason": "Maintainer-approved contextual pronunciation variants for the experimental release.",
       "record_ids": [

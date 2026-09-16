@@ -288,6 +288,7 @@ jobs:
           gh release download "$TAG" \
             --pattern "spokenform-gold-v${VERSION}.zip" \
             --pattern "spokenform-gold-v${VERSION}-archive-SHA256SUMS" \
+            --pattern "spokenform-gold-v${VERSION}.tar.gz" \
             --pattern "spokenform-gold-v${VERSION}-manifest.json" \
             --dir published
       - name: Verify transport and extracted release

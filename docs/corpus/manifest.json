@@ -1,12 +1,12 @@
 {
-  "canonical_corpus_hash": "sha256:c25bf92396898e5d707eaa9b3fc5dab69d6e0113a8690e163097f6149629a9dc",
-  "corpus_hash": "sha256:afbb1b4dd450001c8bd55266acbc19ce19668d0e42fad467c25bc24732880b34",
+  "canonical_corpus_hash": "sha256:64dcf445275aa20084dc73f4c40654710cdafc9a93997edf3dd0b761beb99b10",
+  "corpus_hash": "sha256:15090e91a9bed9aaf82df7974fd11be4346cf1310bfba865ef5039de7c7cdad8",
   "generator": "spokenform-gold corpus-site",
   "languages": {
     "de": {
       "file": "de.html",
-      "records": 1173,
-      "sha256": "sha256:4e4c2d57cdfcfcae802e8bd3777f02682bed97c3e94e0170345ec41e03b566fc"
+      "records": 1171,
+      "sha256": "sha256:58f9d4b1389c92a79ffc011b27b1f2b5ca7f83d5d7df09a7b0ab925ea1d5476b"
     },
     "en": {
       "file": "en/index.html",
@@ -16,9 +16,9 @@
         "en/part-003.html",
         "en/part-004.html"
       ],
-      "records": 11023,
+      "records": 11007,
       "routing": "en/routing.json",
-      "sha256": "sha256:24e9b3e5cdaa1dcf5e363f02e098364c31ebf6af6568c09a43d81a6fa41dbea9"
+      "sha256": "sha256:93c892d41dbe85c82ba91fded98ce156974d17fa9d5e1a93adb13f89e25a10d4"
     },
     "es": {
       "file": "es/index.html",
@@ -26,9 +26,9 @@
         "es/part-001.html",
         "es/part-002.html"
       ],
-      "records": 4010,
+      "records": 4009,
       "routing": "es/routing.json",
-      "sha256": "sha256:e32e9092f8686296b7f1bc3bb73c475deb08c9e2bd9485fee868ef66de61f3b9"
+      "sha256": "sha256:495ff30faa9202f865f23ff48ec9ebb58b38859ac250c693bef93733a2e6a86e"
     },
     "fr": {
       "file": "fr.html",
@@ -61,7 +61,7 @@
       "sha256": "sha256:9cb180a43bf7f1a8c81b2863b599e7855c931df9afc51ae5bb0cfc5ad8695848"
     }
   },
-  "record_count": 20056,
+  "record_count": 20037,
   "schema_version": "1",
-  "site_content_hash": "sha256:afbb1b4dd450001c8bd55266acbc19ce19668d0e42fad467c25bc24732880b34"
+  "site_content_hash": "sha256:15090e91a9bed9aaf82df7974fd11be4346cf1310bfba865ef5039de7c7cdad8"
 }
