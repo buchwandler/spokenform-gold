@@ -1,12 +1,12 @@
 {
-  "canonical_corpus_hash": "sha256:8150703cb617acd16e02c9cd8e3ca206d5f5779b82fb463e1bdf55037603f6ad",
-  "corpus_hash": "sha256:b62eb3ff19779fbd436e469c66f73b2cbdafae568b3126c38a63fe200d233269",
+  "canonical_corpus_hash": "sha256:c25bf92396898e5d707eaa9b3fc5dab69d6e0113a8690e163097f6149629a9dc",
+  "corpus_hash": "sha256:afbb1b4dd450001c8bd55266acbc19ce19668d0e42fad467c25bc24732880b34",
   "generator": "spokenform-gold corpus-site",
   "languages": {
     "de": {
       "file": "de.html",
-      "records": 1175,
-      "sha256": "sha256:36e6baae03a9838b5c56e042403ac276e1dff898427341670782d6719cb80d9d"
+      "records": 1173,
+      "sha256": "sha256:4e4c2d57cdfcfcae802e8bd3777f02682bed97c3e94e0170345ec41e03b566fc"
     },
     "en": {
       "file": "en/index.html",
@@ -16,9 +16,9 @@
         "en/part-003.html",
         "en/part-004.html"
       ],
-      "records": 11026,
+      "records": 11023,
       "routing": "en/routing.json",
-      "sha256": "sha256:78b1eabe46b0c438f8d472e5525d1fbd99e43d4251e33e5b8145ef16403854f5"
+      "sha256": "sha256:24e9b3e5cdaa1dcf5e363f02e098364c31ebf6af6568c09a43d81a6fa41dbea9"
     },
     "es": {
       "file": "es/index.html",
@@ -61,7 +61,7 @@
       "sha256": "sha256:9cb180a43bf7f1a8c81b2863b599e7855c931df9afc51ae5bb0cfc5ad8695848"
     }
   },
-  "record_count": 20061,
+  "record_count": 20056,
   "schema_version": "1",
-  "site_content_hash": "sha256:b62eb3ff19779fbd436e469c66f73b2cbdafae568b3126c38a63fe200d233269"
+  "site_content_hash": "sha256:afbb1b4dd450001c8bd55266acbc19ce19668d0e42fad467c25bc24732880b34"
 }

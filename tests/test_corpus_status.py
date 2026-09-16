@@ -15,8 +15,8 @@ class CorpusStatusTests(unittest.TestCase):
             source_manifest=read_json(ROOT / "sources/manifest.json"),
             retry_backlog=28,
         )
-        self.assertEqual(result["canonical"], 20061)
-        self.assertEqual(result["local_benchmark_records"], 20061)
+        self.assertEqual(result["canonical"], 20056)
+        self.assertEqual(result["local_benchmark_records"], 20056)
         self.assertEqual(result["review_gaps"], 0)
         self.assertEqual(result["retry_backlog"], 28)
 

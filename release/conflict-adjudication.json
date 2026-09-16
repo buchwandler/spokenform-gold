@@ -11202,10 +11202,7 @@
       "fingerprint": "sha256:77fa5bce623f83eb36c656aafd3174bc9ff3f002d8bef76ba8b876966db0b79e",
       "key": ["lt-LT", "abbreviation", "prof."],
       "reason": "Grammatical gender and sentence context distinguish profesorius from profesorės; both realizations are contextually valid.",
-      "record_ids": [
-        "sfg-493156d7fb5055923946",
-        "sfg-cba28f4cbe09cbc47e63"
-      ],
+      "record_ids": ["sfg-493156d7fb5055923946", "sfg-cba28f4cbe09cbc47e63"],
       "variants": ["profesorius", "profesorės"]
     },
     {
@@ -11229,10 +11226,7 @@
       "fingerprint": "sha256:ca2a320bbdf5297d7c2b8012adc936ae040929e8a482ce1197fb39877a6b0694",
       "key": ["lt-LT", "math_expression", "x"],
       "reason": "The bounded expressions use x in distinct mathematical contexts; iks and kartų are contextually valid realizations.",
-      "record_ids": [
-        "sfg-929410e459d6eb246796",
-        "sfg-bcbf3fdd6aff1370bb82"
-      ],
+      "record_ids": ["sfg-929410e459d6eb246796", "sfg-bcbf3fdd6aff1370bb82"],
       "variants": ["iks", "kartų"]
     },
     {
@@ -11240,10 +11234,7 @@
       "fingerprint": "sha256:fa804fdd260607ab54a2c56a435842e61683e81ac496ba0f80858dbca700bb21",
       "key": ["lt-LT", "music", "3/4"],
       "reason": "Both Lithuanian musical-meter realizations are retained as contextually valid variants.",
-      "record_ids": [
-        "sfg-276d1db821d0c39d9f32",
-        "sfg-4abe9fb3eb4ad73cd66a"
-      ],
+      "record_ids": ["sfg-276d1db821d0c39d9f32", "sfg-4abe9fb3eb4ad73cd66a"],
       "variants": ["trijų ketvirtžingsniu", "trijų ketvirtžingsnių"]
     },
     {
@@ -11251,10 +11242,7 @@
       "fingerprint": "sha256:94dc692fc8fbdbc6ced206bb6c956e800eec88797835e6e19b30ed8d05578fae",
       "key": ["lt-LT", "music", "♩"],
       "reason": "Both ketvirtinė and ketvirtinė nata are contextually valid names for the quarter-note symbol.",
-      "record_ids": [
-        "sfg-3735dab9a893292c325e",
-        "sfg-b1408c0294c540bf45a2"
-      ],
+      "record_ids": ["sfg-3735dab9a893292c325e", "sfg-b1408c0294c540bf45a2"],
       "variants": ["ketvirtinė", "ketvirtinė nata"]
     },
     {
@@ -11262,10 +11250,7 @@
       "fingerprint": "sha256:4c990ec6562aac9894d576a5aa7d84147b168967e9c03430ae9b3ba1fcb7a89a",
       "key": ["lt-LT", "ordinal", "2"],
       "reason": "Sentence grammar determines ordinal case; antroji and antrą are contextually valid.",
-      "record_ids": [
-        "sfg-64e74bf2d6eacc80efbe",
-        "sfg-e20a002f3b814e06d87a"
-      ],
+      "record_ids": ["sfg-64e74bf2d6eacc80efbe", "sfg-e20a002f3b814e06d87a"],
       "variants": ["antroji", "antrą"]
     },
     {
@@ -11273,10 +11258,7 @@
       "fingerprint": "sha256:5953ca61dffb60997c01e5ddba2bdcc5617475d2066733a74740c32d3e2f0945",
       "key": ["lt-LT", "ordinal", "3"],
       "reason": "Sentence grammar determines ordinal case; trečios and trečiu are contextually valid.",
-      "record_ids": [
-        "sfg-c82d5c0f97b15a3206ba",
-        "sfg-e20a002f3b814e06d87a"
-      ],
+      "record_ids": ["sfg-c82d5c0f97b15a3206ba", "sfg-e20a002f3b814e06d87a"],
       "variants": ["trečios", "trečiu"]
     }
   ],
